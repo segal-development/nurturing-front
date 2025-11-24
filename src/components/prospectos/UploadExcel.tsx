@@ -349,19 +349,39 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
                   <label
                     htmlFor="archivo"
                     className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 ${
-                      formErrors.archivo
+                      selectedFile
+                        ? 'border-segal-green/40 bg-segal-green/5 hover:bg-segal-green/10'
+                        : formErrors.archivo
                         ? 'border-segal-red/40 bg-segal-red/5 hover:bg-segal-red/10'
                         : 'border-segal-blue/40 bg-segal-blue/5 hover:bg-segal-blue/10'
                     }`}
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className={`w-12 h-12 mb-4 ${
-                        formErrors.archivo ? 'text-segal-red' : 'text-segal-blue'
-                      }`} />
-                      <p className="mb-2 text-sm text-segal-dark">
-                        <span className="font-bold text-segal-dark">Click para subir</span> o arrastra el archivo aquí
-                      </p>
-                      <p className="text-xs text-segal-dark/60 font-medium">Archivos Excel (.xlsx, .xls)</p>
+                      {selectedFile ? (
+                        <>
+                          <CheckCircle2 className="w-12 h-12 mb-4 text-segal-green animate-pulse" />
+                          <p className="mb-2 text-sm text-segal-dark">
+                            <span className="font-bold text-segal-green">✓ Archivo adjuntado</span>
+                          </p>
+                          <p className="text-xs text-segal-dark/70 font-medium text-center px-4 break-words">
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-xs text-segal-dark/50 mt-1">
+                            {(selectedFile.size / 1024).toFixed(2)} KB
+                          </p>
+                          <p className="text-xs text-segal-blue mt-2 underline">Click para cambiar archivo</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className={`w-12 h-12 mb-4 ${
+                            formErrors.archivo ? 'text-segal-red' : 'text-segal-blue'
+                          }`} />
+                          <p className="mb-2 text-sm text-segal-dark">
+                            <span className="font-bold text-segal-dark">Click para subir</span> o arrastra el archivo aquí
+                          </p>
+                          <p className="text-xs text-segal-dark/60 font-medium">Archivos Excel (.xlsx, .xls)</p>
+                        </>
+                      )}
                     </div>
                     <input
                       ref={fileInputRef}
