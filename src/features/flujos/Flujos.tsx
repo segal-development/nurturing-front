@@ -10,17 +10,26 @@ import { FlujosFilters } from './components/FlujosFilters/FlujosFilters'
 import { FlujosTable } from './components/FlujosTable/FlujosTable'
 import { FlujosPagination } from './components/FlujosPagination/FlujosPagination'
 import { CreateFlujoDialog } from './components/CreateFlujoDialog/CreateFlujoDialog'
+import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
+import { EditFlujoDialog } from './components/EditFlujoDialog/EditFlujoDialog'
+import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
 import { useOpciones } from './hooks/useOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
 import { useFlujoPagination } from './hooks/useFlujoPagination'
 import { Button } from '@/components/ui/button'
+import type { FlujoNurturing } from '@/types/flujo'
 
 const ITEMS_PER_PAGE = 15
 
 export function Flujos() {
   // Estado local
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [progressPanelOpen, setProgressPanelOpen] = useState(false)
+  const [selectedFlujo, setSelectedFlujo] = useState<FlujoNurturing | null>(null)
+  const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null)
 
   // Query client para invalidar caché
   const queryClient = useQueryClient()
@@ -77,13 +86,15 @@ export function Flujos() {
   }
 
   const handleViewFlujo = (id: number) => {
-    console.log('Ver flujo:', id)
-    // TODO: Implementar lógica de visualización
+    const flujo = flujos.find((f) => f.id === id) || null
+    setSelectedFlujo(flujo)
+    setDetailDialogOpen(true)
   }
 
   const handleEditFlujo = (id: number) => {
-    console.log('Editar flujo:', id)
-    // TODO: Implementar lógica de edición
+    const flujo = flujos.find((f) => f.id === id) || null
+    setSelectedFlujo(flujo)
+    setEditDialogOpen(true)
   }
 
   const handleDeleteFlujo = (id: number) => {
@@ -92,8 +103,15 @@ export function Flujos() {
   }
 
   const handleEjecutarFlujo = (flujoId: number) => {
-    console.log('Ejecutar flujo:', flujoId)
-    // TODO: Abrir modal/drawer con progreso de ejecución
+    setSelectedFlujoId(flujoId)
+    setProgressPanelOpen(true)
+  }
+
+  const handleEditSuccess = () => {
+    setEditDialogOpen(false)
+    setSelectedFlujo(null)
+    queryClient.invalidateQueries({ queryKey: ['flujos'] })
+    resetPage()
   }
 
   // Loading estado inicial de opciones
@@ -232,6 +250,43 @@ export function Flujos() {
         tipoDeudor={filtros.tipoDeudor}
         opciones={opciones}
         onSuccess={handleCreateFlujoSuccess}
+      />
+
+      {/* Dialog para ver detalle del flujo */}
+      <FlujoDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        flujo={selectedFlujo}
+        onEdit={() => {
+          setDetailDialogOpen(false)
+          setEditDialogOpen(true)
+        }}
+        onExecute={() => {
+          setDetailDialogOpen(false)
+          if (selectedFlujo) {
+            handleEjecutarFlujo(selectedFlujo.id)
+          }
+        }}
+      />
+
+      {/* Dialog para editar flujo */}
+      <EditFlujoDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        flujo={selectedFlujo}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Panel de progreso de ejecución */}
+      <FlujoProgressPanel
+        open={progressPanelOpen}
+        onOpenChange={setProgressPanelOpen}
+        flujoId={selectedFlujoId}
+        flujNombre={selectedFlujo?.nombre || 'Ejecución de Flujo'}
+        onClose={() => {
+          setProgressPanelOpen(false)
+          setSelectedFlujoId(null)
+        }}
       />
     </div>
   )
