@@ -7,7 +7,7 @@
  * - Calcular automáticamente costos basados en prospectos seleccionados
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -35,6 +35,7 @@ import type { OpcionesFlujos } from '@/api/flujos.service'
 import type { Prospecto } from '@/types/prospecto'
 import { flujosService } from '@/api/flujos.service'
 import { prospectosService } from '@/api/prospectos.service'
+import { configuracionService } from '@/api/configuracion.service'
 
 // Esquema de validación
 const createFlujoSchema = z.object({
@@ -61,10 +62,6 @@ interface CreateFlujoDialogProps {
   onSuccess?: () => void
 }
 
-// Costo por envío
-const COST_EMAIL = 1 // $1 por email
-const COST_SMS = 11 // $11 por SMS
-
 type Step = 'origin' | 'prospects' | 'config'
 
 export function CreateFlujoDialog({
@@ -83,6 +80,33 @@ export function CreateFlujoDialog({
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoMensaje, setSelectedTipoMensaje] = useState<TipoMensaje>('email')
   const [emailPercentage, setEmailPercentage] = useState(50)
+  const [costEmail, setCostEmail] = useState(1)
+  const [costSms, setCostSms] = useState(11)
+  const [loadingPrices, setLoadingPrices] = useState(true)
+
+  // Cargar precios al abrir el dialog
+  useEffect(() => {
+    if (open) {
+      cargarPrecios()
+    }
+  }, [open])
+
+  const cargarPrecios = async () => {
+    try {
+      setLoadingPrices(true)
+      const precios = await configuracionService.obtenerPrecios()
+      setCostEmail(precios.email_costo)
+      setCostSms(precios.sms_costo)
+      console.log('✅ Precios cargados:', { email: precios.email_costo, sms: precios.sms_costo })
+    } catch (error) {
+      console.error('❌ Error cargando precios:', error)
+      // Usar valores por defecto en caso de error
+      setCostEmail(1)
+      setCostSms(11)
+    } finally {
+      setLoadingPrices(false)
+    }
+  }
 
   const {
     control,
@@ -152,7 +176,7 @@ export function CreateFlujoDialog({
       return {
         email: totalSelected,
         sms: 0,
-        emailCost: totalSelected * COST_EMAIL,
+        emailCost: totalSelected * costEmail,
         smsCost: 0,
       }
     } else if (selectedTipoMensaje === 'sms') {
@@ -160,7 +184,7 @@ export function CreateFlujoDialog({
         email: 0,
         sms: totalSelected,
         emailCost: 0,
-        smsCost: totalSelected * COST_SMS,
+        smsCost: totalSelected * costSms,
       }
     } else {
       // Ambos
@@ -169,8 +193,8 @@ export function CreateFlujoDialog({
       return {
         email: emailCount,
         sms: smsCount,
-        emailCost: emailCount * COST_EMAIL,
-        smsCost: smsCount * COST_SMS,
+        emailCost: emailCount * costEmail,
+        smsCost: smsCount * costSms,
       }
     }
   }
@@ -208,12 +232,12 @@ export function CreateFlujoDialog({
         distribucion: {
           email: {
             cantidad: distribution.email,
-            costo_unitario: COST_EMAIL,
+            costo_unitario: costEmail,
             costo_total: distribution.emailCost,
           },
           sms: {
             cantidad: distribution.sms,
-            costo_unitario: COST_SMS,
+            costo_unitario: costSms,
             costo_total: distribution.smsCost,
           },
           resumen: {
@@ -530,6 +554,12 @@ export function CreateFlujoDialog({
                 <Label className="text-sm font-semibold text-segal-dark">
                   Tipo de Mensaje <span className="text-segal-red">*</span>
                 </Label>
+                {loadingPrices && (
+                  <div className="text-sm text-segal-dark/60 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cargando precios actualizados...
+                  </div>
+                )}
                 <Controller
                   name="tipo_mensaje"
                   control={control}
@@ -550,7 +580,7 @@ export function CreateFlujoDialog({
                       >
                         <Mail className="h-6 w-6 text-segal-blue" />
                         <span className="text-sm font-semibold text-segal-dark">Email</span>
-                        <span className="text-xs text-segal-dark/60">$1 por envío</span>
+                        <span className="text-xs text-segal-dark/60">${costEmail} por envío</span>
                       </button>
 
                       {/* SMS */}
@@ -568,7 +598,7 @@ export function CreateFlujoDialog({
                       >
                         <MessageSquare className="h-6 w-6 text-segal-blue" />
                         <span className="text-sm font-semibold text-segal-dark">SMS</span>
-                        <span className="text-xs text-segal-dark/60">$11 por envío</span>
+                        <span className="text-xs text-segal-dark/60">${costSms} por envío</span>
                       </button>
 
                       {/* Ambos */}
