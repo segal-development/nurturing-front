@@ -92,6 +92,7 @@ function FlowBuilderContent({
     addEndNode,
     addEdge: addFlowEdge,
     removeNode,
+    updateNode,
     setNodePosition,
     removeEdge,
     setFlowName,
@@ -115,15 +116,19 @@ function FlowBuilderContent({
     <ConditionalNode {...props} onDelete={removeNode} />
   ), [removeNode])
 
+  const EndNodeWrapper = useCallback((props: any) => (
+    <EndNode {...props} onDelete={removeNode} onUpdate={updateNode} />
+  ), [removeNode, updateNode])
+
   // Memoize nodeTypes para evitar recreación en cada render
   const memoizedNodeTypes = useMemo(
     () => ({
       stage: StageNodeWrapper,
       initial: InitialNode,
-      end: EndNode,
+      end: EndNodeWrapper,
       conditional: ConditionalNodeWrapper,
     }),
-    [StageNodeWrapper, ConditionalNodeWrapper]
+    [StageNodeWrapper, ConditionalNodeWrapper, EndNodeWrapper]
   )
 
   // Memoize edgeTypes para los edges animados
