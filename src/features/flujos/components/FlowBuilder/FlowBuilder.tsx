@@ -89,6 +89,7 @@ function FlowBuilderContent({
     flowDescription,
     addStageNode,
     addConditionalNode,
+    addEndNode,
     addEdge: addFlowEdge,
     removeNode,
     setNodePosition,
@@ -235,15 +236,98 @@ function FlowBuilderContent({
     }
 
     try {
+      // Crear estructura completa para el backend
+      const stages = storeNodes
+        .filter((n) => n.type === 'stage')
+        .map((n, index) => {
+          const data = n.data as any
+          return {
+            id: n.id,
+            orden: index,
+            label: data.label,
+            dia_envio: data.dia_envio || 1,
+            tipo_mensaje: data.tipo_mensaje || 'email',
+            plantilla_mensaje: data.plantilla_mensaje || '',
+            fecha_inicio_personalizada: data.fecha_inicio_personalizada || null,
+            activo: data.activo !== false,
+          }
+        })
+
+      // Obtener condiciones
+      const conditions = storeNodes
+        .filter((n) => n.type === 'conditional')
+        .map((n) => {
+          const data = n.data as any
+          return {
+            id: n.id,
+            label: data.label,
+            description: data.description || '',
+            condition_type: data.condition?.type || 'email_opened',
+            condition_label: data.condition?.label || '',
+            yes_label: data.yesLabel || 'Sí',
+            no_label: data.noLabel || 'No',
+          }
+        })
+
+      // Procesar conexiones (edges) para crear la estructura de ramificaciones
+      const branches = storeEdges
+        .filter((e) => {
+          const sourceNode = storeNodes.find((n) => n.id === e.source)
+          return sourceNode?.type === 'conditional'
+        })
+        .map((e) => ({
+          edge_id: e.id,
+          source_node_id: e.source,
+          target_node_id: e.target,
+          source_handle: e.sourceHandle,
+          target_handle: e.targetHandle,
+          condition_branch: e.sourceHandle?.includes('yes') ? 'yes' : 'no',
+        }))
+
+      // Crear estructura de nodos para visualización
+      const nodesStructure = storeNodes.map((n) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: {
+          ...n.data,
+          label: n.data.label,
+        },
+      }))
+
+      // Crear estructura de edges para visualización
+      const edgesStructure = storeEdges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+        type: e.type || 'animated',
+      }))
+
       const config = {
         nombre: flowName,
         descripcion: flowDescription,
-        nodes: storeNodes,
-        edges: storeEdges,
-        stages: storeNodes
-          .filter((n) => n.type === 'stage')
-          .map((n) => ({ id: n.id, ...n.data })),
+
+        // Datos visuales (para reconstruir el flujo en el editor)
+        visual: {
+          nodes: nodesStructure,
+          edges: edgesStructure,
+        },
+
+        // Datos estructurados para el backend (para ejecutar el flujo)
+        structure: {
+          stages,
+          conditions,
+          branches,
+          initial_node: storeNodes.find((n) => n.type === 'initial') || null,
+          end_nodes: storeNodes.filter((n) => n.type === 'end'),
+        },
+
+        // Datos legados (compatibilidad)
+        stages,
       }
+
       await onSaveFlow?.(config)
     } catch (error) {
       console.error('Error saving flow:', error)
@@ -361,6 +445,15 @@ function FlowBuilderContent({
             >
               <GitBranch className="h-4 w-4" />
               Agregar Condición
+            </Button>
+
+            <Button
+              onClick={addEndNode}
+              variant="outline"
+              className="w-full border-segal-green/30 text-segal-green hover:bg-segal-green/5 font-semibold flex items-center justify-center gap-2 h-10"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Agregar Fin
             </Button>
           </div>
 

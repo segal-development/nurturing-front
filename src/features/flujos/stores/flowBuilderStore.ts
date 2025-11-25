@@ -22,6 +22,7 @@ interface FlowBuilderStore {
   // Node actions
   addStageNode: () => void
   addConditionalNode: () => void
+  addEndNode: () => void
   removeNode: (nodeId: string) => void
   updateNode: (nodeId: string, data: Partial<any>) => void
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => void
@@ -107,6 +108,23 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
       } as ConditionalNodeData,
       position: { x: 600, y: newY },
       type: 'conditional',
+    }
+
+    set((state) => ({
+      nodes: [...state.nodes, newNode],
+    }))
+  },
+
+  addEndNode: () => {
+    const state = get()
+    const endNodeCount = state.nodes.filter((n) => n.type === 'end').length
+    const newY = 250 + endNodeCount * 200
+
+    const newNode: CustomNode = {
+      id: `end-${nanoid()}`,
+      data: { label: `Fin ${endNodeCount > 0 ? endNodeCount + 1 : ''}` },
+      position: { x: 400, y: newY },
+      type: 'end',
     }
 
     set((state) => ({
