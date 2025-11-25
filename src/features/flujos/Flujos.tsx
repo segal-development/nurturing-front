@@ -9,7 +9,7 @@ import { GitBranch, Loader2, AlertCircle } from 'lucide-react'
 import { FlujosFilters } from './components/FlujosFilters/FlujosFilters'
 import { FlujosTable } from './components/FlujosTable/FlujosTable'
 import { FlujosPagination } from './components/FlujosPagination/FlujosPagination'
-import { CreateFlujoDialog } from './components/CreateFlujoDialog/CreateFlujoDialog'
+import { CreateFlujoWithBuilder } from './components/CreateFlujoWithBuilder/CreateFlujoWithBuilder'
 import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
 import { EditFlujoDialog } from './components/EditFlujoDialog/EditFlujoDialog'
 import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
@@ -243,8 +243,8 @@ export function Flujos() {
         </>
       )}
 
-      {/* Dialog para crear flujo */}
-      <CreateFlujoDialog
+      {/* Dialog para crear flujo con FlowBuilder */}
+      <CreateFlujoWithBuilder
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         tipoDeudor={filtros.tipoDeudor}
