@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Loader2, Settings, AlertCircle, CheckCircle } from 'lucide-react'
+import { Loader2, Settings, AlertCircle, CheckCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,6 +34,16 @@ export function ConfiguracionPage() {
   useEffect(() => {
     cargarConfiguracion()
   }, [])
+
+  // Auto-cerrar notificación después de 4 segundos si es exitosa
+  useEffect(() => {
+    if (notification?.type === 'success') {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   const cargarConfiguracion = async () => {
     try {
@@ -118,26 +128,39 @@ export function ConfiguracionPage() {
       {/* Notificación */}
       {notification && (
         <div
-          className={`flex items-center gap-3 rounded-lg border p-4 ${
+          className={`flex items-center justify-between gap-3 rounded-lg border p-4 ${
             notification.type === 'success'
               ? 'border-segal-green/30 bg-segal-green/10'
               : 'border-segal-red/30 bg-segal-red/10'
           }`}
         >
-          {notification.type === 'success' ? (
-            <CheckCircle className="h-5 w-5 text-segal-green shrink-0" />
-          ) : (
-            <AlertCircle className="h-5 w-5 text-segal-red shrink-0" />
-          )}
-          <p
-            className={
+          <div className="flex items-center gap-3">
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-segal-green shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-segal-red shrink-0" />
+            )}
+            <p
+              className={
+                notification.type === 'success'
+                  ? 'text-segal-green font-medium'
+                  : 'text-segal-red font-medium'
+              }
+            >
+              {notification.message}
+            </p>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className={`shrink-0 p-1 rounded hover:bg-black/10 transition-colors ${
               notification.type === 'success'
-                ? 'text-segal-green font-medium'
-                : 'text-segal-red font-medium'
-            }
+                ? 'text-segal-green hover:bg-segal-green/20'
+                : 'text-segal-red hover:bg-segal-red/20'
+            }`}
+            aria-label="Cerrar notificación"
           >
-            {notification.message}
-          </p>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
