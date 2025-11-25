@@ -8,10 +8,13 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getStraightPath,
+  useReactFlow,
   type EdgeProps,
 } from 'reactflow'
+import { Trash2 } from 'lucide-react'
 
 export function AnimatedEdge({
+  id,
   sourceX,
   sourceY,
   targetX,
@@ -21,12 +24,18 @@ export function AnimatedEdge({
   markerStart,
   selected = false,
 }: EdgeProps) {
+  const { deleteElements } = useReactFlow()
+
   const [edgePath, labelX, labelY] = getStraightPath({
     sourceX,
     sourceY,
     targetX,
     targetY,
   })
+
+  const handleDeleteEdge = () => {
+    deleteElements({ edges: [{ id: id || '' }] })
+  }
 
   return (
     <>
@@ -72,19 +81,30 @@ export function AnimatedEdge({
         </EdgeLabelRenderer>
       )}
 
-      {/* Helper text when selected */}
+      {/* Helper text and delete button when selected */}
       {selected && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY - 30}px)`,
-              fontSize: 10,
-              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              pointerEvents: 'all',
             }}
-            className="text-segal-green font-medium"
+            className="nodrag nopan"
           >
-            Presiona Delete para eliminar
+            <span className="text-segal-green font-medium text-xs">
+              Presiona Delete o
+            </span>
+            <button
+              onClick={handleDeleteEdge}
+              title="Eliminar conexión"
+              className="flex items-center justify-center gap-1 p-1.5 rounded bg-segal-red hover:bg-segal-red/90 text-white shadow-md transition-colors hover:scale-110"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
         </EdgeLabelRenderer>
       )}

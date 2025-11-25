@@ -34,6 +34,7 @@ interface FlowBuilderStore {
   setFlowName: (name: string) => void
   setFlowDescription: (description: string) => void
   resetFlow: () => void
+  initializeWithOrigin: (originId: string, originName: string, prospectoCount: number) => void
 
   // Utility
   getStageCount: () => number
@@ -182,6 +183,27 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
       edges: [],
       flowName: '',
       flowDescription: '',
+    })
+  },
+
+  initializeWithOrigin: (originId: string, originName: string, prospectoCount: number) => {
+    const updatedNodes = INITIAL_NODES.map((node) =>
+      node.id === 'initial-1'
+        ? {
+            ...node,
+            data: {
+              ...node.data,
+              label: `Inicio - ${originName}`,
+              origen_id: originId,
+              origen_nombre: originName,
+              prospectos_count: prospectoCount,
+            },
+          }
+        : node
+    )
+
+    set({
+      nodes: updatedNodes,
     })
   },
 

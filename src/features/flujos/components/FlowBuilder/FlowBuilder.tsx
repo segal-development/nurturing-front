@@ -63,6 +63,9 @@ interface FlowBuilderProps {
   onCancel?: () => void
   initialName?: string
   initialDescription?: string
+  selectedOriginId?: string
+  selectedOriginName?: string
+  selectedProspectoCount?: number
 }
 
 /**
@@ -74,6 +77,9 @@ function FlowBuilderContent({
   onCancel,
   initialName = '',
   initialDescription = '',
+  selectedOriginId = '',
+  selectedOriginName = '',
+  selectedProspectoCount = 0,
 }: FlowBuilderProps) {
   // Zustand store - única fuente de verdad
   const {
@@ -90,6 +96,7 @@ function FlowBuilderContent({
     setFlowName,
     setFlowDescription,
     resetFlow,
+    initializeWithOrigin,
   } = useFlowBuilderStore()
 
   // ReactFlow state - sincronizado con Zustand
@@ -142,6 +149,13 @@ function FlowBuilderContent({
     if (initialName) setFlowName(initialName)
     if (initialDescription) setFlowDescription(initialDescription)
   }, [initialName, initialDescription, setFlowName, setFlowDescription])
+
+  // Initialize with origin information
+  useEffect(() => {
+    if (selectedOriginId && selectedOriginName) {
+      initializeWithOrigin(selectedOriginId, selectedOriginName, selectedProspectoCount)
+    }
+  }, [selectedOriginId, selectedOriginName, selectedProspectoCount, initializeWithOrigin])
 
   /**
    * Handle node changes (posición, selección, etc)

@@ -223,6 +223,9 @@ export function CreateFlujoWithBuilder({
               onCancel={handleBack}
               initialName=""
               initialDescription=""
+              selectedOriginId={selectedOriginId || ''}
+              selectedOriginName={selectedOriginName || ''}
+              selectedProspectoCount={selectedProspectoIds.size}
             />
           )}
         </div>
