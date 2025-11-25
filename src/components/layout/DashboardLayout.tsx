@@ -111,7 +111,10 @@ export function DashboardLayout() {
                 <Settings className="mr-2 h-4 w-4 text-segal-blue" />
                 <span>Configuración de Cuenta</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-segal-dark hover:bg-segal-blue/5 focus:bg-segal-blue/5">
+              <DropdownMenuItem
+                className="cursor-pointer text-segal-dark hover:bg-segal-blue/5 focus:bg-segal-blue/5"
+                onClick={() => navigate('/profile')}
+              >
                 <Users className="mr-2 h-4 w-4 text-segal-turquoise" />
                 <span>Ver Perfil</span>
               </DropdownMenuItem>

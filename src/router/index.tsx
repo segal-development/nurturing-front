@@ -8,6 +8,7 @@ import Flujos from '@/pages/Flujos';
 import Ofertas from '@/pages/Ofertas';
 import Monitor from '@/pages/Monitor';
 import Configuracion from '@/pages/Configuracion';
+import { ProfilePage } from '@/pages/Profile';
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +50,10 @@ export const router = createBrowserRouter([
       {
         path: 'configuracion',
         element: <Configuracion />,
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />,
       },
     ],
   },
