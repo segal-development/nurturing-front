@@ -36,6 +36,7 @@ interface FlowBuilderStore {
   setFlowDescription: (description: string) => void
   resetFlow: () => void
   initializeWithOrigin: (originId: string, originName: string, prospectoCount: number) => void
+  loadFlowConfiguration: (nodes: CustomNode[], edges: CustomEdge[]) => void
 
   // Utility
   getStageCount: () => number
@@ -142,11 +143,14 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   },
 
   updateNode: (nodeId: string, data: Partial<any>) => {
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
+    console.log(`[DEBUG Store] updateNode called for ${nodeId} with data:`, data)
+    set((state) => {
+      const updated = state.nodes.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
-      ),
-    }))
+      )
+      console.log(`[DEBUG Store] Node ${nodeId} after update:`, updated.find((n) => n.id === nodeId)?.data)
+      return { nodes: updated }
+    })
   },
 
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => {
@@ -171,19 +175,32 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
     )
 
     if (exists) {
-      console.warn('Edge already exists:', edge.id)
+      console.warn('⚠️ [Zustand] Edge duplicado evitado:', edge.id)
       return
     }
 
-    set((state) => ({
-      edges: [...state.edges, edge],
-    }))
+    console.log('✅ [Zustand] Agregando edge:', {
+      id: edge.id,
+      source: edge.source,
+      sourceHandle: edge.sourceHandle,
+      target: edge.target,
+      targetHandle: edge.targetHandle,
+    })
+
+    set((state) => {
+      const updated = [...state.edges, edge]
+      console.log(`📊 [Zustand] Total edges después de agregar: ${updated.length}`)
+      return { edges: updated }
+    })
   },
 
   removeEdge: (edgeId: string) => {
-    set((state) => ({
-      edges: state.edges.filter((e) => e.id !== edgeId),
-    }))
+    console.log('🗑️ [Zustand] Eliminando edge:', edgeId)
+    set((state) => {
+      const updated = state.edges.filter((e) => e.id !== edgeId)
+      console.log(`📊 [Zustand] Total edges después de eliminar: ${updated.length}`)
+      return { edges: updated }
+    })
   },
 
   // Flow actions
@@ -222,6 +239,17 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
 
     set({
       nodes: updatedNodes,
+    })
+  },
+
+  loadFlowConfiguration: (nodes: CustomNode[], edges: CustomEdge[]) => {
+    console.log('📂 [Store] Cargando configuración completa del flujo:', {
+      nodesCount: nodes.length,
+      edgesCount: edges.length,
+    })
+    set({
+      nodes,
+      edges,
     })
   },
 

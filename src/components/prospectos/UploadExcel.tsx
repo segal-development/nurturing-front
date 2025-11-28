@@ -239,7 +239,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       setUploadProgress(80);
 
       console.log('✅ Importación exitosa:');
-      console.log('   ID Importación:', response.data.id);
+      console.log('   ID Importación:', response.data?.id);
       console.log('   Nombre de origen:', selectedOriginName);
       console.log('   Cantidad de prospectos:', preview.length);
       console.log('   Resumen:', response.resumen);

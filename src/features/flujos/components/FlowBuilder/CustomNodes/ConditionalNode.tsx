@@ -53,15 +53,14 @@ export function ConditionalNode({
 
   return (
     <>
-      {/* Input handles */}
-      <Handle type="target" position={Position.Top} id="top" />
-      <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="target" position={Position.Bottom} id="bottom" />
+      {/* Input handle - only top for cleaner design */}
+      <Handle type="target" position={Position.Top} id="input" />
 
       <div
-        className={`rounded-lg border-2 p-4 min-w-[240px] bg-white shadow-md transition-all duration-200 ${
+        className={`rounded-lg border-2 p-4 min-w-[280px] bg-white shadow-md transition-all duration-200 ${
           isSelected ? 'border-segal-blue ring-2 ring-segal-blue/20' : 'border-segal-blue/30'
         } ${isEditing ? 'ring-2 ring-segal-green/30' : ''}`}
+        style={{ position: 'relative' }}
       >
         {!isEditing ? (
           // View Mode
@@ -85,6 +84,15 @@ export function ConditionalNode({
               <div className="p-2 rounded bg-segal-blue/5 border border-segal-blue/10">
                 <p className="font-medium text-segal-blue">📋 {localData.condition?.label || 'Sin condición'}</p>
               </div>
+
+              {/* Condition Parameters Display */}
+              {localData.condition?.check_param && (
+                <div className="p-2 rounded bg-segal-green/5 border border-segal-green/10 space-y-1">
+                  <p className="text-xs font-medium text-segal-green">
+                    {localData.condition.check_param} {localData.condition.check_operator} {localData.condition.check_value}
+                  </p>
+                </div>
+              )}
 
               {/* Yes/No Labels */}
               <div className="grid grid-cols-2 gap-2">
@@ -154,6 +162,86 @@ export function ConditionalNode({
               </select>
             </div>
 
+            {/* Condition Parameters */}
+            <div className="space-y-2 p-3 bg-segal-blue/5 rounded border border-segal-blue/10">
+              <p className="text-xs font-semibold text-segal-dark">Parámetros de Evaluación</p>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-segal-dark">Parámetro a verificar:</label>
+                <select
+                  value={localData.condition?.check_param || 'Views'}
+                  onChange={(e) =>
+                    setLocalData({
+                      ...localData,
+                      condition: {
+                        ...localData.condition,
+                        id: localData.condition?.id || `cond-${Date.now()}`,
+                        type: localData.condition?.type || 'email_opened',
+                        label: localData.condition?.label || 'Sin condición',
+                        check_param: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                >
+                  <option value="Views">Email abierto (Views)</option>
+                  <option value="Clicks">Link clickeado (Clicks)</option>
+                  <option value="Bounces">Email rechazado (Bounces)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-segal-dark">Operador:</label>
+                <select
+                  value={localData.condition?.check_operator || '>'}
+                  onChange={(e) =>
+                    setLocalData({
+                      ...localData,
+                      condition: {
+                        ...localData.condition,
+                        id: localData.condition?.id || `cond-${Date.now()}`,
+                        type: localData.condition?.type || 'email_opened',
+                        label: localData.condition?.label || 'Sin condición',
+                        check_operator: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                >
+                  <option value=">">Mayor que (&gt;)</option>
+                  <option value=">=">&gt;= Mayor o igual</option>
+                  <option value="==">Igual (==)</option>
+                  <option value="!=">No igual (!=)</option>
+                  <option value="<">Menor que (&lt;)</option>
+                  <option value="<=">&lt;= Menor o igual</option>
+                  <option value="in">En lista (in)</option>
+                  <option value="not_in">No en lista (not_in)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-segal-dark">Valor esperado:</label>
+                <input
+                  type="text"
+                  value={localData.condition?.check_value || '0'}
+                  onChange={(e) =>
+                    setLocalData({
+                      ...localData,
+                      condition: {
+                        ...localData.condition,
+                        id: localData.condition?.id || `cond-${Date.now()}`,
+                        type: localData.condition?.type || 'email_opened',
+                        label: localData.condition?.label || 'Sin condición',
+                        check_value: e.target.value,
+                      },
+                    })
+                  }
+                  className="w-full px-2 py-1 text-xs border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                  placeholder="0, 1 o lista separada por comas: 0,1,2"
+                />
+              </div>
+            </div>
+
             {/* Description */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-segal-dark">Descripción (Opcional)</label>
@@ -208,38 +296,84 @@ export function ConditionalNode({
         )}
       </div>
 
-      {/* Two output handles for yes/no branches */}
-      {/* Bottom handles - for vertical layout */}
+      {/* YES handle - Green, left bottom */}
       <Handle
         type="source"
         position={Position.Bottom}
         id={`${id}-yes`}
-        style={{ left: '25%' }}
-        title="Conexión para 'Sí' (condición verdadera)"
+        style={{
+          left: '25%',
+          width: '16px',
+          height: '16px',
+          background: '#059669',
+          border: '3px solid #ffffff',
+          boxShadow: '0 0 0 2px #059669, 0 2px 6px rgba(0,0,0,0.3)',
+          cursor: 'crosshair',
+          zIndex: 10,
+        }}
+        title="✓ Conexión para SÍ (condición verdadera)"
       />
+
+      {/* NO handle - Red, right bottom */}
       <Handle
         type="source"
         position={Position.Bottom}
         id={`${id}-no`}
-        style={{ left: '75%' }}
-        title="Conexión para 'No' (condición falsa)"
+        style={{
+          left: '75%',
+          width: '16px',
+          height: '16px',
+          background: '#dc2626',
+          border: '3px solid #ffffff',
+          boxShadow: '0 0 0 2px #dc2626, 0 2px 6px rgba(0,0,0,0.3)',
+          cursor: 'crosshair',
+          zIndex: 10,
+        }}
+        title="✗ Conexión para NO (condición falsa)"
       />
 
-      {/* Right handles - for horizontal layout */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-yes-right`}
-        style={{ top: '30%' }}
-        title="Conexión para 'Sí' (condición verdadera)"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id={`${id}-no-right`}
-        style={{ top: '70%' }}
-        title="Conexión para 'No' (condición falsa)"
-      />
+      {/* Visual labels for the handles */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-28px',
+          left: '20%',
+          transform: 'translateX(-50%)',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: '#059669',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          textShadow: '0 1px 2px rgba(255, 255, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+        }}
+      >
+        <span>✓</span>
+        <span>SÍ</span>
+      </div>
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-28px',
+          left: '80%',
+          transform: 'translateX(-50%)',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: '#dc2626',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          textShadow: '0 1px 2px rgba(255, 255, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+        }}
+      >
+        <span>✗</span>
+        <span>NO</span>
+      </div>
     </>
   )
 }

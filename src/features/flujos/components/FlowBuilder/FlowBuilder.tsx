@@ -50,11 +50,19 @@ const handleStyles = `
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { StageNode } from './CustomNodes/StageNode'
 import { InitialNode } from './CustomNodes/InitialNode'
 import { EndNode } from './CustomNodes/EndNode'
 import { ConditionalNode } from './CustomNodes/ConditionalNode'
-import { AnimatedEdge } from './CustomEdges/AnimatedEdge'
+import { N8nStyleEdge } from './CustomEdges/N8nStyleEdge'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import type { CustomEdge } from '../../types/flowBuilder'
 
@@ -105,16 +113,17 @@ function FlowBuilderContent({
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges)
   const [previewMode, setPreviewMode] = useState(false)
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false)
   const flowContainerRef = useRef<HTMLDivElement>(null)
 
   // Crear wrappers de nodos que tengan acceso a los callbacks
   const StageNodeWrapper = useCallback((props: any) => (
-    <StageNode {...props} onDelete={removeNode} />
-  ), [removeNode])
+    <StageNode {...props} onDelete={removeNode} onUpdate={updateNode} />
+  ), [removeNode, updateNode])
 
   const ConditionalNodeWrapper = useCallback((props: any) => (
-    <ConditionalNode {...props} onDelete={removeNode} />
-  ), [removeNode])
+    <ConditionalNode {...props} onDelete={removeNode} onUpdate={updateNode} />
+  ), [removeNode, updateNode])
 
   const EndNodeWrapper = useCallback((props: any) => (
     <EndNode {...props} onDelete={removeNode} onUpdate={updateNode} />
@@ -131,22 +140,40 @@ function FlowBuilderContent({
     [StageNodeWrapper, ConditionalNodeWrapper, EndNodeWrapper]
   )
 
-  // Memoize edgeTypes para los edges animados
+  // Memoize edgeTypes para los edges estilo n8n
   const memoizedEdgeTypes = useMemo(
     () => ({
-      animated: AnimatedEdge,
+      animated: N8nStyleEdge,
     }),
     []
   )
 
   // Sincronizar Zustand store con ReactFlow cuando cambian
+  // Esta es la ÚNICA fuente de verdad para ReactFlow
   useEffect(() => {
+    console.log('🔄 [useEffect Sync] Sincronizando desde Zustand...')
+    console.log(`   - Nodos en Zustand: ${storeNodes.length}`)
+    console.log(`   - Edges en Zustand: ${storeEdges.length}`)
+
+    // Actualizar nodos
     setNodes(storeNodes)
-    // Asegurar que todos los edges tengan un tipo para que ReactFlow los renderice
-    const edgesWithType = storeEdges.map((edge) => ({
-      ...edge,
-      type: edge.type || 'animated',
-    }))
+
+    // Actualizar edges con tipo asegurado
+    const edgesWithType = storeEdges.map((edge) => {
+      const edgeWithType = {
+        ...edge,
+        type: edge.type || 'animated',
+      }
+
+      // Log para debugging de edges específicos
+      if (edge.sourceHandle?.includes('-yes') || edge.sourceHandle?.includes('-no')) {
+        console.log(`   ✓ Edge ${edge.id}: sourceHandle="${edge.sourceHandle}"`)
+      }
+
+      return edgeWithType
+    })
+
+    console.log(`🎨 [useEffect Sync] ReactFlow actualizado con ${edgesWithType.length} edges`)
     setEdges(edgesWithType)
   }, [storeNodes, storeEdges, setNodes, setEdges])
 
@@ -207,6 +234,15 @@ function FlowBuilderContent({
       const sourceHandle = connection.sourceHandle || 'center'
       const targetHandle = connection.targetHandle || 'center'
 
+      console.log('🔗 [handleConnect] Nueva conexión:', {
+        source: connection.source,
+        sourceHandle,
+        target: connection.target,
+        targetHandle,
+        isYesHandle: sourceHandle?.includes('-yes') || false,
+        isNoHandle: sourceHandle?.includes('-no') || false,
+      })
+
       const newEdge: CustomEdge = {
         id: `edge-${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`,
         source: connection.source || '',
@@ -216,12 +252,13 @@ function FlowBuilderContent({
         type: 'animated',
       } as any
 
-      // Agregar edge a Zustand
+      console.log('➕ [handleConnect] Edge creado:', newEdge)
+      console.log('📌 [handleConnect] Agregando SOLO a Zustand (source of truth)')
+
+      // SOLO agregar a Zustand - ReactFlow se actualizará automáticamente desde storeEdges
       addFlowEdge(newEdge)
-      // Agregar también a ReactFlow para mostrar inmediatamente
-      setEdges((eds) => [...eds, newEdge as any])
     },
-    [addFlowEdge, setEdges]
+    [addFlowEdge]
   )
 
   /**
@@ -241,6 +278,15 @@ function FlowBuilderContent({
     }
 
     try {
+      // DEBUG: Log de los nodos del store ANTES de guardar
+      console.log('[DEBUG FlowBuilder] storeNodes ANTES de guardar:')
+      storeNodes.forEach((n) => {
+        console.log(`  Nodo ${n.id}:`, {
+          type: n.type,
+          data: n.data,
+        })
+      })
+
       // Crear estructura completa para el backend
       const stages = storeNodes
         .filter((n) => n.type === 'stage')
@@ -289,16 +335,19 @@ function FlowBuilderContent({
           condition_branch: e.sourceHandle?.includes('yes') ? 'yes' : 'no',
         }))
 
-      // Crear estructura de nodos para visualización
-      const nodesStructure = storeNodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: {
-          ...n.data,
-          label: n.data.label,
-        },
-      }))
+      // Crear estructura de nodos para visualización - incluir TODOS los datos
+      const nodesStructure = storeNodes.map((n) => {
+        console.log(`[DEBUG GUARDANDO] Nodo ${n.id}:`, {
+          type: n.type,
+          data: n.data,
+        })
+        return {
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: n.data, // Guardar todos los datos tal como están
+        }
+      })
 
       // Crear estructura de edges para visualización
       const edgesStructure = storeEdges.map((e) => ({
@@ -333,6 +382,9 @@ function FlowBuilderContent({
         stages,
       }
 
+      console.log('[DEBUG FINAL] config.visual.nodes que se enviará:', config.visual.nodes)
+      console.log('[DEBUG FINAL] config.visual completo:', config.visual)
+
       await onSaveFlow?.(config)
     } catch (error) {
       console.error('Error saving flow:', error)
@@ -344,12 +396,22 @@ function FlowBuilderContent({
    * Handle reset flow
    */
   const handleResetFlow = useCallback(() => {
-    if (confirm('¿Descartar todos los cambios? Esta acción no se puede deshacer.')) {
-      resetFlow()
-      setNodes(storeNodes)
-      setEdges(storeEdges)
+    setIsDiscardDialogOpen(true)
+  }, [])
+
+  const handleConfirmDiscard = useCallback(() => {
+    console.log('🗑️ Descartando cambios del flujo...')
+    resetFlow()
+    // Sincronizar ReactFlow con los nodos y edges vacios del store
+    setNodes([])
+    setEdges([])
+    setIsDiscardDialogOpen(false)
+    console.log('✅ Flujo descartado exitosamente')
+    // Cerrar el modal de creación y volver a flujos
+    if (onCancel) {
+      onCancel()
     }
-  }, [resetFlow, storeNodes, storeEdges, setNodes, setEdges])
+  }, [resetFlow, setNodes, setEdges, onCancel])
 
   // Contadores
   const stageCount = storeNodes.filter((n) => n.type === 'stage').length
@@ -533,6 +595,35 @@ function FlowBuilderContent({
           </div>
         </div>
       </div>
+
+      {/* Dialog de confirmación para descartar cambios */}
+      <Dialog open={isDiscardDialogOpen} onOpenChange={setIsDiscardDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">¿Descartar cambios?</DialogTitle>
+            <DialogDescription className="mt-2 space-y-2">
+              <p>Todos los cambios realizados en el flujo se perderán de forma permanente.</p>
+              <p className="text-sm text-orange-600 font-medium">⚠️ Esta acción no se puede deshacer.</p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 justify-end mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setIsDiscardDialogOpen(false)}
+              className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDiscard}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Descartar cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

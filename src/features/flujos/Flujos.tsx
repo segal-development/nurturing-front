@@ -11,7 +11,7 @@ import { FlujosTable } from './components/FlujosTable/FlujosTable'
 import { FlujosPagination } from './components/FlujosPagination/FlujosPagination'
 import { CreateFlujoWithBuilder } from './components/CreateFlujoWithBuilder/CreateFlujoWithBuilder'
 import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
-import { EditFlujoDialog } from './components/EditFlujoDialog/EditFlujoDialog'
+import { EditFlujoBuilderDialog } from './components/EditFlujoBuilderDialog/EditFlujoBuilderDialog'
 import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
 import { useOpciones } from './hooks/useOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
@@ -80,8 +80,11 @@ export function Flujos() {
 
   const handleCreateFlujoSuccess = () => {
     setCreateDialogOpen(false)
-    // Invalidar caché de flujos para recargarlos
-    queryClient.invalidateQueries({ queryKey: ['flujos'] })
+    // Invalidar caché de flujos para recargarlos - usar queryKey exacto con prefijo
+    console.log('🔄 [handleCreateFlujoSuccess] Invalidando caché de flujos')
+    queryClient.invalidateQueries({
+      queryKey: ['flujos-page']
+    })
     resetPage()
   }
 
@@ -97,9 +100,15 @@ export function Flujos() {
     setEditDialogOpen(true)
   }
 
-  const handleDeleteFlujo = (id: number) => {
-    console.log('Eliminar flujo:', id)
-    // TODO: Implementar lógica de eliminación
+  const handleDeleteFlujo = () => {
+    setDetailDialogOpen(false)
+    setSelectedFlujo(null)
+    // Invalidar caché de flujos para recargarlos - usar queryKey exacto con prefijo
+    console.log('🔄 [handleDeleteFlujo] Invalidando caché de flujos')
+    queryClient.invalidateQueries({
+      queryKey: ['flujos-page']
+    })
+    resetPage()
   }
 
   const handleEjecutarFlujo = (flujoId: number) => {
@@ -110,7 +119,10 @@ export function Flujos() {
   const handleEditSuccess = () => {
     setEditDialogOpen(false)
     setSelectedFlujo(null)
-    queryClient.invalidateQueries({ queryKey: ['flujos'] })
+    console.log('🔄 [handleEditSuccess] Invalidando caché de flujos')
+    queryClient.invalidateQueries({
+      queryKey: ['flujos-page']
+    })
     resetPage()
   }
 
@@ -247,7 +259,6 @@ export function Flujos() {
       <CreateFlujoWithBuilder
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        tipoDeudor={filtros.tipoDeudor}
         opciones={opciones}
         onSuccess={handleCreateFlujoSuccess}
       />
@@ -261,16 +272,11 @@ export function Flujos() {
           setDetailDialogOpen(false)
           setEditDialogOpen(true)
         }}
-        onExecute={() => {
-          setDetailDialogOpen(false)
-          if (selectedFlujo) {
-            handleEjecutarFlujo(selectedFlujo.id)
-          }
-        }}
+        onDelete={handleDeleteFlujo}
       />
 
-      {/* Dialog para editar flujo */}
-      <EditFlujoDialog
+      {/* Dialog para editar flujo con canvas visual */}
+      <EditFlujoBuilderDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         flujo={selectedFlujo}

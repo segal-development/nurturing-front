@@ -26,7 +26,6 @@ type Step = 'origin' | 'prospects' | 'builder'
 interface CreateFlujoWithBuilderProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  tipoDeudor: string | null
   opciones?: OpcionesFlujos
   onSuccess?: () => void
 }
@@ -34,7 +33,6 @@ interface CreateFlujoWithBuilderProps {
 export function CreateFlujoWithBuilder({
   open,
   onOpenChange,
-  tipoDeudor,
   opciones,
   onSuccess,
 }: CreateFlujoWithBuilderProps) {
@@ -43,6 +41,7 @@ export function CreateFlujoWithBuilder({
   const [selectedOriginId, setSelectedOriginId] = useState<string | null>(null)
   const [selectedOriginName, setSelectedOriginName] = useState<string | null>(null)
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
+  const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
 
   // Prospectos state
   const [prospectos, setProspectos] = useState<Prospecto[]>([])
@@ -95,6 +94,10 @@ export function CreateFlujoWithBuilder({
       setError('Debes seleccionar al menos un prospecto')
       return
     }
+    if (selectedTipoProspectoId === null) {
+      setError('Debes seleccionar un tipo de prospecto')
+      return
+    }
     setError(null)
     setCurrentStep('builder')
   }
@@ -118,9 +121,9 @@ export function CreateFlujoWithBuilder({
     try {
       const payload = {
         flujo: {
-          nombre: config.flowName,
-          descripcion: config.flowDescription,
-          tipo_prospecto: tipoDeudor || config.tipoDeudor,
+          nombre: config.nombre,
+          descripcion: config.descripcion,
+          tipo_prospecto_id: selectedTipoProspectoId,  // 13, 14, o 15
           activo: true,
         },
         origen_id: selectedOriginId,
@@ -129,13 +132,24 @@ export function CreateFlujoWithBuilder({
           total_seleccionados: selectedProspectoIds.size,
           ids_seleccionados: Array.from(selectedProspectoIds),
           total_disponibles: prospectos.length,
+          tipo_prospecto_id: selectedTipoProspectoId,  // 13, 14, o 15
         },
-        etapas: config.stages,
+        // Estructura visual para reconstruir el editor
+        visual: config.visual,
+        // Estructura para ejecutar el flujo en el backend
+        structure: config.structure,
+        // Datos legados para compatibilidad
+        stages: config.stages,
         metadata: {
           fecha_creacion: new Date().toISOString(),
           navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         },
       }
+
+      // LOG: Mostrar el payload en consola para debugging
+      console.log('=== PAYLOAD ENVIADO AL BACKEND ===')
+      console.log(JSON.stringify(payload, null, 2))
+      console.log('===================================')
 
       await flujosService.createWithProspectos(payload)
 
@@ -143,7 +157,7 @@ export function CreateFlujoWithBuilder({
       onSuccess?.()
     } catch (err) {
       setError('Error al crear el flujo. Intenta nuevamente.')
-      console.error(err)
+      console.error('Error detallado:', err)
     } finally {
       setSaving(false)
     }
@@ -210,6 +224,7 @@ export function CreateFlujoWithBuilder({
               prospectos={prospectos}
               selectedIds={selectedProspectoIds}
               onSelectionChange={setSelectedProspectoIds}
+              onTipoChange={setSelectedTipoProspectoId}
               onContinue={handleProspectsSelect}
               originName={selectedOriginName || ''}
               onBack={handleBack}

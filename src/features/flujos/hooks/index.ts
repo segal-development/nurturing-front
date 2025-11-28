@@ -5,3 +5,4 @@ export {
   useUpdateFlujo,
   useDeleteFlujo,
 } from './useFlujos'
+export { useFlujosDetail } from './useFlujosDetail'

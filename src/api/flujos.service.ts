@@ -212,12 +212,59 @@ export const flujosService = {
   /**
    * Eliminar un flujo
    */
-  async delete(id: number): Promise<void> {
-    await apiClient.delete(`/flujos/${id}`)
+  async delete(id: number): Promise<{ mensaje: string; detalles: any }> {
+    try {
+      console.log('📤 flujosService.delete() - Enviando request a DELETE /flujos/' + id)
+      const { data } = await apiClient.delete<{ mensaje: string; detalles: any }>(
+        `/flujos/${id}`
+      )
+      console.log('✅ flujosService.delete() - Flujo eliminado:', data)
+      return data
+    } catch (error: any) {
+      console.error('❌ flujosService.delete() - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
   },
 
   /**
    * Ejecutar un flujo (iniciar envío de mensajes)
+   * @param flujoId ID del flujo a ejecutar
+   * @param config Configuración de ejecución (prospectos, fecha inicio)
+   */
+  async ejecutarFlujo(
+    flujoId: number,
+    config: {
+      prospectos_ids: number[]
+      fecha_inicio_programada?: string
+    }
+  ): Promise<{ id: number; estado: string; fecha_inicio_programada: string; mensaje: string }> {
+    try {
+      console.log('📤 flujosService.ejecutarFlujo() - Iniciando ejecución del flujo:', flujoId)
+      console.log('   Config:', config)
+
+      const { data } = await apiClient.post<{
+        id: number
+        estado: string
+        fecha_inicio_programada: string
+        mensaje: string
+      }>(`/flujos/${flujoId}/ejecutar`, config)
+
+      console.log('✅ flujosService.ejecutarFlujo() - Flujo ejecutado:', data)
+      return data
+    } catch (error: any) {
+      console.error('❌ flujosService.ejecutarFlujo() - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
+  },
+
+  /**
+   * Ejecutar un flujo (versión antigua - mantener por compatibilidad)
    * @param flujoId ID del flujo a ejecutar
    * @param prospecto_ids IDs específicos de prospectos (opcional, si no se envía, usa todos)
    */

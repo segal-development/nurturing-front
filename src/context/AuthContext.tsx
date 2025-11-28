@@ -110,11 +110,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Inicializar autenticación verificando con el backend
   useEffect(() => {
     let isMounted = true
+    let hasRun = false
 
     const initializeAuth = async () => {
+      // Prevenir ejecución duplicada en Strict Mode
+      if (hasRun) return
+      hasRun = true
+
       try {
-        const user = await authService.getMe()
+        console.log('🔐 AuthContext: Inicializando autenticación...')
+        const user = await authService.getMeQuietly()
         if (isMounted) {
+          console.log('✅ AuthContext: Usuario autenticado:', user.email)
           dispatch({ type: 'INIT_AUTH', payload: user })
         }
       } catch (error: any) {
@@ -123,19 +130,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const status = error.response?.status
           const message = error.response?.data?.message || error.message
 
-          // Log detallado para debug
-          console.warn('Error inicializando autenticación:', {
-            status,
-            message,
-            url: error.config?.url,
-            headers: error.config?.headers,
-          })
-
-          // 401 es normal si no hay sesión activa
+          // 401 es NORMAL si no hay sesión activa - no es un error
           if (status === 401) {
-            console.log('No hay sesión activa, usuario debe iniciar sesión')
+            console.log('ℹ️ AuthContext: No hay sesión activa - usuario necesita iniciar sesión')
+          } else {
+            // Solo loguear otros errores como warnings
+            console.warn('⚠️ AuthContext: Error inesperado en autenticación:', {
+              status,
+              message,
+              url: error.config?.url,
+            })
           }
 
+          // Fin de la inicialización sin user = no autenticado
           dispatch({ type: 'SET_INITIALIZING', payload: false })
         }
       }
@@ -155,7 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await authService.login(credentials)
+
+      // ⭐ CRÍTICO: Esperar a que las cookies se guarden en el navegador
+      // Las cookies httpOnly se guardan de forma asíncrona, necesitamos dar tiempo
+      console.log('⏳ Esperando que las cookies se guarden en el navegador...')
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       dispatch({ type: 'SET_USER', payload: response.user })
+      console.log('✅ Login completado y cookies guardadas')
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.errors?.email?.[0] ||

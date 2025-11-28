@@ -1,18 +1,27 @@
 /**
  * Step 2: Prospect Selection
  * Allows user to select which prospects to include in the flow
+ * Auto-categorizes by debt amount: Deuda Baja (13), Deuda Media (14), Deuda Alta (15)
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Check, X, AlertCircle, Users } from 'lucide-react'
 import type { Prospecto } from '@/types/prospecto'
 
+// Tipos de deuda y sus rangos
+const TIPOS_DEUDA = {
+  BAJA: { id: 13, nombre: 'Deuda Baja', min: 0, max: 699000 },
+  MEDIA: { id: 14, nombre: 'Deuda Media', min: 700000, max: 1500000 },
+  ALTA: { id: 15, nombre: 'Deuda Alta', min: 1500001, max: Infinity },
+}
+
 interface ProspectSelectorProps {
   prospectos: Prospecto[]
   selectedIds: Set<number>
   onSelectionChange: (ids: Set<number>) => void
+  onTipoChange?: (tipoId: number | null) => void
   onContinue: () => void
   originName: string
   onBack: () => void
@@ -23,12 +32,43 @@ export function ProspectSelector({
   prospectos,
   selectedIds,
   onSelectionChange,
+  onTipoChange,
   onContinue,
   originName,
   onBack,
   onClose,
 }: ProspectSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedTipo, setSelectedTipo] = useState<number | null>(null)
+
+  /**
+   * Categorizar prospectos por monto de deuda
+   */
+  const categorizedProspectos = useMemo(() => {
+    return {
+      baja: prospectos.filter(
+        p => p.monto_deuda >= TIPOS_DEUDA.BAJA.min && p.monto_deuda <= TIPOS_DEUDA.BAJA.max
+      ),
+      media: prospectos.filter(
+        p => p.monto_deuda >= TIPOS_DEUDA.MEDIA.min && p.monto_deuda <= TIPOS_DEUDA.MEDIA.max
+      ),
+      alta: prospectos.filter(
+        p => p.monto_deuda >= TIPOS_DEUDA.ALTA.min
+      ),
+    }
+  }, [prospectos])
+
+  /**
+   * Seleccionar todos los prospectos de un tipo
+   */
+  const handleSelectTipo = useCallback((tipo: keyof typeof categorizedProspectos) => {
+    const tipoData = tipo === 'baja' ? TIPOS_DEUDA.BAJA : tipo === 'media' ? TIPOS_DEUDA.MEDIA : TIPOS_DEUDA.ALTA
+    const idsDelTipo = new Set(categorizedProspectos[tipo].map(p => p.id))
+
+    setSelectedTipo(tipoData.id)
+    onSelectionChange(idsDelTipo)
+    onTipoChange?.(tipoData.id)
+  }, [categorizedProspectos, onSelectionChange, onTipoChange])
 
   /**
    * Toggle prospect selection
@@ -96,6 +136,48 @@ export function ProspectSelector({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="px-3 py-2 border border-segal-blue/30 rounded-lg focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
         />
+
+        {/* Tipos de Deuda - Quick Select */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-segal-dark">Seleccionar por Tipo de Deuda:</p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleSelectTipo('baja')}
+              variant={selectedTipo === 13 ? 'default' : 'outline'}
+              className={selectedTipo === 13
+                ? 'bg-segal-blue text-white'
+                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
+            >
+              <span className="text-xs">Deuda Baja</span>
+              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.baja.length}</span>
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => handleSelectTipo('media')}
+              variant={selectedTipo === 14 ? 'default' : 'outline'}
+              className={selectedTipo === 14
+                ? 'bg-segal-blue text-white'
+                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
+            >
+              <span className="text-xs">Deuda Media</span>
+              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.media.length}</span>
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={() => handleSelectTipo('alta')}
+              variant={selectedTipo === 15 ? 'default' : 'outline'}
+              className={selectedTipo === 15
+                ? 'bg-segal-blue text-white'
+                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
+            >
+              <span className="text-xs">Deuda Alta</span>
+              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.alta.length}</span>
+            </Button>
+          </div>
+        </div>
 
         {/* Actions */}
         <div className="flex gap-2">

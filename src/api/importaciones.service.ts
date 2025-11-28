@@ -38,12 +38,40 @@ export const importacionesService = {
     formData.append('archivo', archivo)
     formData.append('origen', origen)
 
-    const { data } = await apiClient.post<ImportarResponse>('/importaciones', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    return data
+    try {
+      const response = await apiClient.post<any>('/importaciones', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      console.log('📥 importacionesService.importar() - Response completo:', response.data)
+
+      const { data } = response
+
+      // El backend puede devolver directamente ImportarResponse o envuelto en { data: ImportarResponse }
+      // Case 1: { data: { mensaje, data: Importacion, resumen } }
+      if (data && 'data' in data && data.data && 'resumen' in data) {
+        console.log('✅ Estructura Type 1 detectada (envuelto en data)')
+        return data as ImportarResponse
+      }
+
+      // Case 2: { mensaje, data: Importacion, resumen }
+      if (data && 'resumen' in data && 'mensaje' in data) {
+        console.log('✅ Estructura Type 2 detectada (directo ImportarResponse)')
+        return data as ImportarResponse
+      }
+
+      // Fallback
+      console.warn('⚠️ Estructura no reconocida, intentando usar como fallback')
+      return data as ImportarResponse
+    } catch (error: any) {
+      console.error('❌ importacionesService.importar() - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
   },
 
   /**

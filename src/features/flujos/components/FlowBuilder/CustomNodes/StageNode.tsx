@@ -14,6 +14,7 @@ import {
   Trash2,
   CheckCircle2,
   Calendar,
+  Clock,
 } from 'lucide-react'
 import type { StageNodeData } from '../../../types/flowBuilder'
 
@@ -118,10 +119,10 @@ export function StageNode({
 
             {/* Content */}
             <div className="space-y-2 text-xs text-segal-dark/70">
-              {/* Day */}
+              {/* Time to wait */}
               <div className="flex items-center gap-2">
                 <Calendar className="h-3 w-3 text-segal-blue/60" />
-                <span>Día {localData.dia_envio || '-'}</span>
+                <span>Espera: {localData.tiempo_espera ?? 0} días</span>
               </div>
 
               {/* Message Type */}
@@ -135,6 +136,14 @@ export function StageNode({
                   )}
                 </span>
               </div>
+
+              {/* Condition verification time */}
+              {localData.tiempo_verificacion_condicion && (
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3 w-3 text-segal-blue/60" />
+                  <span>Verifica en: {localData.tiempo_verificacion_condicion}h</span>
+                </div>
+              )}
 
               {/* Template preview */}
               {localData.plantilla_mensaje && (
@@ -185,14 +194,14 @@ export function StageNode({
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-segal-dark">Día</label>
+                <label className="text-xs font-semibold text-segal-dark">Tiempo de espera (días)</label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   max="365"
-                  value={localData.dia_envio || 1}
+                  value={localData.tiempo_espera ?? 0}
                   onChange={(e) =>
-                    setLocalData({ ...localData, dia_envio: parseInt(e.target.value) })
+                    setLocalData({ ...localData, tiempo_espera: parseInt(e.target.value) || 0 })
                   }
                   className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
                 />
@@ -215,6 +224,21 @@ export function StageNode({
                   <option value="ambos">Ambos</option>
                 </select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-segal-dark">Tiempo antes de verificar condición (horas)</label>
+              <input
+                type="number"
+                min="1"
+                max="2160"
+                value={localData.tiempo_verificacion_condicion ?? 24}
+                onChange={(e) =>
+                  setLocalData({ ...localData, tiempo_verificacion_condicion: parseInt(e.target.value) || 24 })
+                }
+                className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+              />
+              <p className="text-xs text-segal-dark/60">Se usa cuando hay una condición después de esta etapa</p>
             </div>
 
             {/* Custom Start Date (Optional) */}

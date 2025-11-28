@@ -2,6 +2,7 @@
  * Custom Animated Edge for Flow Builder
  * Renders visible connections between nodes with smooth animation
  * Supports selection and deletion via Delete/Backspace keys
+ * Automatically displays "Sí" / "No" labels for conditional branches
  */
 
 import {
@@ -13,17 +14,20 @@ import {
 } from 'reactflow'
 import { Trash2 } from 'lucide-react'
 
-export function AnimatedEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  data,
-  markerEnd,
-  markerStart,
-  selected = false,
-}: EdgeProps) {
+export function AnimatedEdge(props: EdgeProps & { sourceHandle?: string }) {
+  const {
+    id,
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    data,
+    sourceHandle,
+    markerEnd,
+    markerStart,
+    selected = false,
+  } = props
+
   const { deleteElements } = useReactFlow()
 
   const [edgePath, labelX, labelY] = getStraightPath({
@@ -32,6 +36,24 @@ export function AnimatedEdge({
     targetX,
     targetY,
   })
+
+  // Debug logging
+  const handleToUse = sourceHandle || (data as any)?.sourceHandle
+  console.log(`[DEBUG Edge ${id}] sourceHandle: "${sourceHandle}", data.sourceHandle: "${(data as any)?.sourceHandle}", handleToUse: "${handleToUse}"`)
+
+  // Determine label based on sourceHandle for conditional nodes
+  let edgeLabel = data?.label
+  let labelBgClass = 'bg-white border border-segal-blue/30 text-segal-blue'
+
+  if (handleToUse?.includes('-yes')) {
+    edgeLabel = edgeLabel || '✓ Sí'
+    labelBgClass = 'bg-segal-green/10 border border-segal-green/50 text-segal-green'
+    console.log(`[DEBUG Edge ${id}] Detected YES handle - showing green edge`)
+  } else if (handleToUse?.includes('-no')) {
+    edgeLabel = edgeLabel || '✗ No'
+    labelBgClass = 'bg-segal-red/10 border border-segal-red/50 text-segal-red'
+    console.log(`[DEBUG Edge ${id}] Detected NO handle - showing red edge`)
+  }
 
   const handleDeleteEdge = () => {
     deleteElements({ edges: [{ id: id || '' }] })
@@ -56,15 +78,25 @@ export function AnimatedEdge({
         markerStart={markerStart}
         style={{
           strokeWidth: selected ? 3.5 : 2.5,
-          stroke: selected ? '#059669' : '#1e3a8a',
+          stroke: handleToUse?.includes('-yes')
+            ? selected
+              ? '#059669'
+              : '#059669'
+            : handleToUse?.includes('-no')
+              ? selected
+                ? '#dc2626'
+                : '#dc2626'
+              : selected
+                ? '#059669'
+                : '#1e3a8a',
           strokeDasharray: '5, 5',
           animation: `dashdraw 0.5s linear infinite`,
           transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
         }}
       />
 
-      {/* Label renderer */}
-      {data?.label && (
+      {/* Label renderer - Always show for conditional branches */}
+      {(edgeLabel || data?.label) && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -74,9 +106,9 @@ export function AnimatedEdge({
               fontWeight: 600,
               pointerEvents: 'all',
             }}
-            className="nodrag nopan bg-white border border-segal-blue/30 rounded px-2 py-1 text-segal-blue shadow-sm"
+            className={`nodrag nopan rounded px-2.5 py-1 shadow-md ${labelBgClass}`}
           >
-            {data.label}
+            {edgeLabel}
           </div>
         </EdgeLabelRenderer>
       )}

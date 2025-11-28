@@ -6,7 +6,7 @@ const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://lo
 const API_URL = `${BASE_URL}/api`;
 
 /**
- * API Client con soporte para autenticación Sanctum basada en sesiones de Laravel
+ * Cliente API con soporte para autenticación Sanctum basada en sesiones de Laravel
  *
  * Flujo de Autenticación Sanctum:
  * 1. Frontend → GET /sanctum/csrf-cookie (obtener token CSRF)
@@ -19,7 +19,7 @@ const API_URL = `${BASE_URL}/api`;
  */
 
 // ============================================================
-// CONFIGURACIÓN GLOBAL DE AXIOS (Recomendación Backend)
+// CONFIGURACIÓN GLOBAL DE AXIOS
 // ============================================================
 axios.defaults.baseURL = BASE_URL;
 axios.defaults.withCredentials = true;  // ⭐ CRÍTICO: Permite enviar/recibir cookies
@@ -27,6 +27,7 @@ axios.defaults.withXSRFToken = true;    // ⭐ CRÍTICO: Maneja token CSRF autom
 
 axios.defaults.headers.common['Accept'] = 'application/json';
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+
 
 // ============================================================
 // CLIENTES AXIOS ESPECÍFICOS
@@ -57,7 +58,6 @@ export const baseClient: AxiosInstance = axios.create({
 // ============================================================
 // CONFIGURACIÓN XSRF
 // ============================================================
-// Laravel espera el token XSRF en esta cookie y este header
 apiClient.defaults.xsrfCookieName = 'XSRF-TOKEN';      // Cookie donde está el token
 apiClient.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';    // Header donde enviarlo
 
@@ -99,11 +99,13 @@ const createRequestInterceptor = (clientName: string) => {
       console.log(`   ⚠️ No hay cookies para enviar`);
     }
 
-    // ⭐ CRÍTICO: Extraer manualmente el token XSRF de la cookie y agregarlo al header
+    // ⭐ CRÍTICO: Extraer el token XSRF de la cookie y asegurar que está decodificado
     const xsrfToken = getXsrfToken();
     if (xsrfToken) {
-      config.headers['X-XSRF-TOKEN'] = xsrfToken;
-      console.log(`   🔐 Header X-XSRF-TOKEN: ${xsrfToken.substring(0, 20)}...`);
+      // Asegurar que el token está decodificado (sin %3D, con = al final)
+      const decodedToken = decodeURIComponent(xsrfToken);
+      config.headers['X-XSRF-TOKEN'] = decodedToken;
+      console.log(`   🔐 Header X-XSRF-TOKEN: ${decodedToken.substring(0, 20)}...`);
     } else {
       console.log(`   ⚠️ ¡ATENCIÓN! No se encontró token XSRF-TOKEN en cookies`);
       console.log(`      Cookies disponibles: ${document.cookie}`);
@@ -138,12 +140,20 @@ const createResponseInterceptor = (clientName: string) => {
     error: async (error: AxiosError) => {
       const status = error.response?.status;
       const currentPath = window.location.pathname;
+      const skipAuthRedirect = (error.config as any)?.skipAuthRedirect;
+      const url = error.config?.url || '';
 
       // Mostrar error detallado
-      console.error(`🔴 [${clientName}] [${status}] ${error.config?.url}`, error.response?.data);
+      console.error(`🔴 [${clientName}] [${status}] ${url}`, error.response?.data);
 
-      // Si es error 401 (no autenticado) o 419 (sesión expirada/CSRF) y no estamos en login
-      if ((status === 401 || status === 419) && currentPath !== '/login') {
+      // Si es error 401 (no autenticado) o 419 (sesión expirada/CSRF)
+      // NO redirigir en estos casos:
+      // 1. Si skipAuthRedirect está configurado (ej: durante AuthContext init)
+      // 2. Si ya estamos en /login
+      // 3. Si es la petición GET /me (parte de la inicialización)
+      const isInitCheck = url.includes('/me') && (error.config?.method === 'get' || !error.config?.method);
+
+      if ((status === 401 || status === 419) && currentPath !== '/login' && !skipAuthRedirect && !isInitCheck) {
         console.log(`⚠️ [${status}] Sesión expirada o CSRF inválido, redirigiendo a login`);
 
         // Limpiar cualquier token del localStorage

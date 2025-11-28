@@ -123,6 +123,7 @@ export const authService = {
   /**
    * Obtener usuario actual
    * Usa la sesión almacenada en cookies
+   * Nota: Si hay 401, el interceptor de apiClient redirige a login
    */
   async getMe(): Promise<User> {
     try {
@@ -136,6 +137,29 @@ export const authService = {
         message: error.response?.data?.message || error.message,
       })
       // Si es 401/419, el interceptor de apiClient redirige a login
+      throw error
+    }
+  },
+
+  /**
+   * Obtener usuario actual sin redirigir en caso de 401
+   * Usado durante la inicialización de autenticación
+   * NO gatilla redireccionamiento a login en el interceptor
+   */
+  async getMeQuietly(): Promise<User> {
+    try {
+      console.log('🔐 authService.getMeQuietly() - Obteniendo usuario actual (sin redirect en 401)...')
+      // Usar baseClient con flag skipAuthRedirect para evitar redireccionamiento
+      const response = await apiClient.get<{ user: User }>('/me', {
+        skipAuthRedirect: true, // Flag personalizado para el interceptor
+      } as any)
+      console.log('✅ authService.getMeQuietly() - Usuario obtenido:', response.data.user)
+      return response.data.user
+    } catch (error: any) {
+      console.error('❌ authService.getMeQuietly() - Error al obtener usuario:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
       throw error
     }
   },

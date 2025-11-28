@@ -14,6 +14,9 @@ export interface FlowCondition {
   label: string // e.g., "Vieron el email", "Hicieron click"
   type: 'email_opened' | 'link_clicked' | 'custom'
   value?: string
+  check_param?: string // 'Views', 'Clicks', 'Bounces'
+  check_operator?: string // '>', '>=', '==', '!=', '<', '<=', 'in', 'not_in'
+  check_value?: string // '0', '1', '0,1,2'
 }
 
 /**
@@ -22,7 +25,9 @@ export interface FlowCondition {
 export interface StageNodeData {
   label: string
   tipo_mensaje?: TipoMensaje
-  dia_envio?: number // Days after flow start
+  dia_envio?: number // Days after flow start (deprecated, use tiempo_espera)
+  tiempo_espera?: number // Days to wait before executing this stage (from NOW when previous stage completes)
+  tiempo_verificacion_condicion?: number // Hours to wait before checking condition (default: 24)
   fecha_inicio_personalizada?: string // Optional custom start date (ISO format)
   plantilla_mensaje?: string
   oferta_infocom_id?: number
