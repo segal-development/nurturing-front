@@ -121,92 +121,105 @@ export function EditFlujoBuilder({
     setFlowName,
     setFlowDescription,
     loadFlowConfiguration,
+    resetFlow,
   } = useFlowBuilderStore()
 
   // Inicializar el flujo cuando se carga el componente
   useEffect(() => {
     console.log('📥 Cargando flujo para edición:', flujo)
 
-    // Establecer nombre y descripción
-    setFlowName(flujo.nombre)
-    setFlowDescription(flujo.descripcion || '')
+    // Resetear el store primero para limpiar estado anterior
+    resetFlow()
 
     // Si el flujo ya tiene configuración visual, usarla
     if (flujo.config_visual?.nodes && flujo.config_visual?.edges) {
       console.log('✅ Usando configuración visual existente del flujo')
-      // TODO: Integrar con FlowBuilder para cargar nodes y edges
+      setFlowName(flujo.nombre)
+      setFlowDescription(flujo.descripcion || '')
+      loadFlowConfiguration(flujo.config_visual.nodes, flujo.config_visual.edges)
+      toast.info(`Flujo "${flujo.nombre}" cargado para edición`)
       return
     }
 
-    // Si tiene estructura, reconstruir desde ella
-    if (flujo.config_structure) {
-      const structure = flujo.config_structure
-      console.log('🔄 Reconstruyendo flujo desde estructura:', structure)
+    // Crear un mapeo de IDs: id backend -> id ReactFlow node
+    const nodeMap = new Map<number, string>()
+    const nodes: CustomNode[] = []
 
-      // Crear un mapeo de IDs: id backend -> id ReactFlow node
-      const nodeMap = new Map<number, string>()
-      const nodes: CustomNode[] = []
+    // Nodo inicial
+    const initialNode: CustomNode = {
+      id: 'initial-1',
+      data: {
+        label: `Inicio - ${flujo.origen || 'Flujo'}`,
+        origen_id: flujo.origen_id,
+        origen_nombre: flujo.origen,
+      },
+      position: { x: 400, y: 50 },
+      type: 'initial',
+    }
+    nodes.push(initialNode)
 
-      // Nodo inicial
-      const initialNode: CustomNode = {
-        id: 'initial-1',
-        data: {
-          label: `Inicio - ${flujo.origen || 'Flujo'}`,
-          origen_id: flujo.origen_id,
-          origen_nombre: flujo.origen,
-        },
-        position: { x: 400, y: 50 },
-        type: 'initial',
-      }
-      nodes.push(initialNode)
-
-      // Cargar etapas (stages)
-      if (structure.stages && structure.stages.length > 0) {
-        structure.stages.forEach((etapa, index) => {
-          const node = createStageNodeFromEtapa(etapa, index)
-          nodes.push(node)
-          nodeMap.set(etapa.id, node.id)
-        })
-      }
-
-      // Cargar condiciones
-      if (structure.conditions && structure.conditions.length > 0) {
-        structure.conditions.forEach((condicion, index) => {
-          const node = createConditionalNodeFromCondicion(condicion, index)
-          nodes.push(node)
-          nodeMap.set(condicion.id, node.id)
-        })
-      }
-
-      // Cargar nodos finales
-      if (structure.end_nodes && structure.end_nodes.length > 0) {
-        structure.end_nodes.forEach((nodoFinal, index) => {
-          const node = createEndNodeFromNodoFinal(nodoFinal, index)
-          nodes.push(node)
-          nodeMap.set(nodoFinal.id, node.id)
-        })
-      }
-
-      // Cargar ramificaciones (edges)
-      const edges: CustomEdge[] = []
-      if (structure.branches && structure.branches.length > 0) {
-        structure.branches.forEach((ramificacion) => {
-          const edge = createEdgeFromRamificacion(ramificacion, nodeMap)
-          edges.push(edge)
-        })
-      }
-
-      console.log('✅ Flujo reconstruido:', {
-        nodes: nodes.length,
-        edges: edges.length,
+    // Cargar etapas (stages) - Backend devuelve en flujo_etapas
+    const etapas = flujo.flujo_etapas || flujo.etapas || []
+    if (etapas.length > 0) {
+      console.log('📊 Cargando etapas:', etapas.length)
+      etapas.forEach((etapa: EtapaFlujo, index: number) => {
+        const node = createStageNodeFromEtapa(etapa, index)
+        nodes.push(node)
+        nodeMap.set(etapa.id, node.id)
       })
-
-      // Cargar nodes y edges en el store
-      loadFlowConfiguration(nodes, edges)
     }
 
+    // Cargar condiciones - Backend devuelve en flujo_condiciones
+    const condiciones = flujo.flujo_condiciones || []
+    if (condiciones.length > 0) {
+      console.log('⚙️ Cargando condiciones:', condiciones.length)
+      condiciones.forEach((condicion: CondicionFlujo, index: number) => {
+        const node = createConditionalNodeFromCondicion(condicion, index)
+        nodes.push(node)
+        nodeMap.set(condicion.id, node.id)
+      })
+    }
+
+    // Cargar nodos finales - Backend devuelve en flujo_nodos_finales
+    const nodosFinales = flujo.flujo_nodos_finales || []
+    if (nodosFinales.length > 0) {
+      console.log('🏁 Cargando nodos finales:', nodosFinales.length)
+      nodosFinales.forEach((nodoFinal: NodoFinalFlujo, index: number) => {
+        const node = createEndNodeFromNodoFinal(nodoFinal, index)
+        nodes.push(node)
+        nodeMap.set(nodoFinal.id, node.id)
+      })
+    }
+
+    // Cargar ramificaciones (edges) - Backend devuelve en flujo_ramificaciones
+    const edges: CustomEdge[] = []
+    const ramificaciones = flujo.flujo_ramificaciones || []
+    if (ramificaciones.length > 0) {
+      console.log('🔗 Cargando ramificaciones:', ramificaciones.length)
+      ramificaciones.forEach((ramificacion: RamificacionFlujo) => {
+        const edge = createEdgeFromRamificacion(ramificacion, nodeMap)
+        edges.push(edge)
+      })
+    }
+
+    console.log('✅ Flujo reconstruido:', {
+      nodes: nodes.length,
+      edges: edges.length,
+      etapas: etapas.length,
+      condiciones: condiciones.length,
+      nodosFinales: nodosFinales.length,
+      ramificaciones: ramificaciones.length,
+    })
+
+    // Establecer nombre y descripción
+    setFlowName(flujo.nombre)
+    setFlowDescription(flujo.descripcion || '')
+
+    // Cargar nodes y edges en el store
+    loadFlowConfiguration(nodes, edges)
+
     toast.info(`Flujo "${flujo.nombre}" cargado para edición`)
-  }, [flujo, setFlowName, setFlowDescription, loadFlowConfiguration])
+  }, [flujo, setFlowName, setFlowDescription, loadFlowConfiguration, resetFlow])
 
   const handleSaveFlow = useCallback(
     async (config: any) => {
