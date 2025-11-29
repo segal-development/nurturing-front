@@ -1,14 +1,18 @@
 /**
  * Container principal de la feature Prospectos
  * Orquesta todos los sub-componentes y hooks
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Orchestrates state and data flow only
+ * - Dependency Injection: Receives all dependencies via hooks/props
+ * - Separation of Concerns: Business logic in hooks, UI in components
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { ProspectosFilters } from './components/ProspectosFilters/ProspectosFilters'
+import { CompactFiltersBar } from './components/ProspectosFilters/CompactFiltersBar'
 import { ProspectosTable } from './components/ProspectosTable/ProspectosTable'
-import { ProspectosSearch } from './components/ProspectosSearch/ProspectosSearch'
 import { ProspectosPagination } from './components/ProspectosPagination/ProspectosPagination'
 import { ProspectosUploadDialog } from './components/ProspectosUploadDialog/ProspectosUploadDialog'
 import { useOpciones } from './hooks/useOpciones'
@@ -20,20 +24,31 @@ import { Button } from '@/components/ui/button'
 
 const ITEMS_PER_PAGE = 15
 
+/**
+ * Calcula el número total de páginas
+ */
+const calculateTotalPages = (total: number, itemsPerPage: number): number => {
+  return Math.ceil(total / itemsPerPage)
+}
+
 export function Prospectos() {
-  // Estado local
+  // ============================================================
+  // ESTADO LOCAL
+  // ============================================================
   const [searchTerm, setSearchTerm] = useState('')
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
 
-  // Query client para invalidar caché
+  // ============================================================
+  // DEPENDENCIAS EXTERNAS
+  // ============================================================
   const queryClient = useQueryClient()
-
-  // Hooks personalizados
   const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useOpciones()
   const { filtros, setImportacionId, setEstado, setTipo } = useProspectosFilters()
   const { currentPage, goToNextPage, goToPreviousPage, resetPage } = useProspectosPagination()
 
-  // Hook para cargar prospectos
+  // ============================================================
+  // DATOS DE PROSPECTOS
+  // ============================================================
   const {
     data: prospectos,
     total,
@@ -48,48 +63,55 @@ export function Prospectos() {
     perPage: ITEMS_PER_PAGE,
   })
 
-  // Filtrado client-side por búsqueda
+  // ============================================================
+  // DATOS DERIVADOS
+  // ============================================================
   const filteredProspectos = useMemo(
     () => searchProspectos(prospectos, searchTerm),
     [prospectos, searchTerm]
   )
 
-  // Cálculo de páginas totales
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
+  const totalPages = calculateTotalPages(total, ITEMS_PER_PAGE)
 
-  // Handlers de filtros
-  const handleFiltrosChange = (newFiltros: typeof filtros) => {
+  // ============================================================
+  // MANEJADORES DE EVENTOS
+  // ============================================================
+  const handleFiltrosChange = useCallback((newFiltros: typeof filtros) => {
     setImportacionId(newFiltros.importacionId)
     setEstado(newFiltros.estado)
     setTipo(newFiltros.tipoProspectoId)
     resetPage()
     setSearchTerm('')
-  }
+  }, [setImportacionId, setEstado, setTipo, resetPage])
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value)
     resetPage()
-  }
+  }, [resetPage])
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     console.log('Exportar prospectos filtrados:', filteredProspectos)
-  }
+  }, [filteredProspectos])
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = useCallback(() => {
     setUploadDialogOpen(false)
-    // Invalidar caché de opciones para recargar las importaciones
     queryClient.invalidateQueries({ queryKey: ['prospectos-opciones-filtrado'] })
-  }
+  }, [queryClient])
 
-  const handlePageChange = (page: number) => {
-    if (page === currentPage - 1) {
+  const handlePageChange = useCallback((newPage: number) => {
+    const isNextPage = newPage === currentPage + 1
+    const isPreviousPage = newPage === currentPage - 1
+
+    if (isPreviousPage) {
       goToPreviousPage()
-    } else if (page === currentPage + 1) {
+    } else if (isNextPage) {
       goToNextPage(totalPages)
     }
-  }
+  }, [currentPage, totalPages, goToNextPage, goToPreviousPage])
 
-  // Loading estado inicial de opciones
+  // ============================================================
+  // EARLY RETURNS: ESTADOS DE CARGA Y ERROR
+  // ============================================================
   if (isLoadingOpciones) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -101,7 +123,6 @@ export function Prospectos() {
     )
   }
 
-  // Error estado de opciones
   if (isErrorOpciones) {
     return (
       <div className="rounded-lg border border-segal-red/30 bg-segal-red/10 p-4">
@@ -138,21 +159,15 @@ export function Prospectos() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <ProspectosFilters
+      {/* Barra compacta de filtros y búsqueda */}
+      <CompactFiltersBar
         filtros={filtros}
         opciones={opciones}
+        searchValue={searchTerm}
         onFiltrosChange={handleFiltrosChange}
+        onSearchChange={handleSearchChange}
+        isSearchDisabled={isLoadingProspectos}
       />
-
-      {/* Búsqueda (solo si hay importación seleccionada) */}
-      {filtros.importacionId && (
-        <ProspectosSearch
-          value={searchTerm}
-          onChange={handleSearchChange}
-          disabled={isLoadingProspectos}
-        />
-      )}
 
       {/* Loading prospectos */}
       {filtros.importacionId && isLoadingProspectos && (
@@ -193,9 +208,9 @@ export function Prospectos() {
         <>
           {/* Resumen de registros */}
           {prospectos.length > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
+            <div className="flex items-center gap-4 px-4 py-3 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
               <div className="text-sm text-segal-dark">
-                Mostrando <span className="font-semibold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
+                Mostrando <span className="font-semibold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> a{' '}
                 <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, total)}</span> de{' '}
                 <span className="font-semibold text-segal-blue">{total}</span> registros
               </div>

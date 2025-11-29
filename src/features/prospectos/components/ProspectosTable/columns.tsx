@@ -1,9 +1,14 @@
 /**
  * Definiciones de columnas para la tabla de prospectos
- * Usando TanStack Table v8 (React Table)
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Each function/component has one reason to change
+ * - Composition: Small, reusable functions for rendering
+ * - Dependency Injection: All dependencies injected via parameters
+ * - Type Safety: Strict TypeScript with no-implicit-any
  */
 
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -25,153 +30,246 @@ import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
 import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
 
+/**
+ * Componente reutilizable para headers de columnas sortables
+ */
+const SortableColumnHeader = ({ label, onClick }: { label: string; onClick: () => void }) => (
+  <Button
+    variant="ghost"
+    onClick={onClick}
+    className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
+  >
+    {label}
+    <ArrowUpDown className="ml-2 h-4 w-4" />
+  </Button>
+)
+
+/**
+ * Formatea un valor de teléfono, retornando '-' si es nulo/vacío
+ */
+const formatPhoneNumber = (phone: string | undefined): string => {
+  return phone?.trim() ? phone : '-'
+}
+
+/**
+ * Formatea un monto en moneda chilena
+ */
+const formatCurrencyAmount = (amount: number): string => {
+  return `$${amount.toLocaleString('es-CL')}`
+}
+
+/**
+ * Obtiene el label de estado con su correspondiente color
+ */
+const getEstadoBadge = (estado: string) => {
+  const estadoOption = ESTADO_PROSPECTO_OPTIONS.find((o) => o.value === estado)
+  const colorClass = ESTADO_PROSPECTO_COLORS[estado as keyof typeof ESTADO_PROSPECTO_COLORS]
+
+  return {
+    label: estadoOption?.label || estado,
+    colorClass: colorClass || '',
+  }
+}
+
+/**
+ * Obtiene el label de tipo de deuda con su correspondiente color basado en monto
+ */
+const getTipoDeudaBadge = (monto: number) => {
+  const montoCategory = getMontoCategoryKey(monto)
+  const tipoOption = TIPO_DEUDA_OPTIONS.find((o) => o.value === montoCategory)
+  const colorClass = TIPO_DEUDA_COLORS[montoCategory as keyof typeof TIPO_DEUDA_COLORS]
+
+  return {
+    label: tipoOption?.label || montoCategory,
+    colorClass: colorClass || '',
+  }
+}
+
+/**
+ * Formatea una fecha, retornando '-' si es nula/vacía
+ */
+const formatLastContactDate = (date: string | undefined): string => {
+  if (!date?.trim()) return '-'
+  return formatDate(date)
+}
+
+/**
+ * Obtiene el callback onViewProspecto del metadata de la tabla
+ */
+const getViewProspectoCallback = (table: Table<Prospecto>): ((id: number) => void) | undefined => {
+  return (table.options.meta as any)?.onViewProspecto
+}
+
 export const columns: ColumnDef<Prospecto>[] = [
+  // ============================================================
+  // COLUMNA: NOMBRE
+  // ============================================================
   {
     accessorKey: 'nombre',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Nombre"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Nombre
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
-    cell: ({ row }) => <div className="font-medium text-segal-dark">{row.getValue('nombre')}</div>,
+    cell: ({ row }) => (
+      <div className="font-medium text-segal-dark">
+        {row.getValue('nombre')}
+      </div>
+    ),
     sortingFn: 'alphanumeric',
   },
 
+  // ============================================================
+  // COLUMNA: EMAIL
+  // ============================================================
   {
     accessorKey: 'email',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Email"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Email
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
-    cell: ({ row }) => <div className="text-segal-dark/70 text-sm">{row.getValue('email')}</div>,
+    cell: ({ row }) => (
+      <div className="text-segal-dark/70 text-sm">
+        {row.getValue('email')}
+      </div>
+    ),
     sortingFn: 'alphanumeric',
   },
 
+  // ============================================================
+  // COLUMNA: TELÉFONO
+  // ============================================================
   {
     accessorKey: 'telefono',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Teléfono"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Teléfono
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
     cell: ({ row }) => {
       const telefono = row.getValue('telefono') as string | undefined
-      return <div className="text-segal-dark/70">{telefono || '-'}</div>
+      return (
+        <div className="text-segal-dark/70">
+          {formatPhoneNumber(telefono)}
+        </div>
+      )
     },
     sortingFn: 'alphanumeric',
   },
 
+  // ============================================================
+  // COLUMNA: MONTO DEUDA
+  // ============================================================
   {
     accessorKey: 'monto_deuda',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Monto Deuda"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Monto Deuda
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
     cell: ({ row }) => {
       const monto = row.getValue('monto_deuda') as number
-      return <div className="font-medium text-segal-dark">${monto.toLocaleString('es-CL')}</div>
+      return (
+        <div className="font-medium text-segal-dark">
+          {formatCurrencyAmount(monto)}
+        </div>
+      )
     },
     sortingFn: 'basic',
   },
 
+  // ============================================================
+  // COLUMNA: ESTADO
+  // ============================================================
   {
     accessorKey: 'estado',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Estado"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Estado
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
     cell: ({ row }) => {
       const estado = row.getValue('estado') as string
+      const { label, colorClass } = getEstadoBadge(estado)
+
       return (
-        <Badge
-          variant="outline"
-          className={ESTADO_PROSPECTO_COLORS[estado as keyof typeof ESTADO_PROSPECTO_COLORS]}
-        >
-          {ESTADO_PROSPECTO_OPTIONS.find((o) => o.value === estado)?.label}
+        <Badge variant="outline" className={colorClass}>
+          {label}
         </Badge>
       )
     },
     sortingFn: 'alphanumeric',
   },
 
+  // ============================================================
+  // COLUMNA: TIPO DE DEUDA
+  // ============================================================
   {
     accessorKey: 'tipo_prospecto_id',
     id: 'tipo',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Tipo"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Tipo
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
     cell: ({ row }) => {
-      const montoCategory = getMontoCategoryKey(row.original.monto_deuda)
+      const { label, colorClass } = getTipoDeudaBadge(row.original.monto_deuda)
+
       return (
-        <Badge variant="secondary" className={TIPO_DEUDA_COLORS[montoCategory as keyof typeof TIPO_DEUDA_COLORS]}>
-          {TIPO_DEUDA_OPTIONS.find((o) => o.value === montoCategory)?.label}
+        <Badge variant="secondary" className={colorClass}>
+          {label}
         </Badge>
       )
     },
     sortingFn: 'alphanumeric',
   },
 
+  // ============================================================
+  // COLUMNA: ÚLTIMO CONTACTO
+  // ============================================================
   {
     accessorKey: 'fecha_ultimo_contacto',
     header: ({ column }) => (
-      <Button
-        variant="ghost"
+      <SortableColumnHeader
+        label="Ult. Contacto"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
-      >
-        Ult. Contacto
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      />
     ),
     cell: ({ row }) => {
       const fecha = row.getValue('fecha_ultimo_contacto') as string | undefined
-      return <div className="text-segal-dark/70 text-sm">{fecha ? formatDate(fecha) : '-'}</div>
+      return (
+        <div className="text-segal-dark/70 text-sm">
+          {formatLastContactDate(fecha)}
+        </div>
+      )
     },
     sortingFn: 'datetime',
   },
 
+  // ============================================================
+  // COLUMNA: ACCIONES
+  // ============================================================
   {
     id: 'acciones',
-    header: () => <div className="text-right text-segal-dark font-semibold">Acciones</div>,
+    header: () => (
+      <div className="text-right text-segal-dark font-semibold">
+        Acciones
+      </div>
+    ),
     cell: ({ row, table }) => {
-      // Obtener el callback de onViewProspecto de los metadata de la tabla
-      const onViewProspecto = (table.options.meta as any)?.onViewProspecto
+      const onViewProspecto = getViewProspectoCallback(table)
       const prospecto = row.original
+
+      if (!onViewProspecto) {
+        return null
+      }
 
       return (
         <div className="text-right">
@@ -185,10 +283,9 @@ export const columns: ColumnDef<Prospecto>[] = [
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onViewProspecto?.(prospecto.id)}>
+              <DropdownMenuItem onClick={() => onViewProspecto(prospecto.id)}>
                 Ver prospecto
               </DropdownMenuItem>
-              {/* Aquí se pueden agregar más acciones como editar, eliminar, etc */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

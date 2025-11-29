@@ -1,6 +1,12 @@
 /**
  * DataTable component con TanStack Table
- * Proporciona sorting, column visibility, y otras funcionalidades avanzadas
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Only handles table rendering and state
+ * - Open/Closed: Accepts column definitions as props
+ * - Liskov Substitution: Works with any data model via generics
+ * - Interface Segregation: Props are minimal and focused
+ * - Dependency Inversion: Depends on abstractions, not concrete implementations
  */
 
 import type {
@@ -17,6 +23,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useState } from 'react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -26,14 +33,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Eye, EyeOff, ChevronDown } from 'lucide-react'
 import type { Prospecto } from '../../types/prospectos'
 
+/**
+ * Props para DataTable
+ * @template TData - Tipo de datos (ej: Prospecto)
+ * @template TValue - Tipo de valor en celdas
+ */
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onViewProspecto?: (id: number) => void
+}
+
+/**
+ * Obtiene el nombre mostrable de una columna
+ */
+const getColumnDisplayName = (header: string | unknown, columnId: string): string => {
+  if (typeof header === 'string') return header
+  return columnId
+}
+
+/**
+ * Determina si una celda tiene un icono visible o no
+ */
+const getVisibilityIcon = (isVisible: boolean) => {
+  return isVisible ? (
+    <Eye className="h-4 w-4 text-segal-green" />
+  ) : (
+    <EyeOff className="h-4 w-4 text-segal-dark/40" />
+  )
 }
 
 export function DataTable<TData extends Prospecto, TValue>({
@@ -41,16 +71,16 @@ export function DataTable<TData extends Prospecto, TValue>({
   data,
   onViewProspecto,
 }: DataTableProps<TData, TValue>) {
-  // Estados de la tabla
+  // ============================================================
+  // ESTADO DE LA TABLA
+  // ============================================================
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    // Por defecto, mostrar todas las columnas
-    // Puedes comentar columnas aquí para ocultarlas por defecto
-    // telefono: false,
-  })
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
-  // Crear la tabla con TanStack Table
+  // ============================================================
+  // INICIALIZACIÓN DE TANSTACK TABLE
+  // ============================================================
   const table = useReactTable({
     data,
     columns,
@@ -65,23 +95,22 @@ export function DataTable<TData extends Prospecto, TValue>({
       columnFilters,
       columnVisibility,
     },
-    // Pasar callbacks a través de meta
     meta: {
       onViewProspecto,
     },
   })
 
+
   return (
-    <div className="w-full space-y-4">
-      {/* Toolbar con controles */}
-      <div className="flex items-center justify-end gap-2">
-        {/* Botón de visibilidad de columnas */}
+    <div className="w-full space-y-3">
+      {/* Toolbar con botón de columnas */}
+      <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="ml-auto border-segal-blue/30 text-segal-dark hover:bg-segal-blue/5"
+              className="border-segal-blue/30 text-segal-dark hover:bg-segal-blue/5"
             >
               <Eye className="mr-2 h-4 w-4" />
               Columnas
@@ -96,25 +125,24 @@ export function DataTable<TData extends Prospecto, TValue>({
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  className="cursor-pointer text-segal-dark"
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                >
-                  <div className="flex items-center gap-2">
-                    {column.getIsVisible() ? (
-                      <Eye className="h-4 w-4 text-segal-green" />
-                    ) : (
-                      <EyeOff className="h-4 w-4 text-segal-dark/40" />
-                    )}
-                    {typeof column.columnDef.header === 'string'
-                      ? column.columnDef.header
-                      : column.id}
-                  </div>
-                </DropdownMenuCheckboxItem>
-              ))}
+              .map((column) => {
+                const isVisible = column.getIsVisible()
+                const displayName = getColumnDisplayName(column.columnDef.header, column.id)
+
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="cursor-pointer text-segal-dark"
+                    checked={isVisible}
+                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {getVisibilityIcon(isVisible)}
+                      {displayName}
+                    </div>
+                  </DropdownMenuCheckboxItem>
+                )
+              })}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
