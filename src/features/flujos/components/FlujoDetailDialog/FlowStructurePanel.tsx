@@ -220,14 +220,26 @@ export function FlowStructurePanel({
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {endNodes.map((nodo) => (
+                {endNodes.map((nodo) => {
+                  console.log('📋 Nodo Final:', {
+                    id: nodo.id,
+                    tipo: nodo.tipo,
+                    descripcion: nodo.descripcion,
+                    allKeys: Object.keys(nodo),
+                    nodoCompleto: nodo,
+                  })
+                  return (
                   <div key={nodo.id} className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
-                    <p className="font-semibold text-segal-green/90 mb-1">{nodo.tipo}</p>
+                    <p className="font-semibold text-segal-green/90 mb-1">{nodo.tipo || 'Nodo Final'}</p>
                     {nodo.descripcion && (
                       <p className="text-sm text-segal-green/70">{nodo.descripcion}</p>
                     )}
+                    {!nodo.descripcion && (
+                      <p className="text-sm text-segal-green/50 italic">Sin descripción</p>
+                    )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

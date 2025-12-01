@@ -230,7 +230,15 @@ export function FlujoDetailDialog({
 
                     {(flujo.etapas && flujo.etapas.length > 0) || (flujo.flujo_etapas && flujo.flujo_etapas.length > 0) ? (
                       <div className="space-y-3">
-                        {(flujo.etapas || flujo.flujo_etapas || []).map((etapa: EtapaFlujo, index: number) => (
+                        {(flujo.etapas || flujo.flujo_etapas || []).map((etapa: EtapaFlujo, index: number) => {
+                          console.log('📋 Etapa detalle:', {
+                            id: etapa.id,
+                            dia_envio: etapa.dia_envio,
+                            tipo_mensaje: etapa.tipo_mensaje,
+                            allKeys: Object.keys(etapa),
+                            etapaCompleta: etapa,
+                          })
+                          return (
                           <div
                             key={etapa.id || index}
                             className="bg-white border border-segal-blue/10 rounded-lg p-4 hover:border-segal-blue/30 transition-colors"
@@ -242,7 +250,7 @@ export function FlujoDetailDialog({
                                     {index + 1}
                                   </div>
                                   <h4 className="text-sm font-bold text-segal-dark">
-                                    Día {etapa.dia_envio} - {etapa.tipo_mensaje === 'email' ? '📧 Email' : '📱 SMS'}
+                                    Día {etapa.dia_envio} - {etapa.tipo_mensaje === 'email' ? '📧 Email' : etapa.tipo_mensaje === 'sms' ? '📱 SMS' : '📧📱 Email + SMS'}
                                   </h4>
                                 </div>
 
@@ -287,7 +295,8 @@ export function FlujoDetailDialog({
                               )}
                             </div>
                           </div>
-                        ))}
+                        )
+                        })}
                       </div>
                     ) : (
                       <div className="bg-segal-blue/5 border border-segal-blue/10 rounded-lg p-6 text-center">
