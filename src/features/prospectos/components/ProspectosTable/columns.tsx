@@ -25,7 +25,6 @@ import {
   TIPO_DEUDA_OPTIONS,
   TIPO_DEUDA_COLORS,
 } from '@/lib/constants'
-import { formatDate } from '@/lib/utils'
 import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
 import { MoreHorizontal, ArrowUpDown, FileText } from 'lucide-react'
@@ -83,14 +82,6 @@ const getTipoDeudaBadge = (monto: number) => {
     label: tipoOption?.label || montoCategory,
     colorClass: colorClass || '',
   }
-}
-
-/**
- * Formatea una fecha, retornando '-' si es nula/vacía
- */
-const formatLastContactDate = (date: string | undefined): string => {
-  if (!date?.trim()) return '-'
-  return formatDate(date)
 }
 
 /**
@@ -301,28 +292,6 @@ export const columns: ColumnDef<Prospecto>[] = [
       )
     },
     sortingFn: 'alphanumeric',
-  },
-
-  // ============================================================
-  // COLUMNA: ÚLTIMO CONTACTO
-  // ============================================================
-  {
-    accessorKey: 'fecha_ultimo_contacto',
-    header: ({ column }) => (
-      <SortableColumnHeader
-        label="Ult. Contacto"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      />
-    ),
-    cell: ({ row }) => {
-      const fecha = row.getValue('fecha_ultimo_contacto') as string | undefined
-      return (
-        <div className="text-segal-dark/70 text-sm">
-          {formatLastContactDate(fecha)}
-        </div>
-      )
-    },
-    sortingFn: 'datetime',
   },
 
   // ============================================================
