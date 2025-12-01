@@ -118,7 +118,12 @@ export function FlowStructurePanel({
                             {index + 1}
                           </div>
                           <h4 className="font-semibold text-segal-dark">
-                            Día {etapa.dia_envio} - {etapa.tipo_mensaje === 'email' ? '📧 Email' : '📱 SMS'}
+                            Día {etapa.dia_envio} - {
+                              etapa.tipo_mensaje === 'email' ? '📧 Email' :
+                              etapa.tipo_mensaje === 'sms' ? '📱 SMS' :
+                              etapa.tipo_mensaje === 'ambos' ? '📧📱 Email + SMS' :
+                              '❓ Desconocido'
+                            }
                           </h4>
                         </div>
 
@@ -220,21 +225,20 @@ export function FlowStructurePanel({
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {endNodes.map((nodo) => {
-                  console.log('📋 Nodo Final:', {
-                    id: nodo.id,
-                    tipo: nodo.tipo,
-                    descripcion: nodo.descripcion,
-                    allKeys: Object.keys(nodo),
-                    nodoCompleto: nodo,
-                  })
+                {endNodes.map((nodo: any) => {
+                  console.log('📋 Nodo Final COMPLETO:', JSON.stringify(nodo, null, 2))
+                  console.log('📋 Claves del nodo:', Object.keys(nodo))
+                  // Intentar acceder a diferentes campos posibles
+                  const label = nodo.label || nodo.tipo || nodo.nombre || nodo.title || 'Nodo Final'
+                  const desc = nodo.descripcion || nodo.description || nodo.detalles || ''
+
                   return (
                   <div key={nodo.id} className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
-                    <p className="font-semibold text-segal-green/90 mb-1">{nodo.tipo || 'Nodo Final'}</p>
-                    {nodo.descripcion && (
-                      <p className="text-sm text-segal-green/70">{nodo.descripcion}</p>
+                    <p className="font-semibold text-segal-green/90 mb-1">{label}</p>
+                    {desc && (
+                      <p className="text-sm text-segal-green/70">{desc}</p>
                     )}
-                    {!nodo.descripcion && (
+                    {!desc && (
                       <p className="text-sm text-segal-green/50 italic">Sin descripción</p>
                     )}
                   </div>
