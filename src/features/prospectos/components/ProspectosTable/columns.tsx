@@ -193,7 +193,6 @@ export const columns: ColumnDef<Prospecto>[] = [
   // COLUMNA: INFORME
   // ============================================================
   {
-    accessorKey: 'url_informe',
     id: 'informe',
     header: () => (
       <div className="text-segal-dark font-semibold">
@@ -201,11 +200,12 @@ export const columns: ColumnDef<Prospecto>[] = [
       </div>
     ),
     cell: ({ row }) => {
-      const urlInforme = row.getValue('url_informe') as string | undefined
-      const hasUrl = urlInforme?.trim()
+      const prospecto = row.original
+      const urlInforme = prospecto.url_informe as string | null | undefined
+      const hasUrl = urlInforme && typeof urlInforme === 'string' && urlInforme.trim().length > 0
 
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center">
           {hasUrl ? (
             <button
               onClick={() => openUrlInNewTab(urlInforme)}
