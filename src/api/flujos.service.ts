@@ -161,8 +161,26 @@ export const flujosService = {
    * Obtener un flujo específico
    */
   async getById(id: number): Promise<FlujoNurturing> {
-    const { data } = await apiClient.get<{ data: FlujoNurturing }>(`/flujos/${id}`)
-    return data.data
+    try {
+      console.log(`📤 flujosService.getById(${id}) - Enviando request a GET /flujos/${id}`)
+      const { data } = await apiClient.get<{ data: FlujoNurturing }>(`/flujos/${id}`)
+
+      console.log(`📥 flujosService.getById(${id}) - Response completo:`, JSON.stringify(data.data, null, 2))
+      console.log(`📥 Claves del flujo:`, Object.keys(data.data))
+      console.log(`📥 etapas:`, data.data.etapas)
+      console.log(`📥 flujo_etapas:`, data.data.flujo_etapas)
+      console.log(`📥 flujo_condiciones:`, data.data.flujo_condiciones)
+      console.log(`📥 flujo_ramificaciones:`, data.data.flujo_ramificaciones)
+      console.log(`📥 flujo_nodos_finales:`, data.data.flujo_nodos_finales)
+
+      return data.data
+    } catch (error: any) {
+      console.error(`❌ flujosService.getById(${id}) - Error:`, {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
   },
 
   /**

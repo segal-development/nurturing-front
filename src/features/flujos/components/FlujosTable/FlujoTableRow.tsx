@@ -39,6 +39,16 @@ export function FlujoTableRow({
   onDeleteFlujo,
   onEjecutarFlujo,
 }: FlujoTableRowProps) {
+  // Calcular cantidad de etapas desde diferentes fuentes posibles
+  // 1. Si existe config_structure.stages (estructura de ReactFlow)
+  // 2. Si existe flujo_etapas (relación del backend)
+  // 3. Si existe etapas (relación alternativa)
+  const etapasCount =
+    flujo.config_structure?.stages?.length ||
+    flujo.flujo_etapas?.length ||
+    flujo.etapas?.length ||
+    0
+
   return (
     <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5">
       <TableCell className="font-medium text-segal-dark">{flujo.nombre}</TableCell>
@@ -47,7 +57,7 @@ export function FlujoTableRow({
       </TableCell>
       <TableCell className="text-segal-dark">
         <Badge variant="outline" className="border-segal-blue/30 text-segal-blue">
-          {flujo.etapas?.length || 0} etapas
+          {etapasCount} etapas
         </Badge>
       </TableCell>
       <TableCell>
