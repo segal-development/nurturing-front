@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   Users,
   GitBranch,
-  Tag,
-  Send,
   Settings,
   LogOut,
   ChevronDown,
@@ -27,8 +25,8 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Prospectos', href: '/prospectos', icon: Users },
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
-  { name: 'Ofertas Infocom', href: '/ofertas', icon: Tag },
-  { name: 'Monitor de Envíos', href: '/monitor', icon: Send },
+  // { name: 'Ofertas Infocom', href: '/ofertas', icon: Tag },
+  // { name: 'Monitor de Envíos', href: '/monitor', icon: Send },
   { name: 'Configuración', href: '/configuracion', icon: Sliders },
 ];
 

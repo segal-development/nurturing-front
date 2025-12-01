@@ -28,7 +28,7 @@ import {
 import { formatDate } from '@/lib/utils'
 import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
-import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, FileText } from 'lucide-react'
 
 /**
  * Componente reutilizable para headers de columnas sortables
@@ -100,6 +100,21 @@ const getViewProspectoCallback = (table: Table<Prospecto>): ((id: number) => voi
   return (table.options.meta as any)?.onViewProspecto
 }
 
+/**
+ * Formatea un RUT, retornando '-' si es nulo/vacío
+ */
+const formatRut = (rut: string | undefined): string => {
+  return rut?.trim() ? rut : '-'
+}
+
+/**
+ * Abre una URL en una nueva pestaña de forma segura
+ */
+const openUrlInNewTab = (url: string | undefined): void => {
+  if (!url?.trim()) return
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 export const columns: ColumnDef<Prospecto>[] = [
   // ============================================================
   // COLUMNA: NOMBRE
@@ -159,6 +174,63 @@ export const columns: ColumnDef<Prospecto>[] = [
       )
     },
     sortingFn: 'alphanumeric',
+  },
+
+  // ============================================================
+  // COLUMNA: RUT
+  // ============================================================
+  {
+    accessorKey: 'rut',
+    header: ({ column }) => (
+      <SortableColumnHeader
+        label="RUT"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      />
+    ),
+    cell: ({ row }) => {
+      const rut = row.getValue('rut') as string | undefined
+      return (
+        <div className="text-segal-dark/70 text-sm">
+          {formatRut(rut)}
+        </div>
+      )
+    },
+    sortingFn: 'alphanumeric',
+  },
+
+  // ============================================================
+  // COLUMNA: INFORME
+  // ============================================================
+  {
+    accessorKey: 'url_informe',
+    id: 'informe',
+    header: () => (
+      <div className="text-segal-dark font-semibold">
+        Informe
+      </div>
+    ),
+    cell: ({ row }) => {
+      const urlInforme = row.getValue('url_informe') as string | undefined
+      const hasUrl = urlInforme?.trim()
+
+      return (
+        <div className="flex items-center gap-2">
+          {hasUrl ? (
+            <button
+              onClick={() => openUrlInNewTab(urlInforme)}
+              className="p-2 rounded-lg hover:bg-segal-blue/10 transition-colors text-segal-blue hover:text-segal-dark"
+              aria-label="Ver informe"
+              title="Descargar informe"
+            >
+              <FileText className="h-5 w-5" />
+            </button>
+          ) : (
+            <span className="text-segal-dark/30 text-sm">-</span>
+          )}
+        </div>
+      )
+    },
+    enableSorting: false,
   },
 
   // ============================================================

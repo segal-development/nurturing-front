@@ -59,8 +59,10 @@ export interface Prospecto {
   nombre: string
   email: string
   telefono?: string
+  rut?: string
   monto_deuda: number
   estado: string
   tipo_prospecto_id?: number
   fecha_ultimo_contacto?: string
+  url_informe?: string
 }
