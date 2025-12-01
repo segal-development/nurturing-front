@@ -9,16 +9,18 @@
  */
 
 import { useEffect, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import { FlowBuilder } from '../FlowBuilder/FlowBuilder'
+import { useUpdateFlowConfiguration } from '../../hooks/useUpdateFlowConfiguration'
 import type { FlujoNurturing, EtapaFlujo, CondicionFlujo, RamificacionFlujo, NodoFinalFlujo } from '@/types/flujo'
 import type { CustomNode, CustomEdge, StageNodeData, ConditionalNodeData } from '../../types/flowBuilder'
 import { toast } from 'sonner'
 
 interface EditFlujoBuilderProps {
   flujo: FlujoNurturing
-  onSaveFlow?: (config: any) => Promise<void>
   onCancel?: () => void
+  onSaveSuccess?: () => void
 }
 
 /**
@@ -114,15 +116,18 @@ function createEdgeFromRamificacion(
  */
 export function EditFlujoBuilder({
   flujo,
-  onSaveFlow,
   onCancel,
+  onSaveSuccess,
 }: EditFlujoBuilderProps) {
+  const queryClient = useQueryClient()
   const {
     setFlowName,
     setFlowDescription,
     loadFlowConfiguration,
     resetFlow,
   } = useFlowBuilderStore()
+
+  const updateFlowConfiguration = useUpdateFlowConfiguration()
 
   // Inicializar el flujo cuando se carga el componente
   useEffect(() => {
@@ -224,11 +229,47 @@ export function EditFlujoBuilder({
   const handleSaveFlow = useCallback(
     async (config: any) => {
       console.log('💾 Guardando flujo editado:', config)
-      if (onSaveFlow) {
-        await onSaveFlow(config)
+
+      try {
+        // Preparar payload para el backend
+        const payload = {
+          nombre: config.nombre,
+          descripcion: config.descripcion,
+          config_visual: {
+            nodes: config.visual.nodes,
+            edges: config.visual.edges,
+          },
+          config_structure: {
+            stages: config.structure.stages,
+            conditions: config.structure.conditions,
+            branches: config.structure.branches,
+            end_nodes: config.structure.end_nodes,
+          },
+        }
+
+        console.log('📤 Enviando payload al backend:', payload)
+
+        // Usar el hook para actualizar en el backend
+        await updateFlowConfiguration.mutateAsync({
+          flujoId: flujo.id,
+          payload,
+        })
+
+        // Invalidar caché para refrescar la tabla de flujos
+        console.log('🔄 Invalidando caché de flujos para refrescar tabla')
+        queryClient.invalidateQueries({ queryKey: ['flujos-page'] })
+        queryClient.invalidateQueries({ queryKey: ['flujos-detail', flujo.id] })
+
+        toast.success(`Flujo "${config.nombre}" actualizado correctamente`)
+        onSaveSuccess?.()
+      } catch (error: any) {
+        console.error('❌ Error al guardar flujo:', error)
+        toast.error('Error al guardar el flujo', {
+          description: error.response?.data?.message || error.message,
+        })
       }
     },
-    [onSaveFlow]
+    [flujo.id, updateFlowConfiguration, onSaveSuccess, queryClient]
   )
 
   return (
