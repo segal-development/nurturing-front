@@ -17,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { plantillasService } from '@/api/plantillas.service'
 import type { AnyPlantilla, PlantillaSMS, PlantillaEmail } from '@/types/plantilla'
+import { EmailTemplatePreview } from './EmailTemplates'
+import type { EmailBlockData } from './EmailTemplates'
 
 interface PlantillaDetailDialogProps {
   open: boolean
@@ -144,35 +146,69 @@ export function PlantillaDetailDialog({
                 </p>
               </div>
             ) : (
-              <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-                <div>
-                  <label className="text-sm font-semibold text-segal-dark">Asunto</label>
-                  <p className="text-sm text-segal-dark/80 mt-1">
-                    {(plantilla as PlantillaEmail).asunto}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-segal-dark">Componentes</label>
-                  <div className="mt-1 space-y-2">
-                    {(plantilla as PlantillaEmail).componentes.map((comp, idx) => (
-                      <div
-                        key={comp.id}
-                        className="text-sm bg-white rounded p-2 border border-segal-blue/10"
-                      >
-                        <span className="font-medium text-segal-dark">{idx + 1}.</span>
-                        {' '}
-                        <span className="capitalize text-segal-dark/80">
-                          {comp.tipo === 'texto' ? '📝 Texto' : ''}
-                          {comp.tipo === 'logo' ? '🖼️ Logo' : ''}
-                          {comp.tipo === 'boton' ? '🔘 Botón' : ''}
-                          {comp.tipo === 'separador' ? '─ Separador' : ''}
-                          {comp.tipo === 'footer' ? '📋 Footer' : ''}
-                        </span>
-                      </div>
-                    ))}
+              <div className="space-y-4">
+                <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+                  <div>
+                    <label className="text-sm font-semibold text-segal-dark">Asunto</label>
+                    <p className="text-sm text-segal-dark/80 mt-1">
+                      {(plantilla as PlantillaEmail).asunto}
+                    </p>
                   </div>
                 </div>
+
+                {/* Email Avanzado (react-email) */}
+                {((plantilla as PlantillaEmail).componentes as any)?.some((c: any) => c.tipo === 'html-avanzado') ? (
+                  <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+                    <label className="text-sm font-semibold text-segal-dark block">Vista Previa</label>
+                    {(() => {
+                      const componenteAvanzado = ((plantilla as PlantillaEmail).componentes as any)?.find(
+                        (c: any) => c.tipo === 'html-avanzado'
+                      )
+                      const bloques = componenteAvanzado?.contenido?.bloques
+                        ? JSON.parse(
+                            typeof componenteAvanzado.contenido.bloques === 'string'
+                              ? componenteAvanzado.contenido.bloques
+                              : JSON.stringify(componenteAvanzado.contenido.bloques)
+                          )
+                        : []
+
+                      return (
+                        <div className="h-96 overflow-hidden rounded border border-segal-blue/20">
+                          <EmailTemplatePreview
+                            blocks={bloques as EmailBlockData[]}
+                            config={{
+                              subject: (plantilla as PlantillaEmail).asunto,
+                              headerText: 'Email Template Preview',
+                            }}
+                          />
+                        </div>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  /* Email Modular */
+                  <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+                    <label className="text-sm font-semibold text-segal-dark">Componentes</label>
+                    <div className="mt-1 space-y-2">
+                      {(plantilla as PlantillaEmail).componentes.map((comp, idx) => (
+                        <div
+                          key={comp.id}
+                          className="text-sm bg-white rounded p-2 border border-segal-blue/10"
+                        >
+                          <span className="font-medium text-segal-dark">{idx + 1}.</span>
+                          {' '}
+                          <span className="capitalize text-segal-dark/80">
+                            {comp.tipo === 'texto' ? '📝 Texto' : ''}
+                            {comp.tipo === 'logo' ? '🖼️ Logo' : ''}
+                            {comp.tipo === 'boton' ? '🔘 Botón' : ''}
+                            {comp.tipo === 'separador' ? '─ Separador' : ''}
+                            {comp.tipo === 'footer' ? '📋 Footer' : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
