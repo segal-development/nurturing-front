@@ -7,6 +7,7 @@ import {
   LogOut,
   ChevronDown,
   Sliders,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Prospectos', href: '/prospectos', icon: Users },
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
+  { name: 'Plantillas', href: '/plantillas', icon: Mail },
   // { name: 'Ofertas Infocom', href: '/ofertas', icon: Tag },
   // { name: 'Monitor de Envíos', href: '/monitor', icon: Send },
   { name: 'Configuración', href: '/configuracion', icon: Sliders },

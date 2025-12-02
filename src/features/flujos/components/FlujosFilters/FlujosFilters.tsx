@@ -7,11 +7,16 @@ import { OrigenFilter } from './OrigenFilter'
 import { OptionalFilters } from './OptionalFilters'
 import type { FlujosFiltersProps, FiltrosState } from '../../types/flujos'
 
+interface FlujosFiltersExtendedProps extends FlujosFiltersProps {
+  isLoadingOpciones?: boolean
+}
+
 export function FlujosFilters({
   filtros,
   opciones,
   onFiltrosChange,
-}: FlujosFiltersProps) {
+  isLoadingOpciones,
+}: FlujosFiltersExtendedProps) {
   const handleOrigenChange = (id: string | null) => {
     const newFiltros: FiltrosState = {
       ...filtros,
@@ -37,6 +42,7 @@ export function FlujosFilters({
             selectedId={filtros.origenId}
             opciones={opciones}
             onChange={handleOrigenChange}
+            isLoading={isLoadingOpciones}
           />
         </div>
 

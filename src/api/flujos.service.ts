@@ -55,18 +55,24 @@ export const flujosService = {
       console.log('📥 flujosService.getOpciones() - backendData.origenes:', backendData.origenes)
       console.log('📥 flujosService.getOpciones() - backendData.tipos_deudor:', backendData.tipos_deudor)
 
-      // Transformar orígenes: si son strings, convertir a objetos con id y nombre
+      // Transformar orígenes
       let origenes: OrigenFlujo[] = []
       if (Array.isArray(backendData.origenes)) {
+        console.log('📋 Origen RAW del backend:', JSON.stringify(backendData.origenes, null, 2))
         origenes = backendData.origenes.map((origen: any) => {
-          // Si es un objeto con id y nombre, usarlo directamente
+          console.log('🔄 Transformando origen:', origen, 'tipo:', typeof origen)
+
+          // Si es un objeto con id y nombre
           if (typeof origen === 'object' && origen.id && origen.nombre) {
-            return {
+            const transformed = {
               id: String(origen.id),
               nombre: origen.nombre,
-              total_flujos: origen.total_flujos || 0,
+              total_flujos: typeof origen.total_flujos === 'number' ? origen.total_flujos : 0,
             }
+            console.log('✅ Origen transformado:', transformed)
+            return transformed
           }
+
           // Si es un string, convertirlo en un objeto
           if (typeof origen === 'string') {
             return {
@@ -75,6 +81,7 @@ export const flujosService = {
               total_flujos: 0,
             }
           }
+
           return origen
         })
       }
@@ -225,6 +232,39 @@ export const flujosService = {
       flujo
     )
     return data.data
+  },
+
+  /**
+   * Actualizar configuración visual y estructura de un flujo (para el flow builder)
+   */
+  async updateFlowConfiguration(
+    id: number,
+    payload: {
+      nombre?: string
+      descripcion?: string
+      activo?: boolean
+      config_visual?: any
+      config_structure?: any
+    }
+  ): Promise<FlujoNurturing> {
+    try {
+      console.log(`📤 flujosService.updateFlowConfiguration(${id}) - Enviando datos actualizados`)
+      console.log('   Payload:', JSON.stringify(payload, null, 2))
+
+      const { data } = await apiClient.put<{ data: FlujoNurturing; mensaje: string }>(
+        `/flujos/${id}`,
+        payload
+      )
+
+      console.log(`✅ flujosService.updateFlowConfiguration(${id}) - Flujo actualizado:`, data.data)
+      return data.data
+    } catch (error: any) {
+      console.error(`❌ flujosService.updateFlowConfiguration(${id}) - Error:`, {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
   },
 
   /**

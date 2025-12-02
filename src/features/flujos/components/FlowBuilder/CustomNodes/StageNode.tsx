@@ -17,6 +17,7 @@ import {
   Clock,
 } from 'lucide-react'
 import type { StageNodeData } from '../../../types/flowBuilder'
+import { PlantillaSelector } from '../components/PlantillaSelector'
 
 interface StageNodeProps extends NodeProps<StageNodeData> {
   onUpdate?: (id: string, data: Partial<StageNodeData>) => void
@@ -259,11 +260,15 @@ export function StageNode({
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-segal-dark">Plantilla</label>
-              <textarea
-                value={localData.plantilla_mensaje || ''}
-                onChange={(e) => setLocalData({ ...localData, plantilla_mensaje: e.target.value })}
-                className="w-full px-2 py-1 text-xs border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20 resize-none h-16"
-                placeholder="Escribe tu plantilla..."
+              <PlantillaSelector
+                tipo_mensaje={localData.tipo_mensaje}
+                plantilla_id={localData.plantilla_id}
+                plantilla_id_email={localData.plantilla_id_email}
+                plantilla_mensaje={localData.plantilla_mensaje}
+                plantilla_type={localData.plantilla_type}
+                onChange={(data) => {
+                  setLocalData({ ...localData, ...data })
+                }}
               />
             </div>
 

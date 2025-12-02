@@ -13,7 +13,7 @@ import ReactFlow, {
   MiniMap,
   ReactFlowProvider,
 } from 'reactflow'
-import type { Connection } from 'reactflow'
+import type { Connection, NodeChange, EdgeChange } from 'reactflow'
 import 'reactflow/dist/style.css'
 import {
   Plus,
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 
 // Style handles to be visible and draggable
-const handleStyles = `
+const HANDLE_STYLES = `
   .react-flow__handle {
     background: #1e3a8a;
     border: 2px solid white;
@@ -47,6 +47,7 @@ const handleStyles = `
     background: #16a34a;
   }
 `
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -65,6 +66,15 @@ import { ConditionalNode } from './CustomNodes/ConditionalNode'
 import { N8nStyleEdge } from './CustomEdges/N8nStyleEdge'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import type { CustomEdge } from '../../types/flowBuilder'
+
+// Importar utilidades
+import { validateFlow } from './utils/flowValidation'
+import {
+  buildFlowConfiguration,
+  logConfigurationForDebug,
+  isConfigurationValid,
+} from './utils/flowConfig'
+import { extractPositionChanges, extractEdgeRemovals } from './utils/flowChanges'
 
 interface FlowBuilderProps {
   onSaveFlow?: (config: any) => Promise<void>
@@ -191,206 +201,146 @@ function FlowBuilderContent({
   }, [selectedOriginId, selectedOriginName, selectedProspectoCount, initializeWithOrigin])
 
   /**
-   * Handle node changes (posición, selección, etc)
+   * Sincroniza cambios de posición de nodos a Zustand
    */
-  const handleNodesChangeWrapper = useCallback(
-    (changes: any[]) => {
-      // Aplicar cambios en ReactFlow
-      onNodesChange(changes)
-
-      // Sincronizar cambios de posición a Zustand
-      changes.forEach((change) => {
-        if (change.type === 'position' && change.position) {
-          setNodePosition(change.id, change.position)
-        }
+  const syncNodePositionChanges = useCallback(
+    (changes: NodeChange[]): void => {
+      const positionChanges = extractPositionChanges(changes)
+      positionChanges.forEach((change) => {
+        setNodePosition(change.nodeId, change.position)
       })
     },
-    [onNodesChange, setNodePosition]
+    [setNodePosition]
+  )
+
+  /**
+   * Handle node changes (posición, selección, etc)
+   * Sincroniza cambios entre ReactFlow y Zustand
+   */
+  const handleNodesChangeWrapper = useCallback(
+    (changes: NodeChange[]): void => {
+      // Aplicar cambios en ReactFlow primero
+      onNodesChange(changes)
+
+      // Luego sincronizar a Zustand si hay cambios de posición
+      syncNodePositionChanges(changes)
+    },
+    [onNodesChange, syncNodePositionChanges]
+  )
+
+  /**
+   * Sincroniza eliminaciones de edges a Zustand
+   */
+  const syncEdgeRemovals = useCallback(
+    (changes: EdgeChange[]): void => {
+      const removals = extractEdgeRemovals(changes)
+      removals.forEach((removal) => {
+        removeEdge(removal.edgeId)
+      })
+    },
+    [removeEdge]
   )
 
   /**
    * Handle edge changes (eliminación, selección, etc)
+   * Sincroniza cambios entre ReactFlow y Zustand
    */
   const handleEdgesChangeWrapper = useCallback(
-    (changes: any[]) => {
-      // Aplicar cambios en ReactFlow
+    (changes: EdgeChange[]): void => {
+      // Aplicar cambios en ReactFlow primero
       onEdgesChange(changes)
 
-      // Sincronizar eliminaciones de edges a Zustand
-      changes.forEach((change) => {
-        if (change.type === 'remove') {
-          removeEdge(change.id)
-        }
-      })
+      // Luego sincronizar eliminaciones a Zustand
+      syncEdgeRemovals(changes)
     },
-    [onEdgesChange, removeEdge]
+    [onEdgesChange, syncEdgeRemovals]
   )
 
   /**
    * Handle connection creation
+   * Construye un edge validado y lo agrega al store
    */
   const handleConnect = useCallback(
-    (connection: Connection) => {
+    (connection: Connection): void => {
+      // Obtener handles con fallback a 'center'
       const sourceHandle = connection.sourceHandle || 'center'
       const targetHandle = connection.targetHandle || 'center'
 
-      console.log('🔗 [handleConnect] Nueva conexión:', {
+      // Validar que source y target existan
+      if (!connection.source || !connection.target) {
+        console.warn('⚠️ Conexión inválida: source o target missing')
+        return
+      }
+
+      // Log de debugging
+      console.log('🔗 Nueva conexión:', {
         source: connection.source,
         sourceHandle,
         target: connection.target,
         targetHandle,
-        isYesHandle: sourceHandle?.includes('-yes') || false,
-        isNoHandle: sourceHandle?.includes('-no') || false,
+        isConditionalBranch: sourceHandle.includes('-yes') || sourceHandle.includes('-no'),
       })
 
+      // Construir edge
       const newEdge: CustomEdge = {
         id: `edge-${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`,
-        source: connection.source || '',
-        target: connection.target || '',
+        source: connection.source,
+        target: connection.target,
         sourceHandle,
         targetHandle,
         type: 'animated',
       } as any
 
-      console.log('➕ [handleConnect] Edge creado:', newEdge)
-      console.log('📌 [handleConnect] Agregando SOLO a Zustand (source of truth)')
+      console.log('➕ Edge creado:', newEdge)
+      console.log('📌 Agregando a Zustand (source of truth)')
 
-      // SOLO agregar a Zustand - ReactFlow se actualizará automáticamente desde storeEdges
+      // Agregar a Zustand - ReactFlow se actualizará automáticamente
       addFlowEdge(newEdge)
     },
     [addFlowEdge]
   )
 
   /**
-   * Handle save flow
+   * Valida el flujo antes de guardar
+   * Early return para fallos de validación
    */
-  const handleSaveFlow = useCallback(async () => {
-    // Validación básica
-    if (!flowName.trim()) {
-      alert('Por favor ingresa un nombre para el flujo')
-      return
+  const validateBeforeSave = useCallback((): boolean => {
+    const validation = validateFlow(flowName, storeNodes)
+    if (!validation.isValid) {
+      alert(validation.message)
+      return false
     }
+    return true
+  }, [flowName, storeNodes])
 
-    const stageCount = storeNodes.filter((n) => n.type === 'stage').length
-    if (stageCount === 0) {
-      alert('Debes agregar al menos una etapa')
-      return
-    }
+  /**
+   * Handle save flow
+   * Refactorizado con early returns y funciones pequeñas
+   */
+  const handleSaveFlow = useCallback(async (): Promise<void> => {
+    // Early return si la validación falla
+    if (!validateBeforeSave()) return
 
     try {
-      // DEBUG: Log de los nodos del store ANTES de guardar
-      console.log('[DEBUG FlowBuilder] storeNodes ANTES de guardar:')
-      storeNodes.forEach((n) => {
-        console.log(`  Nodo ${n.id}:`, {
-          type: n.type,
-          data: n.data,
-        })
-      })
+      // Construir configuración completa
+      const config = buildFlowConfiguration(flowName, flowDescription, storeNodes, storeEdges)
 
-      // Crear estructura completa para el backend
-      const stages = storeNodes
-        .filter((n) => n.type === 'stage')
-        .map((n, index) => {
-          const data = n.data as any
-          return {
-            id: n.id,
-            orden: index,
-            label: data.label,
-            dia_envio: data.dia_envio || 1,
-            tipo_mensaje: data.tipo_mensaje || 'email',
-            plantilla_mensaje: data.plantilla_mensaje || '',
-            fecha_inicio_personalizada: data.fecha_inicio_personalizada || null,
-            activo: data.activo !== false,
-          }
-        })
-
-      // Obtener condiciones
-      const conditions = storeNodes
-        .filter((n) => n.type === 'conditional')
-        .map((n) => {
-          const data = n.data as any
-          return {
-            id: n.id,
-            label: data.label,
-            description: data.description || '',
-            condition_type: data.condition?.type || 'email_opened',
-            condition_label: data.condition?.label || '',
-            yes_label: data.yesLabel || 'Sí',
-            no_label: data.noLabel || 'No',
-          }
-        })
-
-      // Procesar conexiones (edges) para crear la estructura de ramificaciones
-      const branches = storeEdges
-        .filter((e) => {
-          const sourceNode = storeNodes.find((n) => n.id === e.source)
-          return sourceNode?.type === 'conditional'
-        })
-        .map((e) => ({
-          edge_id: e.id,
-          source_node_id: e.source,
-          target_node_id: e.target,
-          source_handle: e.sourceHandle,
-          target_handle: e.targetHandle,
-          condition_branch: e.sourceHandle?.includes('yes') ? 'yes' : 'no',
-        }))
-
-      // Crear estructura de nodos para visualización - incluir TODOS los datos
-      const nodesStructure = storeNodes.map((n) => {
-        console.log(`[DEBUG GUARDANDO] Nodo ${n.id}:`, {
-          type: n.type,
-          data: n.data,
-        })
-        return {
-          id: n.id,
-          type: n.type,
-          position: n.position,
-          data: n.data, // Guardar todos los datos tal como están
-        }
-      })
-
-      // Crear estructura de edges para visualización
-      const edgesStructure = storeEdges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle,
-        type: e.type || 'animated',
-      }))
-
-      const config = {
-        nombre: flowName,
-        descripcion: flowDescription,
-
-        // Datos visuales (para reconstruir el flujo en el editor)
-        visual: {
-          nodes: nodesStructure,
-          edges: edgesStructure,
-        },
-
-        // Datos estructurados para el backend (para ejecutar el flujo)
-        structure: {
-          stages,
-          conditions,
-          branches,
-          initial_node: storeNodes.find((n) => n.type === 'initial') || null,
-          end_nodes: storeNodes.filter((n) => n.type === 'end'),
-        },
-
-        // Datos legados (compatibilidad)
-        stages,
+      // Validar configuración
+      if (!isConfigurationValid(config)) {
+        alert('La configuración del flujo no es válida')
+        return
       }
 
-      console.log('[DEBUG FINAL] config.visual.nodes que se enviará:', config.visual.nodes)
-      console.log('[DEBUG FINAL] config.visual completo:', config.visual)
+      // Log para debugging
+      logConfigurationForDebug(config)
 
+      // Guardar en backend
       await onSaveFlow?.(config)
     } catch (error) {
-      console.error('Error saving flow:', error)
-      alert('Error al guardar el flujo')
+      console.error('❌ Error saving flow:', error)
+      alert('Error al guardar el flujo. Por favor intenta de nuevo.')
     }
-  }, [flowName, flowDescription, storeNodes, storeEdges, onSaveFlow])
+  }, [flowName, flowDescription, storeNodes, storeEdges, onSaveFlow, validateBeforeSave])
 
   /**
    * Handle reset flow
@@ -420,7 +370,7 @@ function FlowBuilderContent({
 
   return (
     <div className="flex flex-col h-full w-full bg-white gap-4 p-4">
-      <style>{handleStyles}</style>
+      <style>{HANDLE_STYLES}</style>
 
       {/* Header */}
       <div className="shrink-0 space-y-3 border-b border-segal-blue/10 pb-4">

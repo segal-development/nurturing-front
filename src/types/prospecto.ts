@@ -19,6 +19,7 @@ export interface Prospecto {
   nombre: string;
   email: string;
   telefono: string | null;
+  rut?: string | null;
   tipo_prospecto_id: number;
   tipo_prospecto?: {
     id: number;
@@ -35,6 +36,7 @@ export interface Prospecto {
     fecha_importacion: string;
   };
   metadata: Record<string, any> | null;
+  url_informe?: string | null;
   created_at: string; // "20/11/2025 09:55:37"
   updated_at: string; // "20/11/2025 09:55:37"
 }

@@ -12,42 +12,20 @@ import {
 } from '@/components/ui/dialog'
 import { EditFlujoBuilder } from '../EditFlujoBuilder/EditFlujoBuilder'
 import type { FlujoNurturing } from '@/types/flujo'
-import { toast } from 'sonner'
 
 interface EditFlujoBuilderDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   flujo: FlujoNurturing | null
-  onSuccess?: () => void
 }
 
 export function EditFlujoBuilderDialog({
   open,
   onOpenChange,
   flujo,
-  onSuccess,
 }: EditFlujoBuilderDialogProps) {
   if (!flujo) {
     return null
-  }
-
-  const handleSaveFlow = async (config: any) => {
-    try {
-      console.log('💾 Guardando flujo editado:', config)
-
-      // TODO: Implementar actualización del flujo en el backend
-      // Por ahora es un placeholder - necesita endpoint en el backend para actualizar flujos con estructura completa
-
-      toast.success(`Flujo "${flujo.nombre}" actualizado correctamente`)
-      onOpenChange(false)
-      onSuccess?.()
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Error al guardar el flujo'
-      toast.error('Error al guardar el flujo', {
-        description: errorMessage,
-      })
-      console.error('❌ Error al guardar flujo:', error)
-    }
   }
 
   return (
@@ -67,8 +45,8 @@ export function EditFlujoBuilderDialog({
         <div className="flex-1 overflow-hidden">
           <EditFlujoBuilder
             flujo={flujo}
-            onSaveFlow={handleSaveFlow}
             onCancel={() => onOpenChange(false)}
+            onSaveSuccess={() => onOpenChange(false)}
           />
         </div>
       </DialogContent>

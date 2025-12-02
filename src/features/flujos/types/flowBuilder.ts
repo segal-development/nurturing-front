@@ -29,7 +29,11 @@ export interface StageNodeData {
   tiempo_espera?: number // Days to wait before executing this stage (from NOW when previous stage completes)
   tiempo_verificacion_condicion?: number // Hours to wait before checking condition (default: 24)
   fecha_inicio_personalizada?: string // Optional custom start date (ISO format)
-  plantilla_mensaje?: string
+  // Plantilla support: can use either reference (ID) or inline text
+  plantilla_id?: number // Reference to saved plantilla (SMS or Email)
+  plantilla_id_email?: number // For tipo_mensaje='ambos': Email plantilla ID
+  plantilla_mensaje?: string // Fallback: inline template content
+  plantilla_type?: 'reference' | 'inline' // Which type is being used
   oferta_infocom_id?: number
   oferta?: {
     id: number
@@ -143,7 +147,11 @@ export interface SerializedStage {
   label: string
   dia_envio: number
   tipo_mensaje: TipoMensaje
-  plantilla_mensaje: string
+  // Plantilla: either ID reference or inline content
+  plantilla_id?: number // Reference to saved plantilla
+  plantilla_id_email?: number // For tipo_mensaje='ambos': Email plantilla ID
+  plantilla_mensaje?: string // Inline template content (fallback)
+  plantilla_type?: 'reference' | 'inline' // Which type is being used
   oferta_infocom_id?: number
   activo: boolean
   fecha_inicio_personalizada?: string // Custom date override

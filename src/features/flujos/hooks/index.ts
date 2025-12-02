@@ -6,3 +6,4 @@ export {
   useDeleteFlujo,
 } from './useFlujos'
 export { useFlujosDetail } from './useFlujosDetail'
+export { useUpdateFlowConfiguration } from './useUpdateFlowConfiguration'

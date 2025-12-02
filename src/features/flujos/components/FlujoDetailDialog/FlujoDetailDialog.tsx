@@ -106,7 +106,7 @@ export function FlujoDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[80vw] max-h-[90vh] bg-white border border-segal-blue/20 shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <DialogHeader className="border-b border-segal-blue/10 pb-4 flex-shrink-0">
+        <DialogHeader className="border-b border-segal-blue/10 pb-4 shrink-0">
           <DialogTitle className="text-2xl font-bold text-segal-dark">
             {flujo.nombre || 'Detalles del Flujo'}
           </DialogTitle>
@@ -116,7 +116,7 @@ export function FlujoDetailDialog({
         </DialogHeader>
 
         {/* Tabs Navigation */}
-        <div className="border-b border-segal-blue/10 flex-shrink-0 bg-segal-blue/2 px-6">
+        <div className="border-b border-segal-blue/10 shrink-0 bg-segal-blue/2 px-6">
           <div className="flex gap-1">
             {TABS.map((tab) => {
               const Icon = tab.icon
@@ -250,7 +250,12 @@ export function FlujoDetailDialog({
                                     {index + 1}
                                   </div>
                                   <h4 className="text-sm font-bold text-segal-dark">
-                                    Día {etapa.dia_envio} - {etapa.tipo_mensaje === 'email' ? '📧 Email' : etapa.tipo_mensaje === 'sms' ? '📱 SMS' : '📧📱 Email + SMS'}
+                                    Día {etapa.dia_envio} - {
+                                      etapa.tipo_mensaje === 'email' ? '📧 Email' :
+                                      etapa.tipo_mensaje === 'sms' ? '📱 SMS' :
+                                      etapa.tipo_mensaje === 'ambos' ? '📧📱 Email + SMS' :
+                                      '❓ Desconocido'
+                                    }
                                   </h4>
                                 </div>
 
@@ -277,11 +282,19 @@ export function FlujoDetailDialog({
                                           <Mail className="h-4 w-4 text-segal-blue" />
                                           <span className="text-sm font-medium text-segal-dark">Email</span>
                                         </>
-                                      ) : (
+                                      ) : etapa.tipo_mensaje === 'sms' ? (
                                         <>
                                           <MessageSquare className="h-4 w-4 text-segal-blue" />
                                           <span className="text-sm font-medium text-segal-dark">SMS</span>
                                         </>
+                                      ) : etapa.tipo_mensaje === 'ambos' ? (
+                                        <>
+                                          <Mail className="h-4 w-4 text-segal-blue" />
+                                          <MessageSquare className="h-4 w-4 text-segal-blue" />
+                                          <span className="text-sm font-medium text-segal-dark">Email + SMS</span>
+                                        </>
+                                      ) : (
+                                        <span className="text-sm font-medium text-segal-dark/50">Desconocido</span>
                                       )}
                                     </div>
                                   </div>

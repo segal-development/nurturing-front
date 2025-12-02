@@ -116,16 +116,6 @@ export function Flujos() {
     setProgressPanelOpen(true)
   }
 
-  const handleEditSuccess = () => {
-    setEditDialogOpen(false)
-    setSelectedFlujo(null)
-    console.log('🔄 [handleEditSuccess] Invalidando caché de flujos')
-    queryClient.invalidateQueries({
-      queryKey: ['flujos-page']
-    })
-    resetPage()
-  }
-
   // Loading estado inicial de opciones
   if (isLoadingOpciones) {
     return (
@@ -180,6 +170,7 @@ export function Flujos() {
         filtros={filtros}
         opciones={opciones}
         onFiltrosChange={handleFiltrosChange}
+        isLoadingOpciones={isLoadingOpciones}
       />
 
       {/* Loading flujos */}
@@ -280,7 +271,6 @@ export function Flujos() {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         flujo={selectedFlujo}
-        onSuccess={handleEditSuccess}
       />
 
       {/* Panel de progreso de ejecución */}

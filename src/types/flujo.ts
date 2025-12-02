@@ -17,7 +17,11 @@ export interface EtapaFlujo {
   flujo_id: number;
   dia_envio: number;
   tipo_mensaje: TipoMensaje;
-  plantilla_mensaje: string;
+  // Plantilla: either ID reference or inline content
+  plantilla_id?: number; // Reference to saved plantilla (SMS or Email)
+  plantilla_id_email?: number; // For tipo_mensaje='ambos': Email plantilla ID
+  plantilla_mensaje?: string; // Fallback: inline template content
+  plantilla_type?: 'reference' | 'inline'; // Which type is being used
   oferta_infocom_id?: number;
   oferta?: {
     id: number;

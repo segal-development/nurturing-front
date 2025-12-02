@@ -78,6 +78,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
         dia_envio: 1,
         tipo_mensaje: 'email',
         plantilla_mensaje: '',
+        plantilla_type: 'inline',
         activo: true,
       } as StageNodeData,
       position: { x: 400, y: newY },
