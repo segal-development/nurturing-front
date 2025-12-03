@@ -28,6 +28,7 @@ interface CreateFlujoWithBuilderProps {
   onOpenChange: (open: boolean) => void
   opciones?: OpcionesFlujos
   onSuccess?: () => void
+  initialOriginId?: string | null
 }
 
 export function CreateFlujoWithBuilder({
@@ -35,41 +36,69 @@ export function CreateFlujoWithBuilder({
   onOpenChange,
   opciones,
   onSuccess,
+  initialOriginId,
 }: CreateFlujoWithBuilderProps) {
   // Step management
   const [currentStep, setCurrentStep] = useState<Step>('origin')
+
+  // Origen seleccionado
   const [selectedOriginId, setSelectedOriginId] = useState<string | null>(null)
   const [selectedOriginName, setSelectedOriginName] = useState<string | null>(null)
+
+  // Prospectos seleccionados
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
 
-  // Prospectos state
+  // Prospectos disponibles
   const [prospectos, setProspectos] = useState<Prospecto[]>([])
   const [loadingProspectos, setLoadingProspectos] = useState(false)
 
-  // Form state
+  // UI state
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Reset when dialog opens
-  useEffect(() => {
-    if (open) {
-      setCurrentStep('origin')
-      setSelectedOriginId(null)
-      setSelectedOriginName(null)
-      setSelectedProspectoIds(new Set())
-      setError(null)
-    }
-  }, [open])
+  /**
+   * Obtiene el nombre de un origen por su ID
+   */
+  const getOriginNameById = (originId: string): string | null => {
+    return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
+  }
 
   /**
-   * Load prospects from selected origin
+   * Reinicia estado del diálogo
+   */
+  const resetDialogState = () => {
+    setCurrentStep('origin')
+    setSelectedOriginId(null)
+    setSelectedOriginName(null)
+    setSelectedProspectoIds(new Set())
+    setSelectedTipoProspectoId(null)
+    setError(null)
+  }
+
+  /**
+   * Maneja la apertura del diálogo y carga origen inicial si existe
+   */
+  useEffect(() => {
+    if (!open) return
+
+    resetDialogState()
+
+    // Si hay origen inicial, lo carga automáticamente
+    if (initialOriginId) {
+      handleOriginSelect(initialOriginId)
+    }
+  }, [open, initialOriginId])
+
+  /**
+   * Carga prospectos del origen seleccionado
+   * Early return si hay error de carga
    */
   const handleOriginSelect = async (originId: string) => {
     setSelectedOriginId(originId)
-    const origin = opciones?.origenes?.find((o) => o.id === originId)
-    setSelectedOriginName(origin?.nombre || null)
+    setSelectedOriginName(getOriginNameById(originId))
     setLoadingProspectos(true)
+    setError(null)
 
     try {
       const response = await prospectosService.getAll({
@@ -78,91 +107,111 @@ export function CreateFlujoWithBuilder({
       })
       setProspectos(response.data)
       setCurrentStep('prospects')
-    } catch (err) {
-      setError('Error al cargar prospectos. Intenta nuevamente.')
-      console.error(err)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setError(`Error al cargar prospectos: ${errorMessage}`)
+      console.error('❌ Error cargando prospectos:', { originId, error })
     } finally {
       setLoadingProspectos(false)
     }
   }
 
   /**
-   * Move to builder after prospects selection
+   * Valida y avanza a step de builder
+   * Usa early returns para validaciones
    */
   const handleProspectsSelect = () => {
+    // Validación 1: Mínimo un prospecto
     if (selectedProspectoIds.size === 0) {
       setError('Debes seleccionar al menos un prospecto')
       return
     }
+
+    // Validación 2: Tipo prospecto obligatorio
     if (selectedTipoProspectoId === null) {
       setError('Debes seleccionar un tipo de prospecto')
       return
     }
+
+    // Validaciones pasadas
     setError(null)
     setCurrentStep('builder')
   }
 
   /**
-   * Go back to previous step
+   * Retrocede al paso anterior
    */
   const handleBack = () => {
     if (currentStep === 'prospects') {
       setCurrentStep('origin')
-    } else if (currentStep === 'builder') {
+      return
+    }
+
+    if (currentStep === 'builder') {
       setCurrentStep('prospects')
+      return
     }
   }
 
   /**
-   * Save flow from builder
+   * Construye payload para crear flujo en backend
+   */
+  const buildFlowPayload = (config: any) => {
+    return {
+      flujo: {
+        nombre: config.nombre,
+        descripcion: config.descripcion,
+        tipo_prospecto_id: selectedTipoProspectoId,
+        activo: true,
+      },
+      origen_id: selectedOriginId,
+      origen_nombre: selectedOriginName,
+      prospectos: {
+        total_seleccionados: selectedProspectoIds.size,
+        ids_seleccionados: Array.from(selectedProspectoIds),
+        total_disponibles: prospectos.length,
+        tipo_prospecto_id: selectedTipoProspectoId,
+      },
+      visual: config.visual,
+      structure: config.structure,
+      stages: config.stages,
+      metadata: {
+        fecha_creacion: new Date().toISOString(),
+        navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      },
+    }
+  }
+
+  /**
+   * Guarda flujo en backend
+   * Manejo robusto de errores con logs detallados
    */
   const handleSaveFlow = async (config: any) => {
     setSaving(true)
-    try {
-      const payload = {
-        flujo: {
-          nombre: config.nombre,
-          descripcion: config.descripcion,
-          tipo_prospecto_id: selectedTipoProspectoId,  // 13, 14, o 15
-          activo: true,
-        },
-        origen_id: selectedOriginId,
-        origen_nombre: selectedOriginName,
-        prospectos: {
-          total_seleccionados: selectedProspectoIds.size,
-          ids_seleccionados: Array.from(selectedProspectoIds),
-          total_disponibles: prospectos.length,
-          tipo_prospecto_id: selectedTipoProspectoId,  // 13, 14, o 15
-        },
-        // Estructura visual para reconstruir el editor
-        visual: config.visual,
-        // Estructura para ejecutar el flujo en el backend
-        structure: config.structure,
-        // Datos legados para compatibilidad
-        stages: config.stages,
-        metadata: {
-          fecha_creacion: new Date().toISOString(),
-          navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-        },
-      }
+    setError(null)
 
-      // LOG: Mostrar el payload en consola para debugging
-      console.log('=== PAYLOAD ENVIADO AL BACKEND ===')
-      console.log(JSON.stringify(payload, null, 2))
-      console.log('===================================')
+    try {
+      const payload = buildFlowPayload(config)
+
+      console.log('📤 Enviando payload a backend:', JSON.stringify(payload, null, 2))
 
       await flujosService.createWithProspectos(payload)
 
+      console.log('✅ Flujo creado exitosamente')
       onOpenChange(false)
       onSuccess?.()
-    } catch (err) {
-      setError('Error al crear el flujo. Intenta nuevamente.')
-      console.error('Error detallado:', err)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setError(`Error al crear el flujo: ${errorMessage}`)
+      console.error('❌ Error creando flujo:', { payload: buildFlowPayload(config), error })
     } finally {
       setSaving(false)
     }
   }
 
+  /**
+   * Cierra el modal
+   */
   const handleClose = () => {
     onOpenChange(false)
   }
@@ -210,7 +259,7 @@ export function CreateFlujoWithBuilder({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          {currentStep === 'origin' && (
+          {currentStep === 'origin' && !initialOriginId && (
             <OriginSelector
               opciones={opciones}
               onSelect={handleOriginSelect}

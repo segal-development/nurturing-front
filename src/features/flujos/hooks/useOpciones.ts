@@ -20,6 +20,11 @@ export function useOpciones() {
         throw err
       }
     },
+    staleTime: 2 * 60 * 1000, // Datos considerados "frescos" por 2 minutos
+    gcTime: 5 * 60 * 1000, // Mantener en caché por 5 minutos
+    refetchOnMount: true, // Siempre refetch al montar el componente
+    refetchOnWindowFocus: true, // Refetch cuando vuelve el foco a la ventana
+    refetchInterval: 3 * 60 * 1000, // Refetch automático cada 3 minutos
   })
 
   console.log('🔍 useOpciones hook - data:', data)

@@ -23,13 +23,18 @@ import type { FlujoNurturing } from '@/types/flujo'
 const ITEMS_PER_PAGE = 15
 
 export function Flujos() {
-  // Estado local
+  // Estado local para diálogos
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [progressPanelOpen, setProgressPanelOpen] = useState(false)
+
+  // Estado para flujos seleccionados
   const [selectedFlujo, setSelectedFlujo] = useState<FlujoNurturing | null>(null)
   const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null)
+
+  // Estado para crear flujo desde origen preseleccionado
+  const [initialOriginIdForCreation, setInitialOriginIdForCreation] = useState<string | null>(null)
 
   // Query client para invalidar caché
   const queryClient = useQueryClient()
@@ -63,54 +68,89 @@ export function Flujos() {
     resetPage()
   }
 
+  /**
+   * Navega entre páginas con early returns
+   */
   const handlePageChange = (page: number) => {
     if (page === currentPage - 1) {
       goToPreviousPage()
-    } else if (page === currentPage + 1) {
-      goToNextPage(totalPages)
-    } else {
-      resetPage()
-      // TODO: Implementar goToPage
+      return
     }
+
+    if (page === currentPage + 1) {
+      goToNextPage(totalPages)
+      return
+    }
+
+    resetPage()
   }
 
+  /**
+   * Invalida caché de flujos y reinicia paginación
+   */
+  const invalidateFlujosCache = () => {
+    console.log('🔄 Invalidando caché de flujos y reiniciando paginación')
+    queryClient.invalidateQueries({
+      queryKey: ['flujos-page']
+    })
+    resetPage()
+  }
+
+  /**
+   * Abre modal para crear nuevo flujo con origen preseleccionado si existe
+   */
   const handleCreateFlujo = () => {
+    setInitialOriginIdForCreation(filtros.origenId)
     setCreateDialogOpen(true)
   }
 
+  /**
+   * Limpia estado después de crear flujo exitosamente
+   */
   const handleCreateFlujoSuccess = () => {
     setCreateDialogOpen(false)
-    // Invalidar caché de flujos para recargarlos - usar queryKey exacto con prefijo
-    console.log('🔄 [handleCreateFlujoSuccess] Invalidando caché de flujos')
-    queryClient.invalidateQueries({
-      queryKey: ['flujos-page']
-    })
-    resetPage()
+    setInitialOriginIdForCreation(null)
+    invalidateFlujosCache()
   }
 
-  const handleViewFlujo = (id: number) => {
-    const flujo = flujos.find((f) => f.id === id) || null
-    setSelectedFlujo(flujo)
+  /**
+   * Cierra modal de creación y limpia origen inicial
+   */
+  const handleCreateDialogClose = () => {
+    setCreateDialogOpen(false)
+    setInitialOriginIdForCreation(null)
+  }
+
+  /**
+   * Busca flujo por ID y lo abre en modal de detalle
+   */
+  const handleViewFlujo = (flujoId: number) => {
+    const flujoEncontrado = flujos.find((flujo) => flujo.id === flujoId) ?? null
+    setSelectedFlujo(flujoEncontrado)
     setDetailDialogOpen(true)
   }
 
-  const handleEditFlujo = (id: number) => {
-    const flujo = flujos.find((f) => f.id === id) || null
-    setSelectedFlujo(flujo)
+  /**
+   * Busca flujo por ID y lo abre en modal de edición
+   */
+  const handleEditFlujo = (flujoId: number) => {
+    const flujoEncontrado = flujos.find((flujo) => flujo.id === flujoId) ?? null
+    setSelectedFlujo(flujoEncontrado)
     setEditDialogOpen(true)
   }
 
+  /**
+   * Cierra modal de detalle y refresca lista de flujos
+   */
   const handleDeleteFlujo = () => {
     setDetailDialogOpen(false)
     setSelectedFlujo(null)
-    // Invalidar caché de flujos para recargarlos - usar queryKey exacto con prefijo
-    console.log('🔄 [handleDeleteFlujo] Invalidando caché de flujos')
-    queryClient.invalidateQueries({
-      queryKey: ['flujos-page']
-    })
-    resetPage()
+    invalidateFlujosCache()
   }
 
+  /**
+   * Abre panel de ejecución para un flujo específico
+   */
   const handleEjecutarFlujo = (flujoId: number) => {
     setSelectedFlujoId(flujoId)
     setProgressPanelOpen(true)
@@ -196,7 +236,7 @@ export function Flujos() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state - No origen seleccionado */}
       {!filtros.origenId && (
         <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-12 text-center">
           <AlertCircle className="h-12 w-12 text-segal-blue/50 mx-auto mb-4" />
@@ -218,8 +258,8 @@ export function Flujos() {
         </div>
       )}
 
-      {/* Tabla y Paginación */}
-      {filtros.origenId && !isLoadingFlujos && (
+      {/* Tabla y Paginación - Mostrar tabla siempre que haya origen seleccionado */}
+      {filtros.origenId && !isLoadingFlujos && !isErrorFlujos && (
         <>
           <FlujosTable
             flujos={flujos}
@@ -236,22 +276,16 @@ export function Flujos() {
               onPageChange={handlePageChange}
             />
           )}
-
-          {flujos.length === 0 && (
-            <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-8 text-center">
-              <AlertCircle className="h-10 w-10 text-segal-blue/50 mx-auto mb-3" />
-              <p className="text-segal-dark/60">No hay flujos para este origen</p>
-            </div>
-          )}
         </>
       )}
 
       {/* Dialog para crear flujo con FlowBuilder */}
       <CreateFlujoWithBuilder
         open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
+        onOpenChange={handleCreateDialogClose}
         opciones={opciones}
         onSuccess={handleCreateFlujoSuccess}
+        initialOriginId={initialOriginIdForCreation}
       />
 
       {/* Dialog para ver detalle del flujo */}
