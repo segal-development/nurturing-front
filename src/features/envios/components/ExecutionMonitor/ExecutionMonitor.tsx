@@ -60,6 +60,7 @@ export function ExecutionMonitor({ flujoId, ejecucionId, onComplete }: Execution
         className="flex items-center justify-center p-8"
         role="status"
         aria-label="Cargando estado de ejecución"
+        aria-live="polite"
       >
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin text-segal-blue" />
