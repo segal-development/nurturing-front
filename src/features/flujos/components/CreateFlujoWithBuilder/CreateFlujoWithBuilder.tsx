@@ -151,7 +151,22 @@ export function CreateFlujoWithBuilder({
       console.log(JSON.stringify(payload, null, 2))
       console.log('===================================')
 
-      await flujosService.createWithProspectos(payload)
+      const createdFlow = await flujosService.createWithProspectos(payload)
+
+      // Guardar la configuración visual y estructura
+      // Esto asegura que el nodo inicial y otros datos se guarden correctamente
+      if (createdFlow && createdFlow.id && config.visual && config.structure) {
+        try {
+          await flujosService.updateFlowConfiguration(createdFlow.id, {
+            config_visual: config.visual,
+            config_structure: config.structure,
+          })
+          console.log('✅ Configuración visual y estructura guardadas correctamente')
+        } catch (err) {
+          console.warn('⚠️ Error al guardar la configuración visual, pero el flujo fue creado:', err)
+          // No lanzar error aquí - el flujo ya se creó
+        }
+      }
 
       onOpenChange(false)
       onSuccess?.()
