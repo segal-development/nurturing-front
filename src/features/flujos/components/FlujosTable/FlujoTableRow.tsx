@@ -50,13 +50,13 @@ export function FlujoTableRow({
     0
 
   return (
-    <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5">
-      <TableCell className="font-medium text-segal-dark">{flujo.nombre}</TableCell>
-      <TableCell className="text-segal-dark/70">
+    <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:border-segal-blue">
+      <TableCell className="font-medium text-segal-dark dark:text-gray-300">{flujo.nombre}</TableCell>
+      <TableCell className="text-segal-dark/70 dark:text-gray-300">
         {getTipoProspectoName(flujo.tipo_prospecto)}
       </TableCell>
       <TableCell className="text-segal-dark">
-        <Badge variant="outline" className="border-segal-blue/30 text-segal-blue">
+        <Badge variant="outline" className="border-segal-blue/30 text-segal-blue dark:text-gray-300">
           {etapasCount} etapas
         </Badge>
       </TableCell>
@@ -72,10 +72,10 @@ export function FlujoTableRow({
           {flujo.activo ? 'Activo' : 'Inactivo'}
         </Badge>
       </TableCell>
-      <TableCell className="text-segal-dark/70 text-sm">
+      <TableCell className="text-segal-dark/70 text-sm dark:text-gray-300">
         {flujo.user?.name || '-'}
       </TableCell>
-      <TableCell className="text-segal-dark/70 text-sm">
+      <TableCell className="text-segal-dark/70 text-sm dark:text-gray-300">
         {formatDate(flujo.created_at)}
       </TableCell>
       <TableCell className="text-right">
@@ -84,7 +84,7 @@ export function FlujoTableRow({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 hover:bg-segal-blue/10 text-segal-dark"
+              className="h-8 w-8 p-0 hover:bg-segal-blue/10 text-segal-dark dark:text-gray-300"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>

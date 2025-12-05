@@ -60,9 +60,9 @@ const getColumnDisplayName = (header: string | unknown, columnId: string): strin
  */
 const getVisibilityIcon = (isVisible: boolean) => {
   return isVisible ? (
-    <Eye className="h-4 w-4 text-segal-green" />
+    <Eye className="h-4 w-4 text-segal-green dark:text-emerald-400" />
   ) : (
-    <EyeOff className="h-4 w-4 text-segal-dark/40" />
+    <EyeOff className="h-4 w-4 text-segal-dark/40 dark:text-white/40" />
   )
 }
 
@@ -110,18 +110,18 @@ export function DataTable<TData extends Prospecto, TValue>({
             <Button
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-dark hover:bg-segal-blue/5"
+              className="border-segal-blue/30 text-segal-dark hover:bg-segal-blue/5 dark:text-white dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20"
             >
               <Eye className="mr-2 h-4 w-4" />
               Columnas
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white">
-            <DropdownMenuLabel className="text-segal-dark font-semibold">
+          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 dark:border-slate-700 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
+            <DropdownMenuLabel className="text-segal-dark font-semibold dark:text-white">
               Mostrar/Ocultar Columnas
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="dark:bg-slate-700" />
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
@@ -132,7 +132,7 @@ export function DataTable<TData extends Prospecto, TValue>({
                 return (
                   <DropdownMenuCheckboxItem
                     key={column.id}
-                    className="cursor-pointer text-segal-dark"
+                    className="cursor-pointer text-segal-dark dark:text-white hover:bg-segal-blue/5 dark:hover:bg-slate-800 focus:bg-segal-blue/5 dark:focus:bg-slate-800"
                     checked={isVisible}
                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
                   >
@@ -148,14 +148,14 @@ export function DataTable<TData extends Prospecto, TValue>({
       </div>
 
       {/* Tabla */}
-      <div className="border border-segal-blue/10 rounded-lg overflow-hidden">
+      <div className="border border-segal-blue/10 rounded-lg overflow-hidden dark:border-slate-700 dark:bg-slate-900">
         <Table>
-          <TableHeader className="bg-segal-blue/5 border-b border-segal-blue/10">
+          <TableHeader className="bg-segal-blue/5 border-b border-segal-blue/10 dark:bg-slate-800 dark:border-slate-700">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="text-segal-dark font-semibold">
+                    <TableHead key={header.id} className="text-segal-dark font-semibold dark:text-white">
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   )
@@ -169,7 +169,7 @@ export function DataTable<TData extends Prospecto, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="hover:bg-segal-blue/5 border-b border-segal-blue/5"
+                  className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:hover:bg-slate-800 dark:border-slate-700"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -180,7 +180,7 @@ export function DataTable<TData extends Prospecto, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-segal-dark/60">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-segal-dark/60 dark:text-white/60">
                   No hay prospectos para esta importación
                 </TableCell>
               </TableRow>

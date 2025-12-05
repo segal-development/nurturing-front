@@ -30,15 +30,15 @@ export function OptionalFilters({
     <div className="flex gap-4 flex-wrap">
       {/* Filtro: TIPO DE DEUDOR (OPCIONAL) */}
       <div className="flex-1 min-w-[200px]">
-        <label className="block text-sm font-semibold text-segal-dark mb-2">Tipo de Deudor</label>
+        <label className="block text-sm font-semibold text-segal-dark mb-2 dark:text-white">Tipo de Deudor</label>
         <Select
           value={tipoDeudorSelectValue}
           onValueChange={(value) => onTipoDeudorChange(value === 'todos-tipos' ? null : value)}
         >
-          <SelectTrigger className="w-full border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20">
+          <SelectTrigger className="w-full border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
             <SelectValue placeholder="Todos los tipos" />
           </SelectTrigger>
-          <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg">
+          <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
             <SelectItem value="todos-tipos">Todos los tipos</SelectItem>
             {opciones?.tipos_deudor?.map((tipo) => (
               <SelectItem key={tipo.value} value={tipo.value}>

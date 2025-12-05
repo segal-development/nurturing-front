@@ -114,15 +114,15 @@ export function CompactFiltersBar({
       {/* Primera fila: Importación + Estado */}
       <div className="flex gap-3">
         <div className="flex-1 flex flex-col">
-          <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight">
+          <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
             Importación <span className="text-segal-red">*</span>
           </label>
           {opciones?.importaciones && opciones.importaciones.length > 0 ? (
             <Select value={selectValueImportacion} onValueChange={handleImportacionChange}>
-              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 truncate">
+              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 truncate dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 <SelectValue placeholder="Selecciona una fuente..." className="truncate" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg">
+              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 {opciones?.importaciones?.map((imp) => (
                   <SelectItem key={imp.id} value={imp.id.toString()}>
                     <span className="text-xs truncate">
@@ -133,7 +133,7 @@ export function CompactFiltersBar({
               </SelectContent>
             </Select>
           ) : (
-            <div className="h-9 px-3 rounded-lg border border-segal-blue/30 bg-white text-xs text-segal-dark/60 flex items-center">
+            <div className="h-9 px-3 rounded-lg border border-segal-blue/30 bg-white text-xs text-segal-dark/60 flex items-center dark:text-gray-300">
               Cargando...
             </div>
           )}
@@ -142,14 +142,14 @@ export function CompactFiltersBar({
         {/* Filtro Estado */}
         {filtros.importacionId && (
           <div className="flex-1 flex flex-col">
-            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight">
+            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
               Estado
             </label>
             <Select value={selectValueEstado} onValueChange={(value) => handleEstadoChange(value === 'todos-estados' ? null : value)}>
-              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20">
+              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg">
+              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 <SelectItem value="todos-estados">Todos los estados</SelectItem>
                 {opciones?.estados?.map((estado) => (
                   <SelectItem key={estado.value} value={estado.value}>
@@ -167,14 +167,14 @@ export function CompactFiltersBar({
         <div className="flex gap-3">
           {/* Filtro Tipo de Deuda */}
           <div className="flex-1 flex flex-col">
-            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight">
+            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
               Tipo de Deuda
             </label>
             <Select value={selectValueTipo} onValueChange={(value) => handleTipoChange(value === 'todos-tipos' ? null : value)}>
-              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20">
+              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg">
+              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
                 <SelectItem value="todos-tipos">Todos los tipos</SelectItem>
                 {opciones?.tipos_prospecto?.map((tipo) => (
                   <SelectItem key={tipo.id} value={tipo.id.toString()}>
@@ -187,7 +187,7 @@ export function CompactFiltersBar({
 
           {/* Búsqueda */}
           <div className="flex-1 flex flex-col">
-            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight">
+            <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
               Buscar
             </label>
             <div className="relative">
@@ -197,7 +197,7 @@ export function CompactFiltersBar({
                 value={searchValue}
                 onChange={(e) => onSearchChange(e.target.value)}
                 disabled={isSearchDisabled}
-                className="h-9 w-full pl-9 text-sm border-segal-blue/20 focus:border-segal-blue focus:ring-segal-blue/20 bg-white disabled:opacity-50"
+                className="h-10 w-full pl-9 text-sm border-segal-blue/20 focus:border-segal-blue focus:ring-segal-blue/20 bg-white disabled:opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20"
               />
             </div>
           </div>

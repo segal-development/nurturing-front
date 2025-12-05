@@ -27,7 +27,7 @@ export function ProspectosPagination({
 
   return (
     <div className="flex flex-col gap-4 items-center justify-between p-4 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-      <div className="text-sm text-segal-dark/70 w-full text-center">
+      <div className="text-sm text-segal-dark/70 w-full text-center dark:text-segal-blue">
         Página <span className="font-semibold">{currentPage}</span> de{' '}
         <span className="font-semibold">{totalPages}</span>
       </div>

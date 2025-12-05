@@ -116,7 +116,7 @@ export function Prospectos() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
+          <Loader2 className="h-8 w-8 animate-spin text-segal-blue dark:text-gray-300" />
           <p className="text-segal-dark/60">Cargando opciones de filtrado...</p>
         </div>
       </div>
@@ -126,7 +126,7 @@ export function Prospectos() {
   if (isErrorOpciones) {
     return (
       <div className="rounded-lg border border-segal-red/30 bg-segal-red/10 p-4">
-        <p className="text-segal-red font-medium">
+        <p className="text-segal-red font-medium dark:text-gray-300">
           Error al cargar las opciones de filtrado. Intenta de nuevo más tarde.
         </p>
       </div>
@@ -138,8 +138,8 @@ export function Prospectos() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-segal-dark">Prospectos</h1>
-          <p className="text-segal-dark/60">
+          <h1 className="text-3xl font-bold tracking-tight text-segal-dark dark:text-gray-300">Prospectos</h1>
+          <p className="text-segal-dark/60 dark:text-gray-300">
             {filtros.importacionId
               ? `Prospectos filtrados por fuente de importación`
               : 'Selecciona una fuente de importación para comenzar'}
@@ -209,7 +209,7 @@ export function Prospectos() {
           {/* Resumen de registros */}
           {prospectos.length > 0 && (
             <div className="flex items-center gap-4 px-4 py-3 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-              <div className="text-sm text-segal-dark">
+              <div className="text-sm text-segal-dark dark:text-gray-300">
                 Mostrando <span className="font-semibold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> a{' '}
                 <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, total)}</span> de{' '}
                 <span className="font-semibold text-segal-blue">{total}</span> registros

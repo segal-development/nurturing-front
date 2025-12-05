@@ -33,7 +33,7 @@ export function FlujosTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-segal-dark/60">
+              <TableCell colSpan={7} className="text-center py-8 text-segal-dark/60 dark:text-white">
                 No hay flujos para este origen
               </TableCell>
             </TableRow>

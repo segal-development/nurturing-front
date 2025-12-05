@@ -144,11 +144,11 @@ export function Flujos() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2 dark:text-white">
             <GitBranch className="h-8 w-8 text-segal-blue" />
             Flujos de Nurturing
           </h1>
-          <p className="text-segal-dark/60 mt-2">
+          <p className="text-segal-dark/60 mt-2 dark:text-white">
             {filtros.origenId
               ? `Gestiona y crea flujos de nurturing para ${
                   opciones?.origenes?.find((o) => o.id === filtros.origenId)?.nombre || 'este origen'
@@ -200,8 +200,8 @@ export function Flujos() {
       {!filtros.origenId && (
         <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-12 text-center">
           <AlertCircle className="h-12 w-12 text-segal-blue/50 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-segal-dark mb-2">Selecciona un origen</p>
-          <p className="text-segal-dark/60">
+          <p className="text-lg font-semibold text-segal-dark mb-2 dark:text-white">Selecciona un origen</p>
+          <p className="text-segal-dark/60 dark:text-white">
             Elige un origen del selector anterior para ver los flujos disponibles
           </p>
         </div>
@@ -210,8 +210,8 @@ export function Flujos() {
       {/* Resumen de registros */}
       {filtros.origenId && flujos.length > 0 && !isLoadingFlujos && (
         <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-          <div className="text-sm text-segal-dark">
-            Mostrando <span className="font-semibold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
+          <div className="text-sm text-segal-dark dark:text-gray-300">
+            Mostrando <span className="font-semibold dark:text-white">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
             <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, total)}</span> de{' '}
             <span className="font-semibold text-segal-blue">{total}</span> flujos
           </div>
@@ -240,7 +240,7 @@ export function Flujos() {
           {flujos.length === 0 && (
             <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-8 text-center">
               <AlertCircle className="h-10 w-10 text-segal-blue/50 mx-auto mb-3" />
-              <p className="text-segal-dark/60">No hay flujos para este origen</p>
+              <p className="text-segal-dark/60 dark:text-white">No hay flujos para este origen</p>
             </div>
           )}
         </>
