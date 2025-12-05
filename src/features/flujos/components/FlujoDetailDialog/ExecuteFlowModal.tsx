@@ -1,9 +1,9 @@
 /**
  * Modal para ejecutar un flujo de nurturing
- * Permite seleccionar prospectos y fecha de inicio (opcional)
+ * Pre-carga los prospectos del flujo, permite modificarlos y establecer fecha de inicio
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Info } from 'lucide-react'
 import { flujosService } from '@/api/flujos.service'
 import type { FlujoNurturing } from '@/types/flujo'
 import { ProspectoMultiSelect } from '../ProspectoMultiSelect'
@@ -29,7 +29,17 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose }: ExecuteFlowModalPro
   const [prospectoIds, setProspectoIds] = useState<number[]>([])
   const [fechaInicio, setFechaInicio] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showModifyOptions, setShowModifyOptions] = useState(false)
   const queryClient = useQueryClient()
+
+  // Pre-cargar prospectos del flujo al abrir
+  useEffect(() => {
+    if (isOpen && flujo) {
+      const prospectos = flujo.prospectos_en_flujo?.map((pf) => pf.prospecto_id) || []
+      setProspectoIds(prospectos)
+      setShowModifyOptions(prospectos.length === 0) // Mostrar opciones si no hay prospectos
+    }
+  }, [isOpen, flujo])
 
   if (!flujo) {
     return null
@@ -86,25 +96,77 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose }: ExecuteFlowModalPro
         <DialogHeader>
           <DialogTitle>Ejecutar: {flujo.nombre}</DialogTitle>
           <DialogDescription>
-            Selecciona los prospectos y la fecha de inicio para ejecutar este flujo
+            {showModifyOptions
+              ? 'Modifica los prospectos si es necesario'
+              : 'Se ejecutará con los prospectos configurados en el flujo'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Selector de prospectos */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-segal-dark">Seleccionar prospectos:</label>
-            <ProspectoMultiSelect
-              origenId={flujo.origen_id}
-              value={prospectoIds}
-              onChange={setProspectoIds}
-            />
-            <p className="text-xs text-segal-dark/60">
-              {prospectoIds.length} prospecto{prospectoIds.length !== 1 ? 's' : ''} seleccionado{
-                prospectoIds.length !== 1 ? 's' : ''
-              }
-            </p>
-          </div>
+          {/* Información de prospectos configurados */}
+          {prospectoIds.length > 0 && !showModifyOptions && (
+            <div className="p-3 rounded bg-segal-green/5 border border-segal-green/20">
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-segal-green mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-segal-green/90">
+                    ✓ {prospectoIds.length} prospecto{prospectoIds.length !== 1 ? 's' : ''} configurado{
+                      prospectoIds.length !== 1 ? 's' : ''
+                    }
+                  </p>
+                  <p className="text-xs text-segal-green/70 mt-1">
+                    Se ejecutará el flujo con los prospectos que configuraste al crear el flujo
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Selector de prospectos - mostrar si no hay configurados o si se elige modificar */}
+          {showModifyOptions && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-segal-dark">Seleccionar prospectos:</label>
+              <ProspectoMultiSelect
+                origenId={flujo.origen_id}
+                value={prospectoIds}
+                onChange={setProspectoIds}
+              />
+              <p className="text-xs text-segal-dark/60">
+                {prospectoIds.length} prospecto{prospectoIds.length !== 1 ? 's' : ''} seleccionado{
+                  prospectoIds.length !== 1 ? 's' : ''
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Botón para modificar prospectos */}
+          {prospectoIds.length > 0 && !showModifyOptions && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowModifyOptions(true)}
+              className="w-full text-segal-blue border-segal-blue/20 hover:bg-segal-blue/5"
+            >
+              Modificar prospectos
+            </Button>
+          )}
+
+          {/* Botón para cancelar modificaciones */}
+          {showModifyOptions && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const prospectos = flujo.prospectos_en_flujo?.map((pf) => pf.prospecto_id) || []
+                setProspectoIds(prospectos)
+                setShowModifyOptions(false)
+              }}
+              disabled={isLoading}
+              className="w-full text-segal-dark/60 border-segal-dark/20"
+            >
+              Cancelar cambios
+            </Button>
+          )}
 
           {/* Fecha de inicio (opcional) */}
           <div className="space-y-2">
