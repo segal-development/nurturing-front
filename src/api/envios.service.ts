@@ -19,7 +19,7 @@ import type {
 } from '@/types/envios'
 import { apiClient } from './client'
 
-const BASE_URL = '/api/envios'
+const BASE_URL = '/envios'
 
 /**
  * EnviosService class
