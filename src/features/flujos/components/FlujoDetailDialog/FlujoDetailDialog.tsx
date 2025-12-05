@@ -26,6 +26,7 @@ import {
   Loader2,
   Trash2,
   Play,
+  Activity,
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
 import { flujosService } from '@/api/flujos.service'
@@ -33,9 +34,10 @@ import { FlujoStatisticsPanel } from './FlujoStatisticsPanel'
 import { FlowStructurePanel } from './FlowStructurePanel'
 import { ExecutionHistoryPanel } from './ExecutionHistoryPanel'
 import { ExecuteFlowModal } from './ExecuteFlowModal'
+import { ExecutionMonitor } from '@/features/envios/components'
 import type { FlujoNurturing, EtapaFlujo } from '@/types/flujo'
 
-type TabType = 'general' | 'estructura' | 'estadisticas' | 'ejecuciones'
+type TabType = 'general' | 'estructura' | 'estadisticas' | 'ejecuciones' | 'monitoreo'
 
 interface FlujoDetailDialogProps {
   open: boolean
@@ -43,6 +45,7 @@ interface FlujoDetailDialogProps {
   flujo: FlujoNurturing | null
   onEdit?: () => void
   onDelete?: () => void
+  executionId?: string
 }
 
 const TABS = [
@@ -50,6 +53,7 @@ const TABS = [
   { id: 'estructura' as TabType, label: 'Estructura', icon: GitBranch },
   { id: 'estadisticas' as TabType, label: 'Estadísticas', icon: BarChart3 },
   { id: 'ejecuciones' as TabType, label: 'Ejecuciones', icon: Clock },
+  { id: 'monitoreo' as TabType, label: 'Monitoreo', icon: Activity },
 ]
 
 export function FlujoDetailDialog({
@@ -58,6 +62,7 @@ export function FlujoDetailDialog({
   flujo: initialFlujo,
   onEdit,
   onDelete,
+  executionId,
 }: FlujoDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -341,6 +346,30 @@ export function FlujoDetailDialog({
               {/* Tab: Ejecuciones */}
               {activeTab === 'ejecuciones' && (
                 <ExecutionHistoryPanel ejecuciones={flujo.flujo_ejecuciones} />
+              )}
+
+              {/* Tab: Monitoreo - Real-time execution monitoring */}
+              {activeTab === 'monitoreo' && executionId && flujo?.id && (
+                <ExecutionMonitor
+                  flujoId={flujo.id}
+                  ejecucionId={executionId}
+                  onComplete={() => setActiveTab('ejecuciones')}
+                />
+              )}
+
+              {/* Monitoreo - No active execution */}
+              {activeTab === 'monitoreo' && !executionId && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Activity className="h-12 w-12 text-segal-blue/30 mx-auto mb-4" />
+                    <p className="text-segal-dark/60 dark:text-slate-400">
+                      No hay una ejecución activa en monitoreo
+                    </p>
+                    <p className="text-sm text-segal-dark/40 dark:text-slate-500 mt-2">
+                      Ejecuta el flujo para ver el monitoreo en tiempo real
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           )}

@@ -29,6 +29,7 @@ const NAVIGATION_ITEMS = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Prospectos', href: '/prospectos', icon: Users },
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
+  { name: 'Envíos', href: '/envios', icon: Mail },
   { name: 'Plantillas', href: '/plantillas', icon: Mail },
   { name: 'Configuración', href: '/configuracion', icon: Sliders },
 ]
