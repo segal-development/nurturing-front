@@ -51,12 +51,34 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose }: ExecuteFlowModalPro
       return
     }
 
+    // Validar fecha si se proporciona
+    if (fechaInicio) {
+      const fechaElegida = new Date(fechaInicio)
+      const ahora = new Date()
+
+      if (fechaElegida < ahora) {
+        toast.error('La fecha debe ser posterior a la fecha actual')
+        return
+      }
+    }
+
     setIsLoading(true)
     try {
-      const result = await flujosService.ejecutarFlujo(flujo.id, {
+      const payload: any = {
         prospectos_ids: prospectoIds,
-        ...(fechaInicio && { fecha_inicio_programada: fechaInicio }),
-      })
+      }
+
+      // Agregar origen_id si está disponible
+      if (flujo.origen_id) {
+        payload.origen_id = flujo.origen_id
+      }
+
+      // Agregar fecha solo si es válida
+      if (fechaInicio) {
+        payload.fecha_inicio_programada = new Date(fechaInicio).toISOString()
+      }
+
+      const result = await flujosService.ejecutarFlujo(flujo.id, payload)
 
       toast.success(`Flujo iniciado: ${result.id}`, {
         description: fechaInicio
@@ -103,6 +125,18 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose }: ExecuteFlowModalPro
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Advertencia si no hay origen */}
+          {!flujo.origen_id && (
+            <div className="p-3 rounded bg-amber-50 border border-amber-200">
+              <p className="text-xs font-medium text-amber-900">
+                ⚠️ Origen no configurado
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                El flujo necesita un origen configurado para ejecutarse
+              </p>
+            </div>
+          )}
+
           {/* Información de prospectos configurados */}
           {prospectoIds.length > 0 && !showModifyOptions && (
             <div className="p-3 rounded bg-segal-green/5 border border-segal-green/20">
@@ -209,8 +243,9 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose }: ExecuteFlowModalPro
             <Button
               type="button"
               onClick={handleExecute}
-              disabled={prospectoIds.length === 0 || isLoading}
-              className="flex-1 bg-segal-green hover:bg-segal-green/90"
+              disabled={prospectoIds.length === 0 || isLoading || !flujo.origen_id}
+              className="flex-1 bg-segal-green hover:bg-segal-green/90 disabled:opacity-50"
+              title={!flujo.origen_id ? 'El flujo necesita un origen configurado' : ''}
             >
               {isLoading ? (
                 <>

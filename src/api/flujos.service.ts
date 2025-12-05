@@ -296,6 +296,7 @@ export const flujosService = {
     flujoId: number,
     config: {
       prospectos_ids: number[]
+      origen_id?: string
       fecha_inicio_programada?: string
     }
   ): Promise<{ id: number; estado: string; fecha_inicio_programada: string; mensaje: string }> {
