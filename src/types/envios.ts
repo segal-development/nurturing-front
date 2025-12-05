@@ -110,7 +110,7 @@ export interface EnviosListResponse {
 /**
  * Filter options for envios list
  */
-export interface EnviosFilters {
+export interface EnviosFilterOptions {
   estado?: EnvioEstado
   canal?: EnvioCanal
   flujo_id?: number
@@ -119,6 +119,11 @@ export interface EnviosFilters {
   pagina?: number
   por_pagina?: number
 }
+
+/**
+ * @deprecated Use EnviosFilterOptions instead
+ */
+export type EnviosFilters = EnviosFilterOptions
 
 /**
  * Query response for statistics by day

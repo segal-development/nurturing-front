@@ -8,13 +8,13 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useState, useCallback } from 'react'
-import type { EnviosFilters } from '@/types/envios'
+import type { EnviosFilterOptions } from '@/types/envios'
 import { enviosService } from '@/api/envios.service'
 
 /**
  * Default filters for initial state
  */
-const DEFAULT_FILTERS: EnviosFilters = {
+const DEFAULT_FILTERS: EnviosFilterOptions = {
   pagina: 1,
   por_pagina: 50,
 }
@@ -41,7 +41,7 @@ const DEFAULT_FILTERS: EnviosFilters = {
  *   </div>
  * )
  */
-export function useEnviosList(filters: EnviosFilters = DEFAULT_FILTERS) {
+export function useEnviosList(filters: EnviosFilterOptions = DEFAULT_FILTERS) {
   return useQuery({
     queryKey: ['envios', 'list', filters],
     queryFn: () => enviosService.list(filters),
@@ -83,9 +83,9 @@ export function useEnviosList(filters: EnviosFilters = DEFAULT_FILTERS) {
  * resetFilters()
  */
 export function useEnviosFilters() {
-  const [filters, setFiltersState] = useState<EnviosFilters>(DEFAULT_FILTERS)
+  const [filters, setFiltersState] = useState<EnviosFilterOptions>(DEFAULT_FILTERS)
 
-  const setFilters = useCallback((newFilters: Partial<EnviosFilters>) => {
+  const setFilters = useCallback((newFilters: Partial<EnviosFilterOptions>) => {
     setFiltersState((prevFilters) => ({
       ...prevFilters,
       ...newFilters,

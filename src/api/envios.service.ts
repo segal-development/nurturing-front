@@ -15,7 +15,7 @@ import type {
   EnviosTodayStats,
   EnviosFlowStatsResponse,
   EnviosListResponse,
-  EnviosFilters,
+  EnviosFilterOptions,
 } from '@/types/envios'
 import { apiClient } from './client'
 
@@ -106,7 +106,7 @@ class EnviosService {
    *   por_pagina: 50
    * })
    */
-  async list(filters: EnviosFilters = {}): Promise<EnviosListResponse> {
+  async list(filters: EnviosFilterOptions = {}): Promise<EnviosListResponse> {
     const params = {
       pagina: filters.pagina || 1,
       por_pagina: filters.por_pagina || 50,
