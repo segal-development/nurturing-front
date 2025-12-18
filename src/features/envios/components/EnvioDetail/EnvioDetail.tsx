@@ -13,7 +13,7 @@
  */
 
 import { useState } from 'react'
-import { format } from 'date-fns'
+import { format, isValid, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import {
   Card,
@@ -37,6 +37,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useEnvioDetail } from '@/features/envios/hooks'
+import { sanitizeHtml } from '@/utils/sanitize'
 
 interface EnvioDetailProps {
   envioId: number
@@ -138,13 +139,32 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
     )
   }
 
-  const statusConfig = STATUS_CONFIG[envio.estado as StatusType]
-  const formattedCreatedDate = format(new Date(envio.fecha_creacion), 'dd/MM/yyyy HH:mm', {
-    locale: es,
-  })
-  const formattedSentDate = envio.fecha_enviado
-    ? format(new Date(envio.fecha_enviado), 'dd/MM/yyyy HH:mm', { locale: es })
-    : null
+  const statusConfig = STATUS_CONFIG[envio.estado as StatusType] || STATUS_CONFIG.pendiente
+
+  /**
+   * Safely format a date string, returning fallback if invalid
+   */
+  const safeFormatDate = (dateString: string | null | undefined): string | null => {
+    if (!dateString) return null
+    
+    try {
+      // Try parsing as ISO string first
+      const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString)
+      
+      if (!isValid(date)) {
+        console.warn('Invalid date:', dateString)
+        return null
+      }
+      
+      return format(date, 'dd/MM/yyyy HH:mm', { locale: es })
+    } catch (error) {
+      console.warn('Error formatting date:', dateString, error)
+      return null
+    }
+  }
+
+  const formattedCreatedDate = safeFormatDate(envio.fecha_creacion) || 'Fecha no disponible'
+  const formattedSentDate = safeFormatDate(envio.fecha_enviado)
 
   return (
     <div className="space-y-4 p-4 dark:bg-slate-950">
@@ -386,7 +406,7 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
                 <div className="bg-white dark:bg-slate-800 border border-segal-blue/20 dark:border-slate-700 rounded p-4 max-h-96 overflow-y-auto">
                   <div
                     className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: envio.contenido }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(envio.contenido) }}
                   />
                 </div>
               </CardContent>

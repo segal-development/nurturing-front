@@ -16,6 +16,12 @@ vi.mock('../FlowVisualizationViewer', () => ({
   FlowVisualizationViewer: () => <div data-testid="flow-visualization">Flow Visualization</div>,
 }))
 
+// Mock the hooks that use TanStack Query
+vi.mock('../../../hooks/useFlowExecutionTracking', () => ({
+  useActiveExecution: () => ({ data: null, isLoading: false }),
+  useLatestExecution: () => ({ data: null, isLoading: false }),
+}))
+
 // Mock data
 const mockStages: any[] = [
   {

@@ -83,6 +83,10 @@ export function PlantillaCrearDialog({
         if (modoEmail === 'modular') {
           // Validar antes de enviar
           const validatedData = plantillaEmailSchema.parse(plantillaEmail)
+
+          console.log('🆕 [PlantillaCrearDialog] Creando plantilla email modular')
+          console.log('📤 [PlantillaCrearDialog] Componentes que se enviarán:', validatedData.componentes)
+
           await plantillasService.crearPlantillaEmail(validatedData)
         } else {
           // Email Avanzado con react-email

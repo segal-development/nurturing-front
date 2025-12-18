@@ -6,12 +6,23 @@
 /**
  * Estado de la ejecución principal del flujo
  */
-export type FlowExecutionMainState = 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed'
+export type FlowExecutionMainState = 'pending' | 'in_progress' | 'paused' | 'completed' | 'failed' | 'cancelled'
 
 /**
  * Estado de una etapa/nodo individual
  */
 export type StageExecutionState = 'pending' | 'executing' | 'completed' | 'failed'
+
+/**
+ * Estadísticas de envíos para una etapa
+ */
+export interface StageEnvios {
+  pendiente: number
+  enviado: number
+  fallido: number
+  abierto: number
+  clickeado: number
+}
 
 /**
  * Información de ejecución de una etapa/nodo individual
@@ -25,6 +36,7 @@ export interface StageExecution {
   message_id?: number
   response_athenacampaign?: any
   error_mensaje?: string
+  envios?: StageEnvios
 }
 
 /**
@@ -53,6 +65,43 @@ export interface EvaluatedCondition {
 }
 
 /**
+ * Progreso de ejecución del flujo
+ */
+export interface ExecutionProgress {
+  total_etapas: number
+  completadas: number
+  fallidas: number
+  en_ejecucion: number
+  pendientes: number
+  porcentaje: number
+}
+
+/**
+ * Timeline de ejecución de un nodo (para mostrar cuándo se ejecutó)
+ */
+export interface ExecutionTimeline {
+  node_id: string
+  stage_id: number
+  estado: 'pending' | 'executing' | 'completed' | 'failed'
+  fecha_programada: string
+  fecha_inicio?: string
+  fecha_fin?: string
+  duracion_segundos?: number
+  orden_ejecucion: number // 1, 2, 3... para saber el orden
+}
+
+/**
+ * Información de condición evaluada en ejecución
+ */
+export interface ExecutionConditionEvaluation {
+  node_id: string
+  condicion_id?: number
+  resultado: boolean // true = siguió por el camino "sí", false = por el "no"
+  fecha_evaluacion: string
+  proxima_etapa_node_id?: string // El nodo que se ejecutará después
+}
+
+/**
  * Detalles completos de una ejecución de flujo con tracking por etapa
  */
 export interface FlowExecutionDetail {
@@ -62,12 +111,22 @@ export interface FlowExecutionDetail {
   fecha_inicio_programada: string
   fecha_inicio_real?: string
   fecha_fin?: string
+  error_message?: string
+  prospectos_ids?: number[]
+  progreso?: ExecutionProgress
   etapas: StageExecution[]
   jobs: ExecutionJob[]
   condiciones: EvaluatedCondition[]
   prospecto_ids?: number[]
   total_prospectos?: number
   error_mensaje?: string
+  created_at?: string
+  updated_at?: string
+  // Timeline y evaluación de condiciones (nuevos)
+  timeline?: ExecutionTimeline[]
+  condiciones_evaluadas?: ExecutionConditionEvaluation[]
+  nodo_actual?: string // ID del nodo que se está ejecutando ahora
+  proximo_nodo?: string // ID del nodo que se ejecutará después
 }
 
 /**
@@ -155,4 +214,76 @@ export interface FlowExecutionVisualization {
   nodes: FlowNodeInfo[]
   nodeStates: Record<string, StageExecutionState>
   stats: StageProgressStats
+}
+
+/**
+ * Información resumida de una ejecución activa
+ */
+export interface ActiveExecutionInfo {
+  id: number
+  estado: FlowExecutionMainState
+  nodo_actual?: string
+  proximo_nodo?: string
+  fecha_proximo_nodo?: string
+  fecha_inicio: string
+  progreso?: {
+    porcentaje: number
+    completadas: number
+    total: number
+    en_ejecucion: number
+    pendientes: number
+    fallidas: number
+  }
+}
+
+/**
+ * Respuesta al verificar si hay ejecución activa
+ */
+export interface ActiveExecutionResponse {
+  tiene_ejecucion_activa: boolean
+  ejecucion: ActiveExecutionInfo | null
+}
+
+/**
+ * Etapa de una ejecución en el listado (viene con el GET /flujos/:id/ejecuciones)
+ */
+export interface ExecutionStageItem {
+  id: number
+  node_id: string
+  estado: StageExecutionState
+  ejecutado: boolean
+  fecha_programada: string
+  fecha_ejecucion?: string
+  error_mensaje?: string
+  created_at?: string
+  updated_at?: string
+}
+
+/**
+ * Ejecución en el listado (viene con el GET /flujos/:id/ejecuciones)
+ */
+export interface ExecutionListItem {
+  id: number
+  flujo_id: number
+  estado: FlowExecutionMainState
+  fecha_inicio_programada?: string
+  fecha_inicio_real?: string
+  fecha_fin?: string
+  created_at?: string
+  updated_at?: string
+  etapas?: ExecutionStageItem[]
+  // Campos adicionales que puede traer el backend
+  origen_id?: string
+  prospectos_ids?: number[]
+  error_message?: string
+}
+
+/**
+ * Response from GET /flujos/:id/ejecuciones
+ * Returns list of all executions with their stages
+ */
+export interface FlowExecutionsListResponse {
+  error: boolean
+  data: ExecutionListItem[]
+  mensaje?: string
 }

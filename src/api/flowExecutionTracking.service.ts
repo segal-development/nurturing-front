@@ -15,10 +15,12 @@ import type {
   PauseExecutionResponse,
   ResumeExecutionResponse,
   CancelExecutionResponse,
+  ActiveExecutionResponse,
+  FlowExecutionsListResponse,
 } from '@/types/flowExecutionTracking'
 import { apiClient } from './client'
 
-const BASE_URL = '/api/flujos'
+const BASE_URL = '/flujos'
 
 /**
  * FlowExecutionTrackingService class
@@ -35,12 +37,57 @@ class FlowExecutionTrackingService {
    * @example
    * const executions = await flowExecutionTrackingService.getExecutions(1, 20)
    */
-  async getExecutions(flujoId: number, limit: number = 20): Promise<any> {
-    const response = await apiClient.get(`${BASE_URL}/${flujoId}/ejecuciones`, {
-      params: {
-        limit,
-      },
+  async getExecutions(flujoId: number, limit: number = 20): Promise<FlowExecutionsListResponse> {
+    const url = `${BASE_URL}/${flujoId}/ejecuciones`
+    console.log('🌐 [FlowExecutionTrackingService.getExecutions] Making request:', {
+      url,
+      flujoId,
+      limit,
     })
+    
+    try {
+      const response = await apiClient.get<FlowExecutionsListResponse>(url, {
+        params: {
+          limit,
+        },
+      })
+      
+      console.log('🌐 [FlowExecutionTrackingService.getExecutions] Response:', {
+        status: response.status,
+        data: response.data,
+        hasData: !!response.data?.data,
+        dataLength: response.data?.data?.length,
+      })
+      
+      return response.data
+    } catch (error: any) {
+      console.error('❌ [FlowExecutionTrackingService.getExecutions] Error:', {
+        url,
+        flujoId,
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+      throw error
+    }
+  }
+
+  /**
+   * Check if flow has an active execution
+   *
+   * @param flujoId - Flow ID
+   * @returns Active execution info or null
+   *
+   * @example
+   * const activeExec = await flowExecutionTrackingService.getActiveExecution(1)
+   * if (activeExec.tiene_ejecucion_activa) {
+   *   console.log('Active execution:', activeExec.ejecucion)
+   * }
+   */
+  async getActiveExecution(flujoId: number): Promise<ActiveExecutionResponse> {
+    const response = await apiClient.get<ActiveExecutionResponse>(
+      `${BASE_URL}/${flujoId}/ejecuciones/activa`,
+    )
     return response.data
   }
 

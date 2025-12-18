@@ -15,7 +15,17 @@ import {
   CheckCircle2,
   Calendar,
   Clock,
+  AlertCircle,
+  Loader2,
+  Send,
+  DollarSign,
 } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import type { StageNodeData } from '../../../types/flowBuilder'
 import { PlantillaSelector } from '../components/PlantillaSelector'
 
@@ -23,6 +33,10 @@ interface StageNodeProps extends NodeProps<StageNodeData> {
   onUpdate?: (id: string, data: Partial<StageNodeData>) => void
   onDelete?: (id: string) => void
   isSelected?: boolean
+  isNextNode?: boolean
+  nextExecutionTime?: string
+  /** Precios por tipo de mensaje (para mostrar costo del nodo) */
+  precios?: { email: number; sms: number }
 }
 
 export function StageNode({
@@ -31,6 +45,9 @@ export function StageNode({
   onUpdate,
   onDelete,
   isSelected = false,
+  isNextNode = false,
+  nextExecutionTime = '',
+  precios,
 }: StageNodeProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
@@ -82,17 +99,82 @@ export function StageNode({
     }
   }
 
+  /**
+   * Calculate cost per prospect for this node based on message type
+   */
+  const getCostoNodo = (): number | null => {
+    if (!precios) return null
+    const tipo = localData.tipo_mensaje || 'email'
+    switch (tipo) {
+      case 'email':
+        return precios.email
+      case 'sms':
+        return precios.sms
+      case 'ambos':
+        return precios.email + precios.sms
+      default:
+        return precios.email
+    }
+  }
+
+  const costoNodo = getCostoNodo()
+
   return (
     <>
-      {/* Input handles */}
-      <Handle type="target" position={Position.Top} id="top" />
-      <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="target" position={Position.Bottom} id="bottom" />
+      {/* Input handle - only left side (n8n style) */}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="left"
+        className="!w-3 !h-3 !bg-segal-blue !border-2 !border-white"
+      />
+
+      <style>{`
+        @keyframes spin-smooth {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(245, 158, 11, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.8), inset 0 0 20px rgba(245, 158, 11, 0.2);
+          }
+        }
+        @keyframes pulse-blue {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.7), inset 0 0 15px rgba(59, 130, 246, 0.2);
+          }
+        }
+        .executing-node {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .next-node {
+          animation: pulse-blue 2.5s ease-in-out infinite;
+        }
+      `}</style>
 
       <div
         ref={containerRef}
         className={`rounded-lg border-2 p-4 min-w-[220px] bg-white shadow-md transition-all duration-200 ${
-          isSelected ? 'border-segal-blue ring-2 ring-segal-blue/20' : 'border-segal-blue/30'
+          // Estado de ejecución tiene prioridad en los estilos
+          data.executionState === 'executing'
+            ? 'border-amber-500 ring-2 ring-amber-400/30 executing-node'
+            : data.executionState === 'completed'
+              ? 'border-green-500 ring-2 ring-green-400/20 border-opacity-100'
+              : data.executionState === 'failed'
+                ? 'border-red-500 ring-2 ring-red-400/20'
+                : data.executionState === 'pending'
+                  ? 'border-gray-400 opacity-60'
+                  : isNextNode
+                    ? 'border-blue-500 ring-2 ring-blue-400/30 next-node'
+                    : isSelected
+                    ? 'border-segal-blue ring-2 ring-segal-blue/20'
+                    : 'border-segal-blue/30'
         } ${isEditing ? 'ring-2 ring-segal-green/30' : ''}`}
       >
         {!isEditing ? (
@@ -114,8 +196,53 @@ export function StageNode({
                     Inactiva
                   </span>
                 )}
+              {isNextNode && nextExecutionTime && (
+                  <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                    ▶ Siguiente: {nextExecutionTime}
+                  </span>
+                )}
               </div>
-              {localData.activo && <CheckCircle2 className="h-4 w-4 text-segal-green shrink-0" />}
+              {/* Icons container - cost badge + execution state */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Cost Badge - always shown with tooltip */}
+                {costoNodo !== null && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 cursor-help hover:bg-emerald-200 transition-colors">
+                          <DollarSign className="h-3 w-3" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="top" 
+                        className="bg-emerald-800 text-white border-emerald-700 px-3 py-2"
+                      >
+                        <div className="text-center">
+                          <p className="font-semibold text-sm">${costoNodo.toLocaleString('es-CL')}</p>
+                          <p className="text-xs text-emerald-200">por prospecto</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {/* Execution State Icon */}
+                {data.executionState === 'executing' && (
+                  <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                )}
+                {data.executionState === 'completed' && (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                )}
+                {data.executionState === 'failed' && (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+                {data.executionState === 'pending' && (
+                  <Clock className="h-5 w-5 text-gray-400" />
+                )}
+                {/* Active check when not in execution and no cost */}
+                {!data.executionState && localData.activo && !costoNodo && (
+                  <CheckCircle2 className="h-4 w-4 text-segal-green" />
+                )}
+              </div>
             </div>
 
             {/* Content */}
@@ -146,19 +273,83 @@ export function StageNode({
                 </div>
               )}
 
-              {/* Template preview */}
-              {localData.plantilla_mensaje && (
+              {/* Template preview - shows reference or inline content */}
+              {localData.plantilla_type === 'reference' && (localData.plantilla_id || localData.plantilla_id_email) ? (
+                <div className="mt-2 space-y-1">
+                  {localData.plantilla_id && (
+                    <div className="p-2 rounded bg-green-50 border border-green-200 flex items-center gap-2">
+                      <span className="text-green-600 text-xs">📄</span>
+                      <span className="text-xs font-medium text-green-800">
+                        Plantilla #{localData.plantilla_id}
+                      </span>
+                    </div>
+                  )}
+                  {localData.plantilla_id_email && (
+                    <div className="p-2 rounded bg-purple-50 border border-purple-200 flex items-center gap-2">
+                      <span className="text-purple-600 text-xs">📧</span>
+                      <span className="text-xs font-medium text-purple-800">
+                        Plantilla Email #{localData.plantilla_id_email}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : localData.plantilla_mensaje ? (
                 <div className="mt-2 p-2 rounded bg-segal-blue/5 border border-segal-blue/10">
                   <p className="text-xs line-clamp-2 text-segal-dark">
                     "{localData.plantilla_mensaje.substring(0, 50)}
                     {localData.plantilla_mensaje.length > 50 ? '...' : ''}"
                   </p>
                 </div>
+              ) : (
+                <div className="mt-2 p-2 rounded bg-yellow-50 border border-yellow-200">
+                  <p className="text-xs text-yellow-800">⚠️ Sin plantilla configurada</p>
+                </div>
               )}
 
               {/* Offer */}
               {localData.oferta && (
                 <div className="text-xs text-segal-green font-medium">📦 {localData.oferta.titulo}</div>
+              )}
+
+              {/* Execution Stats */}
+              {data.executionState && data.envios && (
+                <div className="mt-3 pt-3 border-t border-segal-blue/10 space-y-1">
+                  <p className="text-xs font-semibold text-segal-dark">Estadísticas:</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    {data.envios.enviado > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Send className="h-3 w-3 text-green-600" />
+                        <span className="text-green-600 font-semibold">{data.envios.enviado} enviados</span>
+                      </div>
+                    )}
+                    {data.envios.fallido > 0 && (
+                      <div className="flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 text-red-600" />
+                        <span className="text-red-600 font-semibold">{data.envios.fallido} fallidos</span>
+                      </div>
+                    )}
+                    {data.envios.pendiente > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-amber-600" />
+                        <span className="text-amber-600 font-semibold">{data.envios.pendiente} pendientes</span>
+                      </div>
+                    )}
+                    {data.envios.abierto > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-blue-600" />
+                        <span className="text-blue-600 font-semibold">{data.envios.abierto} abiertos</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {data.errorMessage && (
+                <div className="mt-3 p-2 rounded bg-red-50 border border-red-200">
+                  <p className="text-xs text-red-600 font-semibold">Error:</p>
+                  <p className="text-xs text-red-600 line-clamp-2">{data.errorMessage}</p>
+                </div>
               )}
             </div>
 
@@ -300,10 +491,13 @@ export function StageNode({
         )}
       </div>
 
-      {/* Output handles */}
-      <Handle type="source" position={Position.Top} id="top-out" />
-      <Handle type="source" position={Position.Right} id="right-out" />
-      <Handle type="source" position={Position.Bottom} id="bottom-out" />
+      {/* Output handle - only right side (n8n style) */}
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        id="right"
+        className="!w-3 !h-3 !bg-segal-blue !border-2 !border-white"
+      />
     </>
   )
 }

@@ -1,171 +1,391 @@
 /**
- * Panel de historial de ejecuciones del flujo
- * Muestra las últimas 50 ejecuciones con logs y estado
+ * ExecutionHistoryPanel
+ * 
+ * Displays the execution history of a flow with expandable cards showing
+ * the timeline of each stage/node execution.
+ * 
+ * Features:
+ * - Collapsible execution cards
+ * - Stage timeline with status indicators
+ * - Human-readable node labels from configVisual
+ * - Duration and prospect count display
+ * 
+ * @module ExecutionHistoryPanel
  */
 
-import { Clock, CheckCircle2, AlertCircle, Pause, XCircle } from 'lucide-react'
-import type { EjecucionFlujo } from '@/types/flujo'
+import { useMemo, useState } from 'react'
+
+import { 
+  CheckCircle2, 
+  ChevronDown,
+  ChevronRight,
+  Clock, 
+  Eye, 
+  GitBranch,
+  Loader2,
+  Mail,
+  MessageSquare,
+} from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import type { ExecutionListItem, ExecutionStageItem } from '@/types/flowExecutionTracking'
+import type { ConfigVisual } from '@/types/flujo'
+
+import { useNodeLabelMap } from '../../hooks/useNodeLabelMap'
+import {
+  calculateExecutionDuration,
+  formatExecutionDate,
+  getExecutionStateColor,
+  getExecutionStateIcon,
+  getExecutionStateLabel,
+} from '../../utils/executionStateHelpers'
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface ExecutionHistoryPanelProps {
-  ejecuciones: EjecucionFlujo[] | undefined
+  ejecuciones: ExecutionListItem[] | undefined
+  isLoading?: boolean
+  onViewExecution?: (ejecucionId: number) => void
+  configVisual?: ConfigVisual
 }
 
-function getEstadoColor(estado: string) {
-  switch (estado) {
-    case 'completado':
-      return 'bg-segal-green/10 border-segal-green/30 text-segal-green'
-    case 'en_progreso':
-      return 'bg-blue-50 border-blue-200 text-blue-600'
-    case 'pausado':
-      return 'bg-yellow-50 border-yellow-200 text-yellow-600'
-    case 'fallido':
-      return 'bg-red-50 border-red-200 text-red-600'
-    default:
-      return 'bg-segal-blue/5 border-segal-blue/10 text-segal-dark'
+interface StageItemProps {
+  stage: ExecutionStageItem
+  nodeLabel: string
+  isLast: boolean
+}
+
+interface ExecutionCardProps {
+  ejecucion: ExecutionListItem
+  nodeLabelMap: Map<string, string>
+  onViewExecution?: (ejecucionId: number) => void
+  defaultExpanded?: boolean
+}
+
+interface StageStatistics {
+  total: number
+  completed: number
+  failed: number
+  pending: number
+  executing: number
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Infers the node type icon based on node ID patterns
+ */
+function getNodeTypeIcon(nodeId: string) {
+  if (nodeId.includes('email') || nodeId.includes('mail')) {
+    return <Mail className="h-4 w-4" />
   }
-}
-
-function getEstadoIcon(estado: string) {
-  switch (estado) {
-    case 'completado':
-      return <CheckCircle2 className="h-5 w-5" />
-    case 'en_progreso':
-      return <Clock className="h-5 w-5" />
-    case 'pausado':
-      return <Pause className="h-5 w-5" />
-    case 'fallido':
-      return <XCircle className="h-5 w-5" />
-    default:
-      return <AlertCircle className="h-5 w-5" />
+  if (nodeId.includes('sms') || nodeId.includes('message')) {
+    return <MessageSquare className="h-4 w-4" />
   }
+  if (nodeId.includes('condition') || nodeId.includes('branch')) {
+    return <GitBranch className="h-4 w-4" />
+  }
+  return <CheckCircle2 className="h-4 w-4" />
 }
 
-function formatearFecha(fecha: string) {
-  return new Date(fecha).toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+/**
+ * Sorts stages by scheduled date
+ */
+function sortStagesByDate(stages: ExecutionStageItem[]): ExecutionStageItem[] {
+  return [...stages].sort((a, b) => {
+    const dateA = new Date(a.fecha_programada).getTime()
+    const dateB = new Date(b.fecha_programada).getTime()
+    return dateA - dateB
   })
 }
 
-function calcularDuracion(inicio: string, fin?: string): string {
-  const fechaInicio = new Date(inicio)
-  const fechaFin = fin ? new Date(fin) : new Date()
-  const duracion = fechaFin.getTime() - fechaInicio.getTime()
-  const minutos = Math.floor(duracion / 60000)
-  const horas = Math.floor(minutos / 60)
-  const dias = Math.floor(horas / 24)
-
-  if (dias > 0) return `${dias}d ${horas % 24}h`
-  if (horas > 0) return `${horas}h ${minutos % 60}m`
-  return `${minutos}m`
+/**
+ * Calculates statistics from stages array
+ */
+function calculateStageStatistics(stages: ExecutionStageItem[]): StageStatistics | null {
+  if (stages.length === 0) return null
+  
+  return {
+    total: stages.length,
+    completed: stages.filter(s => s.estado === 'completed').length,
+    failed: stages.filter(s => s.estado === 'failed').length,
+    pending: stages.filter(s => s.estado === 'pending').length,
+    executing: stages.filter(s => s.estado === 'executing').length,
+  }
 }
 
-export function ExecutionHistoryPanel({ ejecuciones }: ExecutionHistoryPanelProps) {
-  if (!ejecuciones || ejecuciones.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
-        <Clock className="h-12 w-12 text-segal-blue/40 mb-3" />
-        <p className="text-segal-dark/60 font-medium">No hay ejecuciones registradas</p>
-        <p className="text-sm text-segal-dark/40 mt-1">Este flujo aún no ha sido ejecutado</p>
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+function StageItem({ stage, nodeLabel, isLast }: StageItemProps) {
+  const colorClass = getExecutionStateColor(stage.estado)
+  
+  return (
+    <div className="relative pl-8">
+      {/* Timeline line */}
+      {!isLast && (
+        <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gray-200" />
+      )}
+      
+      {/* Timeline dot */}
+      <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 flex items-center justify-center ${colorClass}`}>
+        {getExecutionStateIcon(stage.estado, 'h-3 w-3')}
       </div>
-    )
+      
+      {/* Content */}
+      <div className={`pb-4 ${isLast ? '' : 'border-b border-gray-100 mb-4'}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              {getNodeTypeIcon(stage.node_id)}
+              <span className="font-medium text-segal-dark">{nodeLabel}</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
+                {getExecutionStateLabel(stage.estado)}
+              </span>
+            </div>
+            
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-segal-dark/60">
+              <div>
+                <span className="font-medium">Programada:</span>{' '}
+                {formatExecutionDate(stage.fecha_programada)}
+              </div>
+              {stage.fecha_ejecucion && (
+                <div>
+                  <span className="font-medium">Ejecutada:</span>{' '}
+                  {formatExecutionDate(stage.fecha_ejecucion)}
+                </div>
+              )}
+            </div>
+            
+            {stage.error_mensaje && (
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                <span className="font-medium">Error:</span> {stage.error_mensaje}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, defaultExpanded = false }: ExecutionCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  
+  const colorClass = getExecutionStateColor(ejecucion.estado)
+  const fechaInicio = ejecucion.fecha_inicio_real ?? ejecucion.fecha_inicio_programada ?? ejecucion.created_at
+  const duracion = calculateExecutionDuration(fechaInicio, ejecucion.fecha_fin)
+  
+  const etapasOrdenadas = useMemo(() => {
+    if (!ejecucion.etapas) return []
+    return sortStagesByDate(ejecucion.etapas)
+  }, [ejecucion.etapas])
+  
+  const estadisticas = useMemo(() => 
+    calculateStageStatistics(etapasOrdenadas),
+    [etapasOrdenadas]
+  )
+
+  const handleToggleExpand = () => setIsExpanded(prev => !prev)
+  
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onViewExecution?.(ejecucion.id)
   }
+  
+  return (
+    <div className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors">
+      {/* Header - Always visible */}
+      <button
+        type="button"
+        onClick={handleToggleExpand}
+        className="w-full p-4 flex items-center justify-between gap-4 hover:bg-segal-blue/5 transition-colors"
+      >
+        <div className="flex items-center gap-3 flex-1">
+          <div className={`p-2 rounded-lg border ${colorClass}`}>
+            {getExecutionStateIcon(ejecucion.estado)}
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-segal-dark">
+              Ejecucion #{ejecucion.id}
+            </p>
+            <p className="text-sm text-segal-dark/60">
+              {formatExecutionDate(fechaInicio)}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Mini stats */}
+          {estadisticas && (
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <span className="text-green-600" title="Completadas">
+                {estadisticas.completed}/{estadisticas.total}
+              </span>
+              {estadisticas.failed > 0 && (
+                <span className="text-red-600" title="Fallidas">
+                  {estadisticas.failed} fallidas
+                </span>
+              )}
+            </div>
+          )}
+          
+          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
+            {getExecutionStateLabel(ejecucion.estado)}
+          </span>
+          
+          {onViewExecution && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleViewClick}
+              className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+              title="Ver monitoreo visual"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              Ver
+            </Button>
+          )}
+          
+          {isExpanded ? (
+            <ChevronDown className="h-5 w-5 text-segal-dark/40" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-segal-dark/40" />
+          )}
+        </div>
+      </button>
+      
+      {/* Expanded content - Stages */}
+      {isExpanded && (
+        <ExpandedContent
+          duracion={duracion}
+          prospectosCount={ejecucion.prospectos_ids?.length}
+          etapasOrdenadas={etapasOrdenadas}
+          nodeLabelMap={nodeLabelMap}
+        />
+      )}
+    </div>
+  )
+}
+
+interface ExpandedContentProps {
+  duracion: string
+  prospectosCount?: number
+  etapasOrdenadas: ExecutionStageItem[]
+  nodeLabelMap: Map<string, string>
+}
+
+function ExpandedContent({ duracion, prospectosCount, etapasOrdenadas, nodeLabelMap }: ExpandedContentProps) {
+  return (
+    <div className="border-t border-segal-blue/10 p-4 bg-segal-blue/5">
+      {/* General info */}
+      <div className="flex items-center gap-4 mb-4 text-sm text-segal-dark/70">
+        <span>
+          <span className="font-medium">Duracion:</span> {duracion}
+        </span>
+        {prospectosCount !== undefined && (
+          <span>
+            <span className="font-medium">Prospectos:</span> {prospectosCount}
+          </span>
+        )}
+      </div>
+      
+      {/* Stages timeline */}
+      {etapasOrdenadas.length > 0 ? (
+        <div className="bg-white rounded-lg p-4 border border-segal-blue/10">
+          <p className="text-sm font-semibold text-segal-dark mb-4">
+            Historial de Etapas ({etapasOrdenadas.length})
+          </p>
+          <div>
+            {etapasOrdenadas.map((stage, index) => (
+              <StageItem
+                key={stage.id}
+                stage={stage}
+                nodeLabel={nodeLabelMap.get(stage.node_id) ?? stage.node_id}
+                isLast={index === etapasOrdenadas.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg p-4 border border-segal-blue/10 text-center text-sm text-segal-dark/50">
+          No hay etapas registradas para esta ejecucion
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// Loading & Empty States
+// ============================================================================
+
+function LoadingState() {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
+      <Loader2 className="h-12 w-12 text-segal-blue/40 mb-3 animate-spin" />
+      <p className="text-segal-dark/60 font-medium">Cargando ejecuciones...</p>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
+      <Clock className="h-12 w-12 text-segal-blue/40 mb-3" />
+      <p className="text-segal-dark/60 font-medium">No hay ejecuciones registradas</p>
+      <p className="text-sm text-segal-dark/40 mt-1">Este flujo aun no ha sido ejecutado</p>
+    </div>
+  )
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export function ExecutionHistoryPanel({ 
+  ejecuciones, 
+  isLoading, 
+  onViewExecution,
+  configVisual 
+}: ExecutionHistoryPanelProps) {
+  const nodeLabelMap = useNodeLabelMap(configVisual)
+
+  if (isLoading) {
+    return <LoadingState />
+  }
+
+  if (!ejecuciones || ejecuciones.length === 0) {
+    return <EmptyState />
+  }
+
+  const ejecutionCount = ejecuciones.length
+  const pluralSuffix = ejecutionCount !== 1 ? 'es' : ''
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-segal-dark">Historial de Ejecuciones</h3>
-        <span className="text-sm text-segal-dark/60">Últimas {ejecuciones.length} ejecuciones</span>
+        <span className="text-sm text-segal-dark/60">
+          {ejecutionCount} ejecucion{pluralSuffix}
+        </span>
       </div>
 
       <div className="space-y-3">
-        {ejecuciones.map((ejecucion) => {
-          const colorClase = getEstadoColor(ejecucion.estado)
-          const icono = getEstadoIcon(ejecucion.estado)
-          const duracion = calcularDuracion(ejecucion.fecha_inicio, ejecucion.fecha_fin)
-
-          return (
-            <div
-              key={ejecucion.id}
-              className="border border-segal-blue/10 rounded-lg p-4 hover:border-segal-blue/30 transition-colors bg-white"
-            >
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className={`p-2 rounded-lg border ${colorClase}`}>{icono}</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-segal-dark">
-                      Ejecución #{ejecucion.id}
-                    </p>
-                    <p className="text-sm text-segal-dark/60">
-                      {formatearFecha(ejecucion.fecha_inicio)}
-                    </p>
-                  </div>
-                </div>
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${colorClase}`}>
-                  {ejecucion.estado.charAt(0).toUpperCase() + ejecucion.estado.slice(1).replace('_', ' ')}
-                </span>
-              </div>
-
-              {/* Estadísticas de la ejecución */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                <div className="bg-segal-blue/5 rounded p-2">
-                  <p className="text-xs text-segal-dark/60">Procesados</p>
-                  <p className="text-sm font-bold text-segal-dark">
-                    {ejecucion.stats?.total_enviados || 0}
-                  </p>
-                </div>
-
-                <div className="bg-red-50 rounded p-2">
-                  <p className="text-xs text-red-600">Fallidos</p>
-                  <p className="text-sm font-bold text-red-600">
-                    {ejecucion.stats?.total_fallidos || 0}
-                  </p>
-                </div>
-
-                <div className="bg-yellow-50 rounded p-2">
-                  <p className="text-xs text-yellow-600">Pendientes</p>
-                  <p className="text-sm font-bold text-yellow-600">
-                    {ejecucion.stats?.total_pendientes || 0}
-                  </p>
-                </div>
-
-                <div className="bg-segal-green/5 rounded p-2">
-                  <p className="text-xs text-segal-green/70">Total</p>
-                  <p className="text-sm font-bold text-segal-green">
-                    {ejecucion.stats?.total_prospectos || 0}
-                  </p>
-                </div>
-
-                <div className="bg-segal-blue/5 rounded p-2">
-                  <p className="text-xs text-segal-dark/60">Duración</p>
-                  <p className="text-sm font-bold text-segal-dark">{duracion}</p>
-                </div>
-              </div>
-
-              {/* Desglose por canal */}
-              {(ejecucion.stats?.email_enviados || 0) > 0 ||
-              (ejecucion.stats?.sms_enviados || 0) > 0 ? (
-                <div className="mt-3 pt-3 border-t border-segal-blue/10 flex gap-4 text-xs">
-                  {(ejecucion.stats?.email_enviados || 0) > 0 && (
-                    <span className="text-segal-dark/60">
-                      📧 Email: {ejecucion.stats?.email_enviados} enviados
-                      {ejecucion.stats?.email_fallidos > 0 && ` / ${ejecucion.stats.email_fallidos} fallidos`}
-                    </span>
-                  )}
-                  {(ejecucion.stats?.sms_enviados || 0) > 0 && (
-                    <span className="text-segal-dark/60">
-                      📱 SMS: {ejecucion.stats?.sms_enviados} enviados
-                      {ejecucion.stats?.sms_fallidos > 0 && ` / ${ejecucion.stats.sms_fallidos} fallidos`}
-                    </span>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
+        {ejecuciones.map((ejecucion, index) => (
+          <ExecutionCard
+            key={ejecucion.id}
+            ejecucion={ejecucion}
+            nodeLabelMap={nodeLabelMap}
+            onViewExecution={onViewExecution}
+            defaultExpanded={index === 0}
+          />
+        ))}
       </div>
     </div>
   )

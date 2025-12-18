@@ -16,10 +16,12 @@ interface ConditionalNodeProps extends NodeProps<ConditionalNodeData> {
   isSelected?: boolean
 }
 
-const CONDITION_OPTIONS: Array<{ type: FlowCondition['type']; label: string }> = [
-  { type: 'email_opened', label: 'Email abierto' },
-  { type: 'link_clicked', label: 'Link clickeado' },
-  { type: 'custom', label: 'Personalizado' },
+const CONDITION_OPTIONS: Array<{ type: FlowCondition['type']; label: string; description: string }> = [
+  { type: 'email_opened', label: 'Email abierto', description: 'Verifica si el destinatario abrió el email' },
+  { type: 'link_clicked', label: 'Link clickeado', description: 'Verifica si el destinatario hizo click en algún enlace' },
+  { type: 'email_bounced', label: 'Email rebotado', description: 'Verifica si el email fue rechazado (bounce)' },
+  { type: 'unsubscribed', label: 'Se dio de baja', description: 'Verifica si el destinatario se dio de baja' },
+  { type: 'custom', label: 'Personalizado', description: 'Condición personalizada con parámetros manuales' },
 ]
 
 export function ConditionalNode({
@@ -53,8 +55,13 @@ export function ConditionalNode({
 
   return (
     <>
-      {/* Input handle - only top for cleaner design */}
-      <Handle type="target" position={Position.Top} id="input" />
+      {/* Input handle - only left side (n8n style) */}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="left"
+        className="!w-3 !h-3 !bg-segal-blue !border-2 !border-white"
+      />
 
       <div
         className={`rounded-lg border-2 p-4 min-w-[280px] bg-white shadow-md transition-all duration-200 ${
@@ -184,10 +191,17 @@ export function ConditionalNode({
                   }
                   className="w-full px-2 py-1 text-xs border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
                 >
-                  <option value="Views">Email abierto (Views)</option>
-                  <option value="Clicks">Link clickeado (Clicks)</option>
-                  <option value="Bounces">Email rechazado (Bounces)</option>
+                  <option value="Views">📧 Aperturas (Views)</option>
+                  <option value="Clicks">🔗 Clicks en enlaces (Clicks)</option>
+                  <option value="Bounces">⛔ Rebotes (Bounces)</option>
+                  <option value="Unsubscribes">🚫 Bajas (Unsubscribes)</option>
                 </select>
+                <p className="text-xs text-segal-dark/50 mt-1">
+                  {localData.condition?.check_param === 'Views' && '¿Cuántas veces se abrió el email?'}
+                  {localData.condition?.check_param === 'Clicks' && '¿Cuántos clicks en enlaces del email?'}
+                  {localData.condition?.check_param === 'Bounces' && '¿Cuántos emails fueron rechazados?'}
+                  {localData.condition?.check_param === 'Unsubscribes' && '¿Cuántos se dieron de baja?'}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -296,83 +310,69 @@ export function ConditionalNode({
         )}
       </div>
 
-      {/* YES handle - Green, left bottom */}
+      {/* YES handle - Green, right side top (n8n style) */}
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id={`${id}-yes`}
         style={{
-          left: '25%',
-          width: '16px',
-          height: '16px',
+          top: '35%',
+          width: '12px',
+          height: '12px',
           background: '#059669',
-          border: '3px solid #ffffff',
-          boxShadow: '0 0 0 2px #059669, 0 2px 6px rgba(0,0,0,0.3)',
+          border: '2px solid #ffffff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
           cursor: 'crosshair',
-          zIndex: 10,
         }}
         title="✓ Conexión para SÍ (condición verdadera)"
       />
 
-      {/* NO handle - Red, right bottom */}
+      {/* NO handle - Red, right side bottom (n8n style) */}
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id={`${id}-no`}
         style={{
-          left: '75%',
-          width: '16px',
-          height: '16px',
+          top: '65%',
+          width: '12px',
+          height: '12px',
           background: '#dc2626',
-          border: '3px solid #ffffff',
-          boxShadow: '0 0 0 2px #dc2626, 0 2px 6px rgba(0,0,0,0.3)',
+          border: '2px solid #ffffff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
           cursor: 'crosshair',
-          zIndex: 10,
         }}
         title="✗ Conexión para NO (condición falsa)"
       />
 
-      {/* Visual labels for the handles */}
+      {/* Visual labels for the handles - positioned to the right */}
       <div
         style={{
           position: 'absolute',
-          bottom: '-28px',
-          left: '20%',
-          transform: 'translateX(-50%)',
-          fontSize: '11px',
+          top: '32%',
+          right: '-32px',
+          fontSize: '10px',
           fontWeight: 700,
           color: '#059669',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
-          textShadow: '0 1px 2px rgba(255, 255, 255, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3px',
         }}
       >
-        <span>✓</span>
-        <span>SÍ</span>
+        ✓
       </div>
 
       <div
         style={{
           position: 'absolute',
-          bottom: '-28px',
-          left: '80%',
-          transform: 'translateX(-50%)',
-          fontSize: '11px',
+          top: '62%',
+          right: '-32px',
+          fontSize: '10px',
           fontWeight: 700,
           color: '#dc2626',
           whiteSpace: 'nowrap',
           pointerEvents: 'none',
-          textShadow: '0 1px 2px rgba(255, 255, 255, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '3px',
         }}
       >
-        <span>✗</span>
-        <span>NO</span>
+        ✗
       </div>
     </>
   )

@@ -31,7 +31,7 @@ export interface PlantillaSMS extends PlantillaBase {
  */
 export interface EmailComponent {
   id: string
-  tipo: 'logo' | 'texto' | 'boton' | 'separador' | 'footer'
+  tipo: 'logo' | 'texto' | 'boton' | 'separador' | 'imagen' | 'footer'
   contenido: any
   orden: number
 }
@@ -46,6 +46,8 @@ export interface LogoComponent extends EmailComponent {
     alt: string
     ancho?: number
     altura?: number
+    color_fondo?: string
+    padding?: number
   }
 }
 
@@ -94,6 +96,25 @@ export interface SeparadorComponent extends EmailComponent {
 }
 
 /**
+ * Estructura de un componente de Imagen
+ * Permite agregar imágenes con link opcional
+ */
+export interface ImagenComponent extends EmailComponent {
+  tipo: 'imagen'
+  contenido: {
+    url: string
+    alt: string
+    ancho?: number
+    altura?: number
+    alineacion?: 'left' | 'center' | 'right'
+    link_url?: string
+    link_target?: '_blank' | '_self'
+    border_radius?: number
+    padding?: number
+  }
+}
+
+/**
  * Estructura de un componente de Footer
  */
 export interface FooterComponent extends EmailComponent {
@@ -105,6 +126,9 @@ export interface FooterComponent extends EmailComponent {
       etiqueta: string
     }[]
     mostrar_fecha?: boolean
+    color_fondo?: string
+    color_texto?: string
+    padding?: number
   }
 }
 
@@ -116,6 +140,7 @@ export type AnyEmailComponent =
   | TextoComponent
   | BotonComponent
   | SeparadorComponent
+  | ImagenComponent
   | FooterComponent
 
 /**

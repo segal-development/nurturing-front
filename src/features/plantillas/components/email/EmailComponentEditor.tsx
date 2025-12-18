@@ -6,11 +6,12 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown, Trash2, ChevronDown as ChevronDownIcon } from 'lucide-react'
 import type { EmailComponentFormData } from '@/features/plantillas/schemas/plantillaSchemas'
-import { TextoComponentEditor } from './components/TextoComponentEditor'
-import { LogoComponentEditor } from './components/LogoComponentEditor'
 import { BotonComponentEditor } from './components/BotonComponentEditor'
-import { SeparadorComponentEditor } from './components/SeparadorComponentEditor'
 import { FooterComponentEditor } from './components/FooterComponentEditor'
+import { ImagenComponentEditor } from './components/ImagenComponentEditor'
+import { LogoComponentEditor } from './components/LogoComponentEditor'
+import { SeparadorComponentEditor } from './components/SeparadorComponentEditor'
+import { TextoComponentEditor } from './components/TextoComponentEditor'
 
 interface EmailComponentEditorProps {
   componente: EmailComponentFormData
@@ -39,6 +40,7 @@ export function EmailComponentEditor({
       texto: '📝 Texto',
       boton: '🔘 Botón',
       separador: '─ Separador',
+      imagen: '🖼️ Imagen',
       footer: '📋 Footer',
     }
     return labels[componente.tipo]
@@ -75,15 +77,15 @@ export function EmailComponentEditor({
             />
           </button>
           <span className="font-medium text-segal-dark">{getTipoLabel()}</span>
-          {componente.tipo === 'texto' && (
+          {componente.tipo === 'texto' && componente.contenido?.texto && (
             <span className="text-xs text-segal-dark/60 truncate">
               "{componente.contenido.texto.substring(0, 30)}"
             </span>
           )}
-          {componente.tipo === 'boton' && (
+          {componente.tipo === 'boton' && componente.contenido?.texto && (
             <span className="text-xs text-segal-dark/60">{componente.contenido.texto}</span>
           )}
-          {componente.tipo === 'logo' && (
+          {componente.tipo === 'logo' && componente.contenido?.url && (
             <span className="text-xs text-segal-dark/60 truncate">{componente.contenido.url}</span>
           )}
         </div>
@@ -150,6 +152,12 @@ export function EmailComponentEditor({
           )}
           {componente.tipo === 'separador' && (
             <SeparadorComponentEditor
+              componente={componente}
+              onUpdate={onUpdate}
+            />
+          )}
+          {componente.tipo === 'imagen' && (
+            <ImagenComponentEditor
               componente={componente}
               onUpdate={onUpdate}
             />

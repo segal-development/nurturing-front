@@ -13,6 +13,7 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getBezierPath,
+  Position,
   useReactFlow,
   type EdgeProps,
 } from 'reactflow'
@@ -33,12 +34,15 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
 
   const { deleteElements } = useReactFlow()
 
-  // Use bezier path for smooth curves (n8n style)
+  // Use bezier path with horizontal source/target for n8n style curves
+  // This creates smooth S-curves that exit horizontally and enter horizontally
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
+    sourcePosition: Position.Right, // Exit horizontally to the right
     targetX,
     targetY,
+    targetPosition: Position.Left,  // Enter horizontally from the left
   })
 
   // Determine edge styling based on handle type

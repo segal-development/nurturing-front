@@ -1,4 +1,139 @@
-export type TipoMensaje = 'email' | 'sms' | 'ambos';
+import type { Node, Edge } from 'reactflow'
+import type { Prospecto } from './prospecto'
+
+// ============================================================================
+// Canal de Envío Types & Utils
+// ============================================================================
+
+/**
+ * Tipos de mensaje/canal de envío disponibles.
+ * Mantener sincronizado con App\Enums\CanalEnvio en el backend.
+ */
+export type CanalEnvio = 'email' | 'sms' | 'ambos'
+
+/** @deprecated Use CanalEnvio instead */
+export type TipoMensaje = CanalEnvio
+
+/**
+ * Configuración de cada canal de envío para mostrar en UI.
+ */
+export interface CanalEnvioConfig {
+  readonly value: CanalEnvio
+  readonly label: string
+  readonly icon: string
+  readonly description: string
+}
+
+/**
+ * Mapa de configuración para cada canal de envío.
+ * Inmutable y type-safe.
+ */
+export const CANAL_ENVIO_CONFIG: Readonly<Record<CanalEnvio, CanalEnvioConfig>> = {
+  email: {
+    value: 'email',
+    label: 'Email',
+    icon: '📧',
+    description: 'Solo correo electrónico',
+  },
+  sms: {
+    value: 'sms',
+    label: 'SMS',
+    icon: '📱',
+    description: 'Solo mensajes de texto',
+  },
+  ambos: {
+    value: 'ambos',
+    label: 'Email y SMS',
+    icon: '📨',
+    description: 'Correo electrónico y mensajes de texto',
+  },
+} as const
+
+/**
+ * Obtiene el label para un canal de envío.
+ */
+export function getCanalEnvioLabel(canal: CanalEnvio | string | undefined): string {
+  if (!canal) return CANAL_ENVIO_CONFIG.email.label
+  
+  const config = CANAL_ENVIO_CONFIG[canal as CanalEnvio]
+  return config?.label ?? canal
+}
+
+/**
+ * Obtiene el icono para un canal de envío.
+ */
+export function getCanalEnvioIcon(canal: CanalEnvio | string | undefined): string {
+  if (!canal) return CANAL_ENVIO_CONFIG.email.icon
+  
+  const config = CANAL_ENVIO_CONFIG[canal as CanalEnvio]
+  return config?.icon ?? '📧'
+}
+
+/**
+ * Infiere el canal de envío basándose en las etapas del flujo.
+ * Replica la lógica del backend CanalEnvioResolver.
+ * 
+ * @param etapas - Array de etapas con tipo_mensaje
+ * @returns El canal inferido
+ */
+export function inferirCanalEnvioDesdeEtapas(
+  etapas: Array<{ tipo_mensaje?: string }> | undefined
+): CanalEnvio {
+  if (!etapas || etapas.length === 0) {
+    return 'email' // Default cuando no hay etapas
+  }
+
+  const tiposValidos = etapas
+    .map((e) => e.tipo_mensaje?.toLowerCase())
+    .filter((t): t is string => t === 'email' || t === 'sms')
+
+  if (tiposValidos.length === 0) {
+    return 'email'
+  }
+
+  const uniqueTipos = [...new Set(tiposValidos)]
+
+  if (uniqueTipos.length === 1) {
+    return uniqueTipos[0] as CanalEnvio
+  }
+
+  return 'ambos'
+}
+
+/**
+ * Obtiene el canal de envío "real" de un flujo.
+ * Prioriza el canal inferido de las etapas sobre el campo canal_envio.
+ * 
+ * @param flujo - El flujo a analizar
+ * @returns El canal de envío correcto
+ */
+export function getCanalEnvioReal(flujo: {
+  canal_envio?: string
+  flujo_etapas?: Array<{ tipo_mensaje?: string }>
+  config_structure?: { stages?: Array<{ tipo_mensaje?: string }> }
+}): CanalEnvio {
+  // Prioridad 1: Etapas cargadas de la BD
+  if (flujo.flujo_etapas && flujo.flujo_etapas.length > 0) {
+    return inferirCanalEnvioDesdeEtapas(flujo.flujo_etapas)
+  }
+
+  // Prioridad 2: Estructura guardada
+  if (flujo.config_structure?.stages && flujo.config_structure.stages.length > 0) {
+    return inferirCanalEnvioDesdeEtapas(flujo.config_structure.stages)
+  }
+
+  // Fallback: usar el campo canal_envio
+  const canal = flujo.canal_envio?.toLowerCase()
+  if (canal === 'email' || canal === 'sms' || canal === 'ambos') {
+    return canal
+  }
+
+  return 'email'
+}
+
+// ============================================================================
+// Legacy Types (mantener compatibilidad)
+// ============================================================================
 
 export interface TipoProspectoObject {
   id: number;
@@ -87,10 +222,23 @@ export interface EstadisticasFlujo {
 
 /**
  * Configuración visual del flujo (para reconstruir en editor)
+ * Uses ReactFlow Node and Edge types with generic data
  */
 export interface ConfigVisual {
-  nodes: any[]; // ReactFlow Node[]
-  edges: any[]; // ReactFlow Edge[]
+  nodes: Node[];
+  edges: Edge[];
+}
+
+/**
+ * Initial node data in config structure
+ */
+export interface InitialNodeConfig {
+  id: string;
+  label: string;
+  origen_id?: string;
+  origen_nombre?: string;
+  prospectos_count?: number;
+  position?: { x: number; y: number };
 }
 
 /**
@@ -100,7 +248,7 @@ export interface ConfigStructure {
   stages: EtapaFlujo[];
   conditions: CondicionFlujo[];
   branches: RamificacionFlujo[];
-  initial_node: any;
+  initial_node: InitialNodeConfig;
   end_nodes: NodoFinalFlujo[];
 }
 
@@ -111,7 +259,7 @@ export interface ProspectoEnFlujo {
   id: number;
   flujo_id: number;
   prospecto_id: number;
-  prospecto?: any;
+  prospecto?: Prospecto;
   estado: 'pendiente' | 'en_proceso' | 'completado' | 'cancelado';
   created_at: string;
   updated_at: string;
@@ -136,7 +284,7 @@ export interface FlujoNurturing {
     created_at?: string;
     updated_at?: string;
   };
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 
   // Configuraciones para reconstrucción y ejecución
   config_visual?: ConfigVisual;

@@ -21,6 +21,13 @@ export interface EdgeRemovalChange {
 }
 
 /**
+ * Tipo de cambio de eliminación de nodo
+ */
+export interface NodeRemovalChange {
+  nodeId: string
+}
+
+/**
  * Extrae cambios de posición de los cambios de nodos
  */
 export function extractPositionChanges(changes: NodeChange[]): PositionChange[] {
@@ -29,6 +36,17 @@ export function extractPositionChanges(changes: NodeChange[]): PositionChange[] 
     .map((change) => ({
       nodeId: (change as any).id,
       position: (change as any).position,
+    }))
+}
+
+/**
+ * Extrae cambios de eliminación de nodos
+ */
+export function extractNodeRemovals(changes: NodeChange[]): NodeRemovalChange[] {
+  return changes
+    .filter((change) => change.type === 'remove')
+    .map((change) => ({
+      nodeId: (change as any).id,
     }))
 }
 

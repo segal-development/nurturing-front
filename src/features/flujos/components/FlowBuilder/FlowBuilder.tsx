@@ -4,7 +4,7 @@
  * Features: Drag-and-drop stage creation, real-time validation, visual preview
  */
 
-import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Controls,
   Background,
@@ -24,27 +24,38 @@ import {
   GitBranch,
 } from 'lucide-react'
 
-// Style handles to be visible and draggable
+// Style handles - n8n style (small, discrete, only visible on hover)
 const HANDLE_STYLES = `
   .react-flow__handle {
-    background: #1e3a8a;
-    border: 2px solid white;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    opacity: 1;
-    visibility: visible;
-    z-index: 10;
-  }
-
-  .react-flow__handle:hover {
-    background: #1e40af;
-    transform: scale(1.3);
+    opacity: 0.7;
     transition: all 0.2s ease;
   }
 
-  .react-flow__handle.connectingFrom {
-    background: #16a34a;
+  .react-flow__node:hover .react-flow__handle {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  .react-flow__handle:hover {
+    opacity: 1;
+    transform: scale(1.4);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.2);
+  }
+
+  .react-flow__handle.connectingFrom,
+  .react-flow__handle.connectingTo {
+    background: #16a34a !important;
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  
+  /* Hide target handles when not connecting */
+  .react-flow__handle-left,
+  .react-flow__handle-right {
+    z-index: 10;
   }
 `
 
@@ -74,7 +85,9 @@ import {
   logConfigurationForDebug,
   isConfigurationValid,
 } from './utils/flowConfig'
-import { extractPositionChanges, extractEdgeRemovals } from './utils/flowChanges'
+import { validateFlowConfiguration } from './utils/flowValidations'
+import { extractPositionChanges, extractEdgeRemovals, extractNodeRemovals } from './utils/flowChanges'
+import { usePrecios } from '@/features/costos/hooks'
 
 interface FlowBuilderProps {
   onSaveFlow?: (config: any) => Promise<void>
@@ -119,6 +132,9 @@ function FlowBuilderContent({
     initializeWithOrigin,
   } = useFlowBuilderStore()
 
+  // Get pricing for cost display
+  const { data: precios } = usePrecios()
+
   // ReactFlow state - sincronizado con Zustand
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges)
@@ -128,8 +144,8 @@ function FlowBuilderContent({
 
   // Crear wrappers de nodos que tengan acceso a los callbacks
   const StageNodeWrapper = useCallback((props: any) => (
-    <StageNode {...props} onDelete={removeNode} onUpdate={updateNode} />
-  ), [removeNode, updateNode])
+    <StageNode {...props} onDelete={removeNode} onUpdate={updateNode} precios={precios} />
+  ), [removeNode, updateNode, precios])
 
   const ConditionalNodeWrapper = useCallback((props: any) => (
     <ConditionalNode {...props} onDelete={removeNode} onUpdate={updateNode} />
@@ -214,7 +230,20 @@ function FlowBuilderContent({
   )
 
   /**
-   * Handle node changes (posición, selección, etc)
+   * Sincroniza eliminaciones de nodos a Zustand
+   */
+  const syncNodeRemovals = useCallback(
+    (changes: NodeChange[]): void => {
+      const removals = extractNodeRemovals(changes)
+      removals.forEach((removal) => {
+        removeNode(removal.nodeId)
+      })
+    },
+    [removeNode]
+  )
+
+  /**
+   * Handle node changes (posición, selección, eliminación, etc)
    * Sincroniza cambios entre ReactFlow y Zustand
    */
   const handleNodesChangeWrapper = useCallback(
@@ -222,10 +251,13 @@ function FlowBuilderContent({
       // Aplicar cambios en ReactFlow primero
       onNodesChange(changes)
 
-      // Luego sincronizar a Zustand si hay cambios de posición
+      // Sincronizar cambios de posición a Zustand
       syncNodePositionChanges(changes)
+
+      // Sincronizar eliminaciones a Zustand (esto también limpiará edges automáticamente)
+      syncNodeRemovals(changes)
     },
-    [onNodesChange, syncNodePositionChanges]
+    [onNodesChange, syncNodePositionChanges, syncNodeRemovals]
   )
 
   /**
@@ -325,9 +357,21 @@ function FlowBuilderContent({
       // Construir configuración completa
       const config = buildFlowConfiguration(flowName, flowDescription, storeNodes, storeEdges)
 
-      // Validar configuración
+      // Validar configuración básica
       if (!isConfigurationValid(config)) {
         alert('La configuración del flujo no es válida')
+        return
+      }
+
+      // ✅ Validar configuración completa según requisitos del backend
+      const validationResult = validateFlowConfiguration(config)
+      if (!validationResult.isValid) {
+        const errorMessage = validationResult.errors
+          .map((error, index) => `${index + 1}. ${error}`)
+          .join('\n')
+
+        console.error('❌ Errores de validación del flujo:', validationResult.errors)
+        alert(`⚠️ El flujo tiene errores que deben corregirse:\n\n${errorMessage}`)
         return
       }
 

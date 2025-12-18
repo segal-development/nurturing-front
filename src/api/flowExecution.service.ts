@@ -17,7 +17,7 @@ import type {
 } from '@/types/flowExecution'
 import { apiClient } from './client'
 
-const BASE_URL = '/api/flujos'
+const BASE_URL = '/flujos'
 
 /**
  * FlowExecutionService class

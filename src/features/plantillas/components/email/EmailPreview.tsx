@@ -48,7 +48,14 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
             plantilla.componentes.map((componente) => (
               <div key={componente.id} className="mb-4">
                 {componente.tipo === 'logo' && (
-                  <div className="text-center mb-4">
+                  <div 
+                    style={{
+                      textAlign: 'center',
+                      marginBottom: '16px',
+                      backgroundColor: componente.contenido.color_fondo || 'transparent',
+                      padding: `${componente.contenido.padding ?? 20}px`,
+                    }}
+                  >
                     <img
                       src={componente.contenido.url}
                       alt={componente.contenido.alt || 'Logo'}
@@ -105,14 +112,55 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                   />
                 )}
 
+                {componente.tipo === 'imagen' && (
+                  <div
+                    style={{
+                      textAlign: componente.contenido.alineacion || 'center',
+                      margin: '16px 0',
+                      padding: `${componente.contenido.padding ?? 10}px`,
+                    }}
+                  >
+                    {componente.contenido.link_url ? (
+                      <a
+                        href={componente.contenido.link_url}
+                        target={componente.contenido.link_target || '_blank'}
+                        onClick={(e) => e.preventDefault()}
+                        style={{ display: 'inline-block' }}
+                      >
+                        <img
+                          src={componente.contenido.url}
+                          alt={componente.contenido.alt || 'Imagen'}
+                          style={{
+                            maxWidth: componente.contenido.ancho ? `${componente.contenido.ancho}px` : '100%',
+                            maxHeight: componente.contenido.altura ? `${componente.contenido.altura}px` : 'auto',
+                            borderRadius: `${componente.contenido.border_radius ?? 0}px`,
+                            display: 'block',
+                          }}
+                        />
+                      </a>
+                    ) : (
+                      <img
+                        src={componente.contenido.url}
+                        alt={componente.contenido.alt || 'Imagen'}
+                        style={{
+                          maxWidth: componente.contenido.ancho ? `${componente.contenido.ancho}px` : '100%',
+                          maxHeight: componente.contenido.altura ? `${componente.contenido.altura}px` : 'auto',
+                          borderRadius: `${componente.contenido.border_radius ?? 0}px`,
+                          display: 'inline-block',
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+
                 {componente.tipo === 'footer' && (
                   <div
                     style={{
-                      borderTop: '1px solid #e0e0e0',
                       marginTop: '24px',
-                      paddingTop: '16px',
+                      padding: `${componente.contenido.padding ?? 20}px`,
                       fontSize: '12px',
-                      color: '#999999',
+                      color: componente.contenido.color_texto || '#666666',
+                      backgroundColor: componente.contenido.color_fondo || 'transparent',
                       textAlign: 'center',
                     }}
                   >
@@ -120,12 +168,12 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                     {componente.contenido.enlaces && componente.contenido.enlaces.length > 0 && (
                       <div style={{ marginTop: '8px' }}>
                         {componente.contenido.enlaces.map((enlace, idx) => (
-                          <span key={idx}>
+                          <span key={`footer-preview-${idx}`}>
                             <a
                               href={enlace.url}
                               style={{
-                                color: '#1e3a8a',
-                                textDecoration: 'none',
+                                color: componente.contenido.color_texto || '#666666',
+                                textDecoration: 'underline',
                                 marginRight: '16px',
                               }}
                               onClick={(e) => e.preventDefault()}
@@ -138,7 +186,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                       </div>
                     )}
                     {componente.contenido.mostrar_fecha && (
-                      <p style={{ marginTop: '8px' }}>
+                      <p style={{ marginTop: '8px', opacity: 0.7 }}>
                         Enviado: {new Date().toLocaleDateString()}
                       </p>
                     )}

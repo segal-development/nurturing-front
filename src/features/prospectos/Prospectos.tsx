@@ -13,12 +13,12 @@ import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CompactFiltersBar } from './components/ProspectosFilters/CompactFiltersBar'
 import { ProspectosTable } from './components/ProspectosTable/ProspectosTable'
-import { ProspectosPagination } from './components/ProspectosPagination/ProspectosPagination'
+import { Pagination } from '@/components/shared/Pagination'
 import { ProspectosUploadDialog } from './components/ProspectosUploadDialog/ProspectosUploadDialog'
-import { useOpciones } from './hooks/useOpciones'
+import { useProspectosOpciones } from './hooks/useProspectosOpciones'
 import { useProspectos } from './hooks/useProspectos'
 import { useProspectosFilters } from './hooks/useProspectosFilters'
-import { useProspectosPagination } from './hooks/useProspectosPagination'
+import { usePagination } from '@/hooks/usePagination'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
 
@@ -42,9 +42,9 @@ export function Prospectos() {
   // DEPENDENCIAS EXTERNAS
   // ============================================================
   const queryClient = useQueryClient()
-  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useOpciones()
+  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useProspectosOpciones()
   const { filtros, setImportacionId, setEstado, setTipo } = useProspectosFilters()
-  const { currentPage, goToNextPage, goToPreviousPage, resetPage } = useProspectosPagination()
+  const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
 
   // ============================================================
   // DATOS DE PROSPECTOS
@@ -106,8 +106,10 @@ export function Prospectos() {
       goToPreviousPage()
     } else if (isNextPage) {
       goToNextPage(totalPages)
+    } else {
+      goToPage(newPage)
     }
-  }, [currentPage, totalPages, goToNextPage, goToPreviousPage])
+  }, [currentPage, totalPages, goToNextPage, goToPreviousPage, goToPage])
 
   // ============================================================
   // EARLY RETURNS: ESTADOS DE CARGA Y ERROR
@@ -228,7 +230,7 @@ export function Prospectos() {
           />
 
           {prospectos.length > 0 && totalPages > 1 && (
-            <ProspectosPagination
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}

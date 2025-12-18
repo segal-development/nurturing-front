@@ -142,6 +142,10 @@ export function PlantillaEditarDialog({
         })
       } else if (modoEmail === 'modular') {
         const validatedData = plantillaEmailSchema.parse(plantillaEmail)
+
+        console.log('✏️ [PlantillaEditarDialog] Actualizando plantilla email modular')
+        console.log('📤 [PlantillaEditarDialog] Componentes que se enviarán:', validatedData.componentes)
+
         await plantillasService.actualizar(plantilla.id, {
           ...validatedData,
         })

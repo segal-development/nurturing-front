@@ -19,6 +19,92 @@ import { flowExecutionTrackingService } from '@/api/flowExecutionTracking.servic
 const POLLING_INTERVAL = 2000 // 2 segundos
 
 /**
+ * Hook to check if flow has an active execution
+ *
+ * @param flujoId - Flow ID
+ * @param enablePolling - Enable/disable auto-polling (default: true)
+ * @returns Active execution info or null
+ *
+ * @example
+ * const { data, isLoading } = useActiveExecution(1)
+ * if (data?.tiene_ejecucion_activa) {
+ *   console.log('Active execution:', data.ejecucion)
+ * }
+ */
+export function useActiveExecution(flujoId: number, enablePolling: boolean = true) {
+  return useQuery({
+    queryKey: ['flowExecutionActive', flujoId],
+    queryFn: () => flowExecutionTrackingService.getActiveExecution(flujoId),
+    refetchInterval: enablePolling ? POLLING_INTERVAL : false,
+    staleTime: 1000,
+    enabled: !!flujoId,
+  })
+}
+
+/**
+ * Hook to get the latest execution (any state) for a flow
+ * Useful for showing execution history/state even after completion
+ *
+ * @param flujoId - Flow ID
+ * @param enablePolling - Enable/disable auto-polling (default: false for completed)
+ * @returns Latest execution info
+ *
+ * @example
+ * const { data } = useLatestExecution(1)
+ * const latestExecution = data?.data?.[0] // First execution is the latest
+ */
+export function useLatestExecution(flujoId: number, enablePolling: boolean = false) {
+  return useQuery({
+    queryKey: ['flowExecutions', flujoId],
+    queryFn: () => flowExecutionTrackingService.getExecutions(flujoId, 1),
+    refetchInterval: enablePolling ? POLLING_INTERVAL : false,
+    staleTime: 5000,
+    enabled: !!flujoId,
+  })
+}
+
+/**
+ * Hook to get all executions for a flow
+ * Useful for showing execution history list
+ *
+ * @param flujoId - Flow ID
+ * @param limit - Maximum number of executions to return (default: 50)
+ * @returns List of executions
+ *
+ * @example
+ * const { data } = useFlowExecutions(1, 20)
+ * const executions = data?.data || []
+ */
+export function useFlowExecutions(flujoId: number, limit: number = 50) {
+  const isEnabled = !!flujoId
+  
+  // DEBUG: Ver si el hook se está habilitando
+  console.log('🔍 [useFlowExecutions] Hook called:', {
+    flujoId,
+    limit,
+    isEnabled,
+    flujoIdType: typeof flujoId,
+  })
+  
+  return useQuery({
+    queryKey: ['flowExecutions', flujoId, limit],
+    queryFn: async () => {
+      console.log('🚀 [useFlowExecutions] queryFn executing for flujoId:', flujoId)
+      const result = await flowExecutionTrackingService.getExecutions(flujoId, limit)
+      console.log('✅ [useFlowExecutions] queryFn result:', {
+        flujoId,
+        result,
+        hasData: !!result?.data,
+        dataLength: result?.data?.length,
+      })
+      return result
+    },
+    staleTime: 5000,
+    enabled: isEnabled,
+  })
+}
+
+/**
  * Hook to get detailed execution with stage tracking
  *
  * @param flujoId - Flow ID
@@ -41,6 +127,15 @@ export function useFlowExecutionDetail(
     refetchInterval: enabled ? POLLING_INTERVAL : false,
     staleTime: 1000,
     enabled: enabled && !!flujoId && !!ejecucionId,
+    retry: (failureCount, error: any) => {
+      // Don't retry on 404 - execution doesn't exist
+      if (error?.response?.status === 404) {
+        console.warn(`⚠️ Execution ${ejecucionId} not found (404), stopping retries`)
+        return false
+      }
+      // Retry on other errors (max 3 times)
+      return failureCount < 3
+    },
   })
 }
 

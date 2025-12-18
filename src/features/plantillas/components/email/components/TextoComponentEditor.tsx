@@ -22,17 +22,29 @@ export function TextoComponentEditor({
   const [mostrarFormularioEnlace, setMostrarFormularioEnlace] = useState(false)
   const [nuevoEnlace, setNuevoEnlace] = useState({ url: '', texto: '' })
 
+  // Valores por defecto para evitar undefined
+  const contenido = componente.contenido || {
+    texto: '',
+    alineacion: 'left' as const,
+    tamano: 'normal' as const,
+    color: '#333333',
+    negrita: false,
+    cursiva: false,
+    subrayado: false,
+    enlaces: [],
+  }
+
   const agregarEnlace = () => {
     if (!nuevoEnlace.url || !nuevoEnlace.texto) return
 
     const nuevoContenido = {
-      ...componente.contenido,
+      ...contenido,
       enlaces: [
-        ...(componente.contenido.enlaces || []),
+        ...(contenido.enlaces || []),
         {
           url: nuevoEnlace.url,
           texto: nuevoEnlace.texto,
-          posicion: componente.contenido.texto.length,
+          posicion: contenido.texto.length,
         },
       ],
     }
@@ -50,8 +62,8 @@ export function TextoComponentEditor({
     onUpdate({
       ...componente,
       contenido: {
-        ...componente.contenido,
-        enlaces: componente.contenido.enlaces?.filter((_, i) => i !== index) || [],
+        ...contenido,
+        enlaces: contenido.enlaces?.filter((_: any, i: number) => i !== index) || [],
       },
     })
   }
@@ -64,12 +76,12 @@ export function TextoComponentEditor({
           Texto <span className="text-segal-red">*</span>
         </Label>
         <textarea
-          value={componente.contenido.texto || ''}
+          value={contenido.texto || ''}
           onChange={(e) =>
             onUpdate({
               ...componente,
               contenido: {
-                ...componente.contenido,
+                ...contenido,
                 texto: e.target.value,
               },
             })
@@ -78,7 +90,7 @@ export function TextoComponentEditor({
           placeholder="Escribe el contenido del texto..."
         />
         <p className="text-xs text-segal-dark/60">
-          {componente.contenido.texto.length} caracteres
+          {contenido.texto.length} caracteres
         </p>
       </div>
 
@@ -93,13 +105,13 @@ export function TextoComponentEditor({
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     alineacion,
                   },
                 })
               }
               className={`px-3 py-2 rounded text-sm font-medium transition-colors capitalize ${
-                componente.contenido.alineacion === alineacion
+                contenido.alineacion === alineacion
                   ? 'bg-segal-blue text-white'
                   : 'bg-segal-blue/10 text-segal-blue hover:bg-segal-blue/20'
               }`}
@@ -120,12 +132,12 @@ export function TextoComponentEditor({
             type="number"
             min="8"
             max="72"
-            value={componente.contenido.tamanio_fuente || 14}
+            value={contenido.tamanio_fuente || 14}
             onChange={(e) =>
               onUpdate({
                 ...componente,
                 contenido: {
-                  ...componente.contenido,
+                  ...contenido,
                   tamanio_fuente: parseInt(e.target.value) || 14,
                 },
               })
@@ -139,12 +151,12 @@ export function TextoComponentEditor({
           <div className="flex gap-2">
             <input
               type="color"
-              value={componente.contenido.color || '#000000'}
+              value={contenido.color || '#000000'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color: e.target.value,
                   },
                 })
@@ -153,12 +165,12 @@ export function TextoComponentEditor({
             />
             <Input
               type="text"
-              value={componente.contenido.color || '#000000'}
+              value={contenido.color || '#000000'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color: e.target.value,
                   },
                 })
@@ -176,12 +188,12 @@ export function TextoComponentEditor({
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={componente.contenido.negrita || false}
+              checked={contenido.negrita || false}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     negrita: e.target.checked,
                   },
                 })
@@ -194,12 +206,12 @@ export function TextoComponentEditor({
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={componente.contenido.italica || false}
+              checked={contenido.italica || false}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     italica: e.target.checked,
                   },
                 })
@@ -265,9 +277,9 @@ export function TextoComponentEditor({
         )}
 
         {/* Lista de enlaces */}
-        {componente.contenido.enlaces && componente.contenido.enlaces.length > 0 && (
+        {contenido.enlaces && contenido.enlaces.length > 0 && (
           <div className="space-y-2">
-            {componente.contenido.enlaces.map((enlace, index) => (
+            {contenido.enlaces.map((enlace: any, index: number) => (
               <div
                 key={index}
                 className="flex items-center justify-between bg-segal-blue/10 rounded p-2 border border-segal-blue/20"
@@ -294,14 +306,14 @@ export function TextoComponentEditor({
         <div
           className="bg-segal-blue/5 rounded p-4 border border-segal-blue/10"
           style={{
-            textAlign: componente.contenido.alineacion as any,
-            fontSize: `${componente.contenido.tamanio_fuente || 14}px`,
-            color: componente.contenido.color || '#000000',
-            fontWeight: componente.contenido.negrita ? 'bold' : 'normal',
-            fontStyle: componente.contenido.italica ? 'italic' : 'normal',
+            textAlign: contenido.alineacion as any,
+            fontSize: `${contenido.tamanio_fuente || 14}px`,
+            color: contenido.color || '#000000',
+            fontWeight: contenido.negrita ? 'bold' : 'normal',
+            fontStyle: contenido.italica ? 'italic' : 'normal',
           }}
         >
-          {componente.contenido.texto}
+          {contenido.texto}
         </div>
       </div>
     </div>

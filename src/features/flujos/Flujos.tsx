@@ -8,15 +8,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import { GitBranch, Loader2, AlertCircle } from 'lucide-react'
 import { FlujosFilters } from './components/FlujosFilters/FlujosFilters'
 import { FlujosTable } from './components/FlujosTable/FlujosTable'
-import { FlujosPagination } from './components/FlujosPagination/FlujosPagination'
+import { Pagination } from '@/components/shared/Pagination'
 import { CreateFlujoWithBuilder } from './components/CreateFlujoWithBuilder/CreateFlujoWithBuilder'
 import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
 import { EditFlujoBuilderDialog } from './components/EditFlujoBuilderDialog/EditFlujoBuilderDialog'
 import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
-import { useOpciones } from './hooks/useOpciones'
+import { useFlujoOpciones } from './hooks/useFlujoOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
-import { useFlujoPagination } from './hooks/useFlujoPagination'
+import { usePagination } from '@/hooks/usePagination'
 import { Button } from '@/components/ui/button'
 import type { FlujoNurturing } from '@/types/flujo'
 
@@ -30,14 +30,15 @@ export function Flujos() {
   const [progressPanelOpen, setProgressPanelOpen] = useState(false)
   const [selectedFlujo, setSelectedFlujo] = useState<FlujoNurturing | null>(null)
   const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null)
+  const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null)
 
   // Query client para invalidar caché
   const queryClient = useQueryClient()
 
   // Hooks personalizados
-  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useOpciones()
+  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useFlujoOpciones()
   const { filtros, setOrigenId, setTipoDeudor } = useFlujosFilters()
-  const { currentPage, goToNextPage, goToPreviousPage, resetPage } = useFlujoPagination()
+  const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
 
   // Hook para cargar flujos
   const {
@@ -69,8 +70,7 @@ export function Flujos() {
     } else if (page === currentPage + 1) {
       goToNextPage(totalPages)
     } else {
-      resetPage()
-      // TODO: Implementar goToPage
+      goToPage(page)
     }
   }
 
@@ -230,7 +230,7 @@ export function Flujos() {
           />
 
           {flujos.length > 0 && totalPages > 1 && (
-            <FlujosPagination
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
@@ -259,11 +259,15 @@ export function Flujos() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         flujo={selectedFlujo}
+        executionId={currentExecutionId || undefined}
         onEdit={() => {
           setDetailDialogOpen(false)
           setEditDialogOpen(true)
         }}
         onDelete={handleDeleteFlujo}
+        onExecutionStart={(ejecucionId) => {
+          setCurrentExecutionId(ejecucionId.toString())
+        }}
       />
 
       {/* Dialog para editar flujo con canvas visual */}

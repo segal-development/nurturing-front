@@ -7,9 +7,38 @@ import { nanoid } from 'nanoid'
 import type { CustomNode, CustomEdge, FlowBuilderState } from '@/features/flujos/types/flowBuilder'
 
 /**
- * Initial empty flow state
+ * Initial nodes as defined in the actual store
+ * The store starts with an initial node and an end node by default
+ */
+const INITIAL_NODES: CustomNode[] = [
+  {
+    id: 'initial-1',
+    data: { label: 'Inicio - Selecciona prospectos' },
+    position: { x: 400, y: 50 },
+    type: 'initial',
+  },
+  {
+    id: 'end-1',
+    data: { label: 'Fin' },
+    position: { x: 400, y: 800 },
+    type: 'end',
+  },
+]
+
+/**
+ * Initial flow state matching the actual store
  */
 export const INITIAL_FLOW_STATE: FlowBuilderState = {
+  nodes: INITIAL_NODES,
+  edges: [],
+  flowName: '',
+  flowDescription: '',
+}
+
+/**
+ * Empty flow state for tests that need a truly empty state
+ */
+export const EMPTY_FLOW_STATE: FlowBuilderState = {
   nodes: [],
   edges: [],
   flowName: '',

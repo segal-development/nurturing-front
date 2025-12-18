@@ -12,6 +12,8 @@ export function FlujoTableHeader() {
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Nombre</TableHead>
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Tipo de Deudor</TableHead>
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Etapas</TableHead>
+        <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Progreso</TableHead>
+        <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Costo</TableHead>
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Estado</TableHead>
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Usuario</TableHead>
         <TableHead className="text-segal-dark font-semibold dark:text-segal-blue">Creado</TableHead>

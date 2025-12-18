@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Sliders,
   Mail,
+  DollarSign,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ const NAVIGATION_ITEMS = [
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
   { name: 'Envíos', href: '/envios', icon: Mail },
   { name: 'Plantillas', href: '/plantillas', icon: Mail },
+  { name: 'Costos', href: '/costos', icon: DollarSign },
   { name: 'Configuración', href: '/configuracion', icon: Sliders },
 ]
 
