@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Info } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -21,14 +21,24 @@ export function FooterComponentEditor({
   const [mostrarFormularioEnlace, setMostrarFormularioEnlace] = useState(false)
   const [nuevoEnlace, setNuevoEnlace] = useState({ url: '', etiqueta: '' })
 
+  // Valores por defecto para evitar undefined
+  const contenido = componente.contenido || {
+    texto: '',
+    mostrar_fecha: false,
+    enlaces: [],
+    color_fondo: undefined,
+    color_texto: '#666666',
+    padding: 20,
+  }
+
   const agregarEnlace = () => {
     if (!nuevoEnlace.url || !nuevoEnlace.etiqueta) return
 
     onUpdate({
       ...componente,
       contenido: {
-        ...componente.contenido,
-        enlaces: [...(componente.contenido.enlaces || []), nuevoEnlace],
+        ...contenido,
+        enlaces: [...(contenido.enlaces || []), nuevoEnlace],
       },
     })
 
@@ -40,14 +50,26 @@ export function FooterComponentEditor({
     onUpdate({
       ...componente,
       contenido: {
-        ...componente.contenido,
-        enlaces: componente.contenido.enlaces?.filter((_, i) => i !== index) || [],
+        ...contenido,
+        enlaces: contenido.enlaces?.filter((_: any, i: number) => i !== index) || [],
       },
     })
   }
 
   return (
     <div className="space-y-4">
+      {/* Aviso sobre footer del proveedor SMTP */}
+      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="text-xs text-blue-800">
+          <p className="font-semibold">Nota sobre el footer de emails</p>
+          <p className="mt-1">
+            El proveedor de email agrega automáticamente un footer con información de compliance 
+            y un enlace para desuscribirse. Si agregas tu propio footer, aparecerán ambos en el email final.
+          </p>
+        </div>
+      </div>
+
       {/* Texto */}
       <div className="space-y-2">
         <Label className="text-sm font-semibold text-segal-dark">
@@ -55,12 +77,12 @@ export function FooterComponentEditor({
         </Label>
         <Input
           type="text"
-          value={componente.contenido.texto || ''}
+          value={contenido.texto || ''}
           onChange={(e) =>
             onUpdate({
               ...componente,
               contenido: {
-                ...componente.contenido,
+                ...contenido,
                 texto: e.target.value,
               },
             })
@@ -75,12 +97,12 @@ export function FooterComponentEditor({
         <input
           id="footer-fecha"
           type="checkbox"
-          checked={componente.contenido.mostrar_fecha || false}
+          checked={contenido.mostrar_fecha || false}
           onChange={(e) =>
             onUpdate({
               ...componente,
               contenido: {
-                ...componente.contenido,
+                ...contenido,
                 mostrar_fecha: e.target.checked,
               },
             })
@@ -146,9 +168,9 @@ export function FooterComponentEditor({
         )}
 
         {/* Lista de enlaces */}
-        {componente.contenido.enlaces && componente.contenido.enlaces.length > 0 && (
+        {contenido.enlaces && contenido.enlaces.length > 0 && (
           <div className="space-y-2">
-            {componente.contenido.enlaces.map((enlace, index) => (
+            {contenido.enlaces.map((enlace: any, index: number) => (
               <div
                 key={index}
                 className="flex items-center justify-between bg-segal-blue/10 rounded p-2 border border-segal-blue/20"
@@ -169,18 +191,125 @@ export function FooterComponentEditor({
         )}
       </div>
 
+      {/* Colores */}
+      <div className="space-y-3 border-t border-segal-blue/10 pt-4">
+        <Label className="text-sm font-semibold text-segal-dark">Estilos</Label>
+        
+        <div className="grid grid-cols-2 gap-4">
+          {/* Color de fondo */}
+          <div className="space-y-2">
+            <Label className="text-xs text-segal-dark/70">Color de fondo</Label>
+            <div className="flex gap-2">
+              <Input
+                type="color"
+                value={contenido.color_fondo || '#f5f5f5'}
+                onChange={(e) =>
+                  onUpdate({
+                    ...componente,
+                    contenido: {
+                      ...contenido,
+                      color_fondo: e.target.value,
+                    },
+                  })
+                }
+                className="w-10 h-8 p-1 border-segal-blue/30 cursor-pointer"
+              />
+              <Input
+                type="text"
+                value={contenido.color_fondo || ''}
+                onChange={(e) =>
+                  onUpdate({
+                    ...componente,
+                    contenido: {
+                      ...contenido,
+                      color_fondo: e.target.value || undefined,
+                    },
+                  })
+                }
+                placeholder="Sin fondo"
+                className="flex-1 border-segal-blue/30 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Color de texto */}
+          <div className="space-y-2">
+            <Label className="text-xs text-segal-dark/70">Color de texto</Label>
+            <div className="flex gap-2">
+              <Input
+                type="color"
+                value={contenido.color_texto || '#666666'}
+                onChange={(e) =>
+                  onUpdate({
+                    ...componente,
+                    contenido: {
+                      ...contenido,
+                      color_texto: e.target.value,
+                    },
+                  })
+                }
+                className="w-10 h-8 p-1 border-segal-blue/30 cursor-pointer"
+              />
+              <Input
+                type="text"
+                value={contenido.color_texto || '#666666'}
+                onChange={(e) =>
+                  onUpdate({
+                    ...componente,
+                    contenido: {
+                      ...contenido,
+                      color_texto: e.target.value || '#666666',
+                    },
+                  })
+                }
+                className="flex-1 border-segal-blue/30 text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Padding */}
+        <div className="space-y-2">
+          <Label className="text-xs text-segal-dark/70">Espaciado interno (px)</Label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={contenido.padding ?? 20}
+            onChange={(e) =>
+              onUpdate({
+                ...componente,
+                contenido: {
+                  ...contenido,
+                  padding: parseInt(e.target.value) || 0,
+                },
+              })
+            }
+            className="border-segal-blue/30 w-24"
+          />
+        </div>
+      </div>
+
       {/* Preview */}
       <div className="border-t border-segal-blue/10 pt-4">
         <p className="text-xs text-segal-dark/60 mb-2">Preview:</p>
-        <div className="bg-segal-blue/5 rounded p-4 border border-segal-blue/10 text-center text-sm">
-          <p className="text-segal-dark/80 mb-2">{componente.contenido.texto}</p>
-          {componente.contenido.enlaces && componente.contenido.enlaces.length > 0 && (
+        <div 
+          className="rounded text-center text-sm"
+          style={{
+            backgroundColor: contenido.color_fondo || '#f5f5f5',
+            color: contenido.color_texto || '#666666',
+            padding: `${contenido.padding ?? 20}px`,
+          }}
+        >
+          <p className="mb-2">{contenido.texto}</p>
+          {contenido.enlaces && contenido.enlaces.length > 0 && (
             <div className="flex justify-center gap-4 text-xs">
-              {componente.contenido.enlaces.map((enlace, idx) => (
+              {contenido.enlaces.map((enlace: any, idx: number) => (
                 <a
-                  key={idx}
+                  key={`footer-link-${idx}`}
                   href={enlace.url}
-                  className="text-segal-blue hover:underline"
+                  className="hover:underline"
+                  style={{ color: contenido.color_texto || '#666666' }}
                   onClick={(e) => e.preventDefault()}
                 >
                   {enlace.etiqueta}
@@ -188,8 +317,8 @@ export function FooterComponentEditor({
               ))}
             </div>
           )}
-          {componente.contenido.mostrar_fecha && (
-            <p className="text-segal-dark/50 text-xs mt-2">
+          {contenido.mostrar_fecha && (
+            <p className="text-xs mt-2 opacity-70">
               Enviado: {new Date().toLocaleDateString()}
             </p>
           )}

@@ -104,6 +104,15 @@ export const logoComponentSchema = z.object({
       .min(50, 'Alto mínimo 50px')
       .max(500, 'Alto máximo 500px')
       .default(100),
+    color_fondo: z
+      .string()
+      .regex(/^#[0-9A-F]{6}$/i, 'Color debe ser un hexadecimal válido')
+      .optional(),
+    padding: z
+      .number()
+      .min(0, 'Padding mínimo 0px')
+      .max(100, 'Padding máximo 100px')
+      .default(20),
   }),
 })
 
@@ -160,6 +169,55 @@ export const separadorComponentSchema = z.object({
 export type SeparadorComponentFormData = z.infer<typeof separadorComponentSchema>
 
 /**
+ * Schema para componente de Imagen
+ * Permite agregar imágenes con link opcional
+ */
+export const imagenComponentSchema = z.object({
+  id: z.string(),
+  tipo: z.literal('imagen'),
+  orden: z.number(),
+  contenido: z.object({
+    url: z
+      .string()
+      .min(1, 'URL de la imagen es obligatoria')
+      .url('URL debe ser válida'),
+    alt: z
+      .string()
+      .min(1, 'Texto alternativo es obligatorio')
+      .max(200, 'Texto alternativo máximo 200 caracteres'),
+    ancho: z
+      .number()
+      .min(50, 'Ancho mínimo 50px')
+      .max(600, 'Ancho máximo 600px')
+      .optional(),
+    altura: z
+      .number()
+      .min(50, 'Alto mínimo 50px')
+      .max(800, 'Alto máximo 800px')
+      .optional(),
+    alineacion: z.enum(['left', 'center', 'right']).default('center'),
+    link_url: z
+      .string()
+      .url('URL del link debe ser válida')
+      .optional()
+      .or(z.literal('')),
+    link_target: z.enum(['_blank', '_self']).default('_blank'),
+    border_radius: z
+      .number()
+      .min(0, 'Border radius mínimo 0px')
+      .max(50, 'Border radius máximo 50px')
+      .default(0),
+    padding: z
+      .number()
+      .min(0, 'Padding mínimo 0px')
+      .max(50, 'Padding máximo 50px')
+      .default(10),
+  }),
+})
+
+export type ImagenComponentFormData = z.infer<typeof imagenComponentSchema>
+
+/**
  * Schema para componente de Footer
  */
 export const footerComponentSchema = z.object({
@@ -179,6 +237,19 @@ export const footerComponentSchema = z.object({
       )
       .default([]),
     mostrar_fecha: z.boolean().default(false),
+    color_fondo: z
+      .string()
+      .regex(/^#[0-9A-F]{6}$/i, 'Color debe ser un hexadecimal válido')
+      .optional(),
+    color_texto: z
+      .string()
+      .regex(/^#[0-9A-F]{6}$/i, 'Color debe ser un hexadecimal válido')
+      .default('#666666'),
+    padding: z
+      .number()
+      .min(0, 'Padding mínimo 0px')
+      .max(100, 'Padding máximo 100px')
+      .default(20),
   }),
 })
 
@@ -192,6 +263,7 @@ export const emailComponentSchema = z.union([
   logoComponentSchema,
   botonComponentSchema,
   separadorComponentSchema,
+  imagenComponentSchema,
   footerComponentSchema,
 ])
 

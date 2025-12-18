@@ -1,82 +1,163 @@
+/**
+ * Hooks para gestión de flujos de nurturing
+ * 
+ * Principios SOLID aplicados:
+ * - Single Responsibility: Cada hook tiene una única responsabilidad
+ * - Open/Closed: Fácil de extender sin modificar
+ * - Dependency Inversion: Depende de abstracciones (service layer)
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { FlujoFormData } from '@/types/flujo'
-import { flujoApi } from '@/api/flujos'
+import { flujosService } from '@/api/flujos.service'
+import type { FlujoNurturing, FlujoFormData } from '@/types/flujo'
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface FlujoFilters {
-  tipoProspecto?: string
-  activo?: boolean
+  origen_id?: string
+  tipo_deudor?: string
+  page?: number
+  per_page?: number
 }
 
+interface FlujoListResponse {
+  data: FlujoNurturing[]
+  meta: {
+    total: number
+    per_page: number
+    current_page: number
+    last_page: number
+  }
+}
+
+// ============================================================================
+// Query Keys (centralized for consistency)
+// ============================================================================
+
+export const flujoQueryKeys = {
+  all: ['flujos'] as const,
+  lists: () => [...flujoQueryKeys.all, 'list'] as const,
+  list: (filters?: FlujoFilters) => [...flujoQueryKeys.lists(), filters] as const,
+  details: () => [...flujoQueryKeys.all, 'detail'] as const,
+  detail: (id: number) => [...flujoQueryKeys.details(), id] as const,
+} as const
+
+// ============================================================================
+// Query Hooks
+// ============================================================================
+
 /**
- * Query hook to fetch all flujos with optional filters
- * Automatically cached and refetched based on staleTime
+ * Hook para obtener lista paginada de flujos con filtros opcionales
+ * 
+ * @param filters - Filtros opcionales (origen_id, tipo_deudor, page, per_page)
+ * @returns Query result con data, isLoading, isError, etc.
+ * 
+ * @example
+ * const { data, isLoading } = useFlujos({ origen_id: '1', page: 1 })
  */
 export function useFlujos(filters?: FlujoFilters) {
-  return useQuery({
-    queryKey: ['flujos', filters],
-    queryFn: () => flujoApi.getAll(filters),
+  return useQuery<FlujoListResponse>({
+    queryKey: flujoQueryKeys.list(filters),
+    queryFn: () => flujosService.getAll(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    gcTime: 10 * 60 * 1000,   // 10 minutes (garbage collection)
   })
 }
 
 /**
- * Query hook to fetch a single flujo by ID
+ * Hook para obtener un flujo específico por ID
+ * 
+ * @param id - ID del flujo (null para deshabilitar la query)
+ * @returns Query result con el flujo
+ * 
+ * @example
+ * const { data: flujo } = useFlujo(selectedId)
  */
 export function useFlujo(id: number | null) {
-  return useQuery({
-    queryKey: ['flujo', id],
-    queryFn: () => (id ? flujoApi.getById(id) : Promise.reject(new Error('No ID provided'))),
-    enabled: id !== null,
+  return useQuery<FlujoNurturing>({
+    queryKey: flujoQueryKeys.detail(id ?? 0),
+    queryFn: async () => {
+      if (id === null || id <= 0) {
+        throw new Error('ID de flujo inválido')
+      }
+      return flujosService.getById(id)
+    },
+    enabled: id !== null && id > 0,
     staleTime: 5 * 60 * 1000,
   })
 }
 
+// ============================================================================
+// Mutation Hooks
+// ============================================================================
+
 /**
- * Mutation hook to create a new flujo
+ * Hook para crear un nuevo flujo
+ * Invalida automáticamente la lista de flujos al crear exitosamente
+ * 
+ * @returns Mutation con mutate/mutateAsync
+ * 
+ * @example
+ * const createFlujo = useCreateFlujo()
+ * createFlujo.mutate({ nombre: 'Nuevo Flujo', ... })
  */
 export function useCreateFlujo() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: FlujoFormData) => flujoApi.create(data),
+    mutationFn: (data: FlujoFormData) => flujosService.create(data),
     onSuccess: () => {
-      // Invalidate all flujos queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ['flujos'] })
+      queryClient.invalidateQueries({ queryKey: flujoQueryKeys.lists() })
     },
   })
 }
 
 /**
- * Mutation hook to update an existing flujo
+ * Hook para actualizar un flujo existente
+ * Actualiza el caché del flujo específico y la lista
+ * 
+ * @param id - ID del flujo a actualizar
+ * @returns Mutation con mutate/mutateAsync
+ * 
+ * @example
+ * const updateFlujo = useUpdateFlujo(flujoId)
+ * updateFlujo.mutate({ nombre: 'Nombre actualizado' })
  */
 export function useUpdateFlujo(id: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: Partial<FlujoFormData>) => flujoApi.update(id, data),
+    mutationFn: (data: Partial<FlujoFormData>) => flujosService.update(id, data),
     onSuccess: (updatedFlujo) => {
-      // Update specific flujo in cache
-      queryClient.setQueryData(['flujo', id], updatedFlujo)
-      // Invalidate list to refetch
-      queryClient.invalidateQueries({ queryKey: ['flujos'] })
+      // Optimistic update del detalle
+      queryClient.setQueryData(flujoQueryKeys.detail(id), updatedFlujo)
+      // Invalidar lista para refetch
+      queryClient.invalidateQueries({ queryKey: flujoQueryKeys.lists() })
     },
   })
 }
 
 /**
- * Mutation hook to delete a flujo
+ * Hook para eliminar un flujo
+ * Remueve del caché e invalida la lista
+ * 
+ * @param id - ID del flujo a eliminar
+ * @returns Mutation con mutate/mutateAsync
+ * 
+ * @example
+ * const deleteFlujo = useDeleteFlujo(flujoId)
+ * deleteFlujo.mutate()
  */
 export function useDeleteFlujo(id: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => flujoApi.delete(id),
+    mutationFn: () => flujosService.delete(id),
     onSuccess: () => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: ['flujo', id] })
-      // Invalidate list to refetch
-      queryClient.invalidateQueries({ queryKey: ['flujos'] })
+      queryClient.removeQueries({ queryKey: flujoQueryKeys.detail(id) })
+      queryClient.invalidateQueries({ queryKey: flujoQueryKeys.lists() })
     },
   })
 }

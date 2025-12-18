@@ -6,7 +6,7 @@
 
 import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
-import { Users, Database } from 'lucide-react'
+import { Users, Database, CheckCircle2, AlertCircle, Loader2, Clock } from 'lucide-react'
 import type { InitialNodeData } from '../../../types/flowBuilder'
 
 interface InitialNodeProps extends NodeProps<InitialNodeData> {
@@ -17,17 +17,47 @@ export function InitialNode({ data, isSelected = false }: InitialNodeProps) {
   return (
     <>
       <div
-        className={`rounded-lg border-2 p-4 min-w-[240px] bg-gradient-to-br from-segal-blue/10 to-segal-turquoise/10 shadow-md transition-all duration-200 ${
-          isSelected ? 'border-segal-blue ring-2 ring-segal-blue/30' : 'border-segal-blue/50'
+        className={`rounded-lg border-2 p-4 min-w-60 bg-linear-to-br from-segal-blue/10 to-segal-turquoise/10 shadow-md transition-all duration-200 ${
+          // Estado de ejecución tiene prioridad
+          data.executionState === 'executing'
+            ? 'border-amber-500 ring-2 ring-amber-400/30'
+            : data.executionState === 'completed'
+              ? 'border-green-500 ring-2 ring-green-400/20'
+              : data.executionState === 'failed'
+                ? 'border-red-500 ring-2 ring-red-400/20'
+                : data.executionState === 'pending'
+                  ? 'border-gray-400 opacity-60'
+                  : isSelected
+                    ? 'border-segal-blue ring-2 ring-segal-blue/30'
+                    : 'border-segal-blue/50'
         }`}
       >
         <div className="space-y-3">
           {/* Header */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-segal-blue text-white">
-              <Database className="h-4 w-4" />
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-segal-blue text-white">
+                <Database className="h-4 w-4" />
+              </div>
+              <h3 className="font-bold text-sm text-segal-dark">{data.label}</h3>
             </div>
-            <h3 className="font-bold text-sm text-segal-dark">{data.label}</h3>
+            {/* Execution State Icon */}
+            {data.executionState && (
+              <>
+                {data.executionState === 'executing' && (
+                  <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                )}
+                {data.executionState === 'completed' && (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                )}
+                {data.executionState === 'failed' && (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+                {data.executionState === 'pending' && (
+                  <Clock className="h-5 w-5 text-gray-400" />
+                )}
+              </>
+            )}
           </div>
 
           {/* Content */}
@@ -56,9 +86,13 @@ export function InitialNode({ data, isSelected = false }: InitialNodeProps) {
         </div>
       </div>
 
-      {/* Output handles */}
-      <Handle type="source" position={Position.Bottom} id="bottom" />
-      <Handle type="source" position={Position.Right} id="right" />
+      {/* Output handle - only right side (n8n style) */}
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        id="right"
+        className="!w-3 !h-3 !bg-segal-blue !border-2 !border-white"
+      />
     </>
   )
 }

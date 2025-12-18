@@ -8,15 +8,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import { GitBranch, Loader2, AlertCircle } from 'lucide-react'
 import { FlujosFilters } from './components/FlujosFilters/FlujosFilters'
 import { FlujosTable } from './components/FlujosTable/FlujosTable'
-import { FlujosPagination } from './components/FlujosPagination/FlujosPagination'
+import { Pagination } from '@/components/shared/Pagination'
 import { CreateFlujoWithBuilder } from './components/CreateFlujoWithBuilder/CreateFlujoWithBuilder'
 import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
 import { EditFlujoBuilderDialog } from './components/EditFlujoBuilderDialog/EditFlujoBuilderDialog'
 import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
-import { useOpciones } from './hooks/useOpciones'
+import { useFlujoOpciones } from './hooks/useFlujoOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
-import { useFlujoPagination } from './hooks/useFlujoPagination'
+import { usePagination } from '@/hooks/usePagination'
 import { Button } from '@/components/ui/button'
 import type { FlujoNurturing } from '@/types/flujo'
 
@@ -32,6 +32,7 @@ export function Flujos() {
   // Estado para flujos seleccionados
   const [selectedFlujo, setSelectedFlujo] = useState<FlujoNurturing | null>(null)
   const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null)
+  const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null)
 
   // Estado para crear flujo desde origen preseleccionado
   const [initialOriginIdForCreation, setInitialOriginIdForCreation] = useState<string | null>(null)
@@ -40,9 +41,9 @@ export function Flujos() {
   const queryClient = useQueryClient()
 
   // Hooks personalizados
-  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useOpciones()
+  const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useFlujoOpciones()
   const { filtros, setOrigenId, setTipoDeudor } = useFlujosFilters()
-  const { currentPage, goToNextPage, goToPreviousPage, resetPage } = useFlujoPagination()
+  const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
 
   // Hook para cargar flujos
   const {
@@ -82,7 +83,7 @@ export function Flujos() {
       return
     }
 
-    resetPage()
+    goToPage(page)
   }
 
   /**
@@ -184,11 +185,11 @@ export function Flujos() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2 dark:text-white">
             <GitBranch className="h-8 w-8 text-segal-blue" />
             Flujos de Nurturing
           </h1>
-          <p className="text-segal-dark/60 mt-2">
+          <p className="text-segal-dark/60 mt-2 dark:text-white">
             {filtros.origenId
               ? `Gestiona y crea flujos de nurturing para ${
                   opciones?.origenes?.find((o) => o.id === filtros.origenId)?.nombre || 'este origen'
@@ -240,8 +241,8 @@ export function Flujos() {
       {!filtros.origenId && (
         <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-12 text-center">
           <AlertCircle className="h-12 w-12 text-segal-blue/50 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-segal-dark mb-2">Selecciona un origen</p>
-          <p className="text-segal-dark/60">
+          <p className="text-lg font-semibold text-segal-dark mb-2 dark:text-white">Selecciona un origen</p>
+          <p className="text-segal-dark/60 dark:text-white">
             Elige un origen del selector anterior para ver los flujos disponibles
           </p>
         </div>
@@ -250,8 +251,8 @@ export function Flujos() {
       {/* Resumen de registros */}
       {filtros.origenId && flujos.length > 0 && !isLoadingFlujos && (
         <div className="flex items-center justify-between px-4 py-3 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-          <div className="text-sm text-segal-dark">
-            Mostrando <span className="font-semibold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
+          <div className="text-sm text-segal-dark dark:text-gray-300">
+            Mostrando <span className="font-semibold dark:text-white">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a{' '}
             <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, total)}</span> de{' '}
             <span className="font-semibold text-segal-blue">{total}</span> flujos
           </div>
@@ -270,11 +271,18 @@ export function Flujos() {
           />
 
           {flujos.length > 0 && totalPages > 1 && (
-            <FlujosPagination
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
             />
+          )}
+
+          {flujos.length === 0 && (
+            <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-8 text-center">
+              <AlertCircle className="h-10 w-10 text-segal-blue/50 mx-auto mb-3" />
+              <p className="text-segal-dark/60 dark:text-white">No hay flujos para este origen</p>
+            </div>
           )}
         </>
       )}
@@ -293,11 +301,15 @@ export function Flujos() {
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         flujo={selectedFlujo}
+        executionId={currentExecutionId || undefined}
         onEdit={() => {
           setDetailDialogOpen(false)
           setEditDialogOpen(true)
         }}
         onDelete={handleDeleteFlujo}
+        onExecutionStart={(ejecucionId) => {
+          setCurrentExecutionId(ejecucionId.toString())
+        }}
       />
 
       {/* Dialog para editar flujo con canvas visual */}

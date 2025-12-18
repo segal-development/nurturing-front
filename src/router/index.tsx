@@ -8,8 +8,10 @@ import Flujos from '@/pages/Flujos';
 import Ofertas from '@/pages/Ofertas';
 import Monitor from '@/pages/Monitor';
 import Configuracion from '@/pages/Configuracion';
+import Costos from '@/pages/Costos';
 import { ProfilePage } from '@/pages/Profile';
 import { PlantillasPage } from '@/features/plantillas/pages/PlantillasPage';
+import EnviosPage from '@/pages/Envios';
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +43,10 @@ export const router = createBrowserRouter([
         element: <Flujos />,
       },
       {
+        path: 'envios',
+        element: <EnviosPage />,
+      },
+      {
         path: 'plantillas',
         element: <PlantillasPage />,
       },
@@ -55,6 +61,10 @@ export const router = createBrowserRouter([
       {
         path: 'configuracion',
         element: <Configuracion />,
+      },
+      {
+        path: 'costos',
+        element: <Costos />,
       },
       {
         path: 'profile',

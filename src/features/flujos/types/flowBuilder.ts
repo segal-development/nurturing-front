@@ -5,24 +5,42 @@
 
 import type { Node, Edge } from 'reactflow'
 import type { TipoMensaje } from '@/types/flujo'
+import type { StageEnvios } from '@/types/flowExecutionTracking'
+
+/**
+ * Base execution state data for all nodes during flow execution
+ */
+export interface ExecutionStateData {
+  executionState?: 'pending' | 'executing' | 'completed' | 'failed'
+  executionDate?: string
+  errorMessage?: string
+  envios?: StageEnvios
+  stageId?: number
+}
 
 /**
  * Condition for branching logic in flows
+ * 
+ * Supported check_param values from AthenaCampaign API:
+ * - Views: Number of email opens
+ * - Clicks: Number of link clicks  
+ * - Bounces: Number of bounced emails
+ * - Unsubscribes: Number of unsubscribes (requires custom tracking)
  */
 export interface FlowCondition {
   id: string
   label: string // e.g., "Vieron el email", "Hicieron click"
-  type: 'email_opened' | 'link_clicked' | 'custom'
+  type: 'email_opened' | 'link_clicked' | 'email_bounced' | 'unsubscribed' | 'custom'
   value?: string
-  check_param?: string // 'Views', 'Clicks', 'Bounces'
-  check_operator?: string // '>', '>=', '==', '!=', '<', '<=', 'in', 'not_in'
-  check_value?: string // '0', '1', '0,1,2'
+  check_param?: 'Views' | 'Clicks' | 'Bounces' | 'Unsubscribes' | string // Metric to check
+  check_operator?: '>' | '>=' | '==' | '!=' | '<' | '<=' | 'in' | 'not_in' // Comparison operator
+  check_value?: string // '0', '1', '0,1,2' - Expected value(s)
 }
 
 /**
  * Custom node data for different stage types
  */
-export interface StageNodeData {
+export interface StageNodeData extends ExecutionStateData {
   label: string
   tipo_mensaje?: TipoMensaje
   dia_envio?: number // Days after flow start (deprecated, use tiempo_espera)
@@ -50,7 +68,7 @@ export interface OfferNodeData {
   fecha_fin: string
 }
 
-export interface InitialNodeData {
+export interface InitialNodeData extends ExecutionStateData {
   label: string
   origen_id?: string
   origen_nombre?: string
@@ -61,7 +79,7 @@ export interface InitialNodeData {
  * Conditional node for branching logic (e.g., "Did user open email?")
  * Creates multiple outgoing edges with different conditions
  */
-export interface ConditionalNodeData {
+export interface ConditionalNodeData extends ExecutionStateData {
   label: string
   description?: string
   condition: FlowCondition
@@ -72,7 +90,7 @@ export interface ConditionalNodeData {
 /**
  * End node to mark flow completion
  */
-export interface EndNodeData {
+export interface EndNodeData extends ExecutionStateData {
   label: string
   description?: string
 }

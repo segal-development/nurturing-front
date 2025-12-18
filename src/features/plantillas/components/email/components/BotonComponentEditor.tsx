@@ -15,6 +15,14 @@ export function BotonComponentEditor({
   componente,
   onUpdate,
 }: BotonComponentEditorProps) {
+  // Valores por defecto para evitar undefined
+  const contenido = componente.contenido || {
+    texto: '',
+    url: '',
+    color_fondo: '#1e3a8a',
+    color_texto: '#ffffff',
+  }
+
   return (
     <div className="space-y-4">
       {/* Texto */}
@@ -24,12 +32,12 @@ export function BotonComponentEditor({
         </Label>
         <Input
           type="text"
-          value={componente.contenido.texto || ''}
+          value={contenido.texto || ''}
           onChange={(e) =>
             onUpdate({
               ...componente,
               contenido: {
-                ...componente.contenido,
+                ...contenido,
                 texto: e.target.value,
               },
             })
@@ -46,12 +54,12 @@ export function BotonComponentEditor({
         </Label>
         <Input
           type="url"
-          value={componente.contenido.url || ''}
+          value={contenido.url || ''}
           onChange={(e) =>
             onUpdate({
               ...componente,
               contenido: {
-                ...componente.contenido,
+                ...contenido,
                 url: e.target.value,
               },
             })
@@ -70,12 +78,12 @@ export function BotonComponentEditor({
           <div className="flex gap-2">
             <input
               type="color"
-              value={componente.contenido.color_fondo || '#1e3a8a'}
+              value={contenido.color_fondo || '#1e3a8a'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color_fondo: e.target.value,
                   },
                 })
@@ -84,12 +92,12 @@ export function BotonComponentEditor({
             />
             <Input
               type="text"
-              value={componente.contenido.color_fondo || '#1e3a8a'}
+              value={contenido.color_fondo || '#1e3a8a'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color_fondo: e.target.value,
                   },
                 })
@@ -106,12 +114,12 @@ export function BotonComponentEditor({
           <div className="flex gap-2">
             <input
               type="color"
-              value={componente.contenido.color_texto || '#ffffff'}
+              value={contenido.color_texto || '#ffffff'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color_texto: e.target.value,
                   },
                 })
@@ -120,12 +128,12 @@ export function BotonComponentEditor({
             />
             <Input
               type="text"
-              value={componente.contenido.color_texto || '#ffffff'}
+              value={contenido.color_texto || '#ffffff'}
               onChange={(e) =>
                 onUpdate({
                   ...componente,
                   contenido: {
-                    ...componente.contenido,
+                    ...contenido,
                     color_texto: e.target.value,
                   },
                 })
@@ -142,13 +150,13 @@ export function BotonComponentEditor({
         <div className="bg-segal-blue/5 rounded p-4 flex justify-center border border-segal-blue/10">
           <button
             style={{
-              backgroundColor: componente.contenido.color_fondo || '#1e3a8a',
-              color: componente.contenido.color_texto || '#ffffff',
+              backgroundColor: contenido.color_fondo || '#1e3a8a',
+              color: contenido.color_texto || '#ffffff',
             }}
             className="px-6 py-2 rounded font-medium transition-opacity hover:opacity-80"
             disabled
           >
-            {componente.contenido.texto || 'Botón'}
+            {contenido.texto || 'Botón'}
           </button>
         </div>
       </div>

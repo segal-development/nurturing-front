@@ -1,5 +1,40 @@
 import axios, { AxiosError } from 'axios';
-import type { AxiosInstance } from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+
+// ============================================================
+// API ERROR TYPES
+// ============================================================
+
+/**
+ * Standard API error response from Laravel backend
+ */
+export interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+  errors?: Record<string, string[]>;
+}
+
+/**
+ * Typed Axios error for API calls
+ */
+export type ApiError = AxiosError<ApiErrorResponse>;
+
+/**
+ * Helper to check if an error is an API error
+ */
+export function isApiError(error: unknown): error is ApiError {
+  return axios.isAxiosError(error);
+}
+
+/**
+ * Extract error message from API error
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'Error desconocido'): string {
+  if (!isApiError(error)) return fallback;
+  
+  const data = error.response?.data;
+  return data?.message || data?.error || error.message || fallback;
+}
 
 // URLs de configuración
 const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
@@ -86,7 +121,7 @@ const getXsrfToken = (): string | null => {
 };
 
 const createRequestInterceptor = (clientName: string) => {
-  return (config: any) => {
+  return (config: InternalAxiosRequestConfig) => {
     console.log(`🔵 [${clientName}] [${config.method?.toUpperCase()}] ${config.url}`)
     console.log(`   withCredentials: ${config.withCredentials}`)
     console.log(`   withXSRFToken: ${config.withXSRFToken}`)
@@ -118,9 +153,15 @@ const createRequestInterceptor = (clientName: string) => {
 // ============================================================
 // INTERCEPTORES DE RESPONSE
 // ============================================================
+
+// Extended config type for custom properties
+interface ExtendedAxiosConfig extends InternalAxiosRequestConfig {
+  skipAuthRedirect?: boolean;
+}
+
 const createResponseInterceptor = (clientName: string) => {
   return {
-    success: (response: any) => {
+    success: <T>(response: import('axios').AxiosResponse<T>) => {
       console.log(`🟢 [${clientName}] [${response.status}] ${response.config.url}`);
 
       // Log Set-Cookie headers si existen
@@ -140,7 +181,8 @@ const createResponseInterceptor = (clientName: string) => {
     error: async (error: AxiosError) => {
       const status = error.response?.status;
       const currentPath = window.location.pathname;
-      const skipAuthRedirect = (error.config as any)?.skipAuthRedirect;
+      const config = error.config as ExtendedAxiosConfig | undefined;
+      const skipAuthRedirect = config?.skipAuthRedirect;
       const url = error.config?.url || '';
 
       // Mostrar error detallado

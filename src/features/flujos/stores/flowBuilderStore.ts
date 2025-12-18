@@ -75,7 +75,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
       id: `stage-${nanoid()}`,
       data: {
         label: 'Nueva Etapa',
-        dia_envio: 1,
+        dia_envio: stageCount === 0 ? 0 : 1, // First stage: 0 (immediate), others: 1 day
         tipo_mensaje: 'email',
         plantilla_mensaje: '',
         plantilla_type: 'inline',

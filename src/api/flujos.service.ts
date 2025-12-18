@@ -3,8 +3,9 @@
  * Maneja todas las operaciones CRUD de flujos de nurturing
  */
 
-import { apiClient } from './client'
-import type { FlujoNurturing, FlujoFormData, EjecucionFlujo } from '@/types/flujo'
+import { apiClient, isApiError, getApiErrorMessage } from './client'
+import type { ApiError } from './client'
+import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure } from '@/types/flujo'
 
 /**
  * Estructura de un origen de flujos
@@ -112,13 +113,8 @@ export const flujosService = {
       console.log('✅ flujosService.getOpciones() - origenes count:', opciones.origenes.length)
       console.log('✅ flujosService.getOpciones() - tipos_deudor count:', opciones.tipos_deudor.length)
       return opciones
-    } catch (error: any) {
-      console.error('🔴 flujosService.getOpciones() - Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: error.response?.data?.message || error.message,
-        fullError: error,
-      })
+    } catch (error) {
+      console.error('🔴 flujosService.getOpciones() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -152,14 +148,8 @@ export const flujosService = {
       }
 
       return response.data
-    } catch (error: any) {
-      console.error('🔴 flujosService.getAll() - Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: error.response?.data?.message || error.message,
-        responseData: error.response?.data,
-        config: error.config,
-      })
+    } catch (error) {
+      console.error('🔴 flujosService.getAll() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -181,20 +171,28 @@ export const flujosService = {
       console.log(`📥 flujo_nodos_finales:`, data.data.flujo_nodos_finales)
 
       return data.data
-    } catch (error: any) {
-      console.error(`❌ flujosService.getById(${id}) - Error:`, {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error(`❌ flujosService.getById(${id}) - Error:`, getApiErrorMessage(error))
       throw error
     }
   },
 
   /**
+   * Payload para crear flujo con prospectos
+   */
+  /**
    * Crear un nuevo flujo con prospectos e información de distribución
    * @param payload Objeto completo con flujo, prospectos, distribución y costos
    */
-  async createWithProspectos(payload: any): Promise<FlujoNurturing> {
+  async createWithProspectos(payload: {
+    nombre: string;
+    descripcion?: string;
+    tipo_prospecto_id: number;
+    origen_id?: string;
+    prospectos_ids: number[];
+    config_visual?: ConfigVisual;
+    config_structure?: ConfigStructure;
+  }): Promise<FlujoNurturing> {
     try {
       console.log('📤 flujosService.createWithProspectos() - Enviando payload a POST /flujos/crear-con-prospectos')
       const { data } = await apiClient.post<{ data: FlujoNurturing; mensaje: string }>(
@@ -203,11 +201,8 @@ export const flujosService = {
       )
       console.log('✅ flujosService.createWithProspectos() - Flujo creado:', data.data)
       return data.data
-    } catch (error: any) {
-      console.error('❌ flujosService.createWithProspectos() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error('❌ flujosService.createWithProspectos() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -243,8 +238,8 @@ export const flujosService = {
       nombre?: string
       descripcion?: string
       activo?: boolean
-      config_visual?: any
-      config_structure?: any
+      config_visual?: ConfigVisual
+      config_structure?: ConfigStructure
     }
   ): Promise<FlujoNurturing> {
     try {
@@ -258,11 +253,8 @@ export const flujosService = {
 
       console.log(`✅ flujosService.updateFlowConfiguration(${id}) - Flujo actualizado:`, data.data)
       return data.data
-    } catch (error: any) {
-      console.error(`❌ flujosService.updateFlowConfiguration(${id}) - Error:`, {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error(`❌ flujosService.updateFlowConfiguration(${id}) - Error:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -270,7 +262,7 @@ export const flujosService = {
   /**
    * Eliminar un flujo
    */
-  async delete(id: number): Promise<{ mensaje: string; detalles: any }> {
+  async delete(id: number): Promise<{ mensaje: string; detalles: { etapas_eliminadas?: number; prospectos_desvinculados?: number } }> {
     try {
       console.log('📤 flujosService.delete() - Enviando request a DELETE /flujos/' + id)
       const { data } = await apiClient.delete<{ mensaje: string; detalles: any }>(
@@ -278,11 +270,8 @@ export const flujosService = {
       )
       console.log('✅ flujosService.delete() - Flujo eliminado:', data)
       return data
-    } catch (error: any) {
-      console.error('❌ flujosService.delete() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error('❌ flujosService.delete() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -296,27 +285,33 @@ export const flujosService = {
     flujoId: number,
     config: {
       prospectos_ids: number[]
+      origen_id?: string
       fecha_inicio_programada?: string
     }
-  ): Promise<{ id: number; estado: string; fecha_inicio_programada: string; mensaje: string }> {
+  ): Promise<{ ejecucion_id: number; estado: string; fecha_inicio_programada: string; prospectos_count: number }> {
     try {
       console.log('📤 flujosService.ejecutarFlujo() - Iniciando ejecución del flujo:', flujoId)
       console.log('   Config:', config)
 
-      const { data } = await apiClient.post<{
-        id: number
-        estado: string
-        fecha_inicio_programada: string
+      const response = await apiClient.post<{
+        error: boolean
         mensaje: string
+        data: {
+          ejecucion_id: number
+          estado: string
+          fecha_inicio_programada: string
+          prospectos_count: number
+          primera_etapa?: {
+            id: number
+            fecha_programada: string
+          }
+        }
       }>(`/flujos/${flujoId}/ejecutar`, config)
 
-      console.log('✅ flujosService.ejecutarFlujo() - Flujo ejecutado:', data)
-      return data
-    } catch (error: any) {
-      console.error('❌ flujosService.ejecutarFlujo() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+      console.log('✅ flujosService.ejecutarFlujo() - Flujo ejecutado:', response.data.data)
+      return response.data.data
+    } catch (error) {
+      console.error('❌ flujosService.ejecutarFlujo() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -341,11 +336,8 @@ export const flujosService = {
 
       console.log('✅ flujosService.ejecutar() - Flujo ejecutado:', data.data)
       return data.data
-    } catch (error: any) {
-      console.error('❌ flujosService.ejecutar() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error('❌ flujosService.ejecutar() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -364,11 +356,8 @@ export const flujosService = {
 
       console.log('✅ flujosService.obtenerProgreso() - Progreso obtenido:', data.data)
       return data.data
-    } catch (error: any) {
-      console.error('❌ flujosService.obtenerProgreso() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error('❌ flujosService.obtenerProgreso() - Error:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -387,11 +376,8 @@ export const flujosService = {
 
       console.log('✅ flujosService.obtenerHistorialEjecuciones() - Historial obtenido:', data.data)
       return data
-    } catch (error: any) {
-      console.error('❌ flujosService.obtenerHistorialEjecuciones() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
+    } catch (error) {
+      console.error('❌ flujosService.obtenerHistorialEjecuciones() - Error:', getApiErrorMessage(error))
       throw error
     }
   },

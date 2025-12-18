@@ -3,9 +3,15 @@ import { z } from 'zod'
 export const loginSchema = z.object({
   email: z
     .string()
-    .email('Correo electrónico inválido')
-    .min(1, 'El correo es requerido')
-    .transform(email => email.toLowerCase().trim()),
+    .transform((email) => email.trim()) // Trim first, before validation
+    .pipe(
+      z
+        .string()
+        .min(1, 'El correo es requerido')
+        .max(254, 'El correo es demasiado largo') // RFC 5321 max email length
+        .email('Correo electrónico inválido'),
+    )
+    .transform((email) => email.toLowerCase()),
   password: z
     .string('La contraseña es requerida')
     .min(8, { message: 'Mínimo 8 caracteres' })

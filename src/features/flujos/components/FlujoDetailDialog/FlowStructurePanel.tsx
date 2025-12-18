@@ -4,11 +4,16 @@
  * Sino, muestra etapas, condiciones, ramificaciones y nodos finales en formato texto
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowVisualizationViewer } from './FlowVisualizationViewer'
+import { FlowExecutionViewer } from './FlowExecutionViewer'
+import { useActiveExecution, useLatestExecution } from '../../hooks/useFlowExecutionTracking'
 import type { EtapaFlujo, CondicionFlujo, RamificacionFlujo, NodoFinalFlujo, ConfigStructure, ConfigVisual } from '@/types/flujo'
+
+// Alias para mayor claridad
+const FlowExecutionViewerDynamic = FlowExecutionViewer
 
 interface FlowStructurePanelProps {
   etapas?: EtapaFlujo[]
@@ -17,6 +22,8 @@ interface FlowStructurePanelProps {
   nodos_finales?: NodoFinalFlujo[]
   config_structure?: ConfigStructure
   config_visual?: ConfigVisual
+  flujoId?: number
+  executionId?: string
 }
 
 export function FlowStructurePanel({
@@ -26,10 +33,53 @@ export function FlowStructurePanel({
   nodos_finales,
   config_structure,
   config_visual,
+  flujoId,
+  executionId,
 }: FlowStructurePanelProps) {
   // Verificar si hay visualización disponible desde el principio
   const hasVisualData = config_visual && config_visual.nodes && config_visual.nodes.length > 0
   const [viewMode, setViewMode] = useState<'visual' | 'details'>(hasVisualData ? 'visual' : 'details')
+
+  // Consultar si hay una ejecución activa desde el backend (in_progress o paused)
+  const { data: activeExecutionData } = useActiveExecution(
+    flujoId || 0,
+    !!flujoId && hasVisualData, // Solo consultar si hay flujoId y visualización
+  )
+
+  // Consultar la última ejecución (cualquier estado) para mostrar historial
+  const { data: latestExecutionData } = useLatestExecution(
+    flujoId || 0,
+    false, // No hacer polling continuo para ejecuciones completadas
+  )
+
+  // Determinar el execution ID efectivo con esta prioridad:
+  // 1. Ejecución activa (in_progress/paused) - más prioritario
+  // 2. ExecutionId pasado como prop
+  // 3. Última ejecución (cualquier estado) - para mostrar historial
+  const effectiveExecutionId = useMemo(() => {
+    // 1. Si hay ejecución activa en el backend, usar ese ID (prioridad máxima)
+    if (activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion) {
+      console.log('🎯 [FlowStructurePanel] Using ACTIVE execution:', activeExecutionData.ejecucion.id)
+      return activeExecutionData.ejecucion.id.toString()
+    }
+
+    // 2. Si se pasó executionId como prop, usar ese
+    if (executionId) {
+      console.log('🎯 [FlowStructurePanel] Using PROP execution:', executionId)
+      return executionId
+    }
+
+    // 3. Si hay última ejecución (completada/fallida), usar ese ID para mostrar historial
+    const latestExecution = latestExecutionData?.data?.[0]
+    if (latestExecution?.id) {
+      console.log('🎯 [FlowStructurePanel] Using LATEST execution:', latestExecution.id, 'Estado:', latestExecution.estado)
+      return latestExecution.id.toString()
+    }
+
+    // 4. No hay ninguna ejecución
+    console.log('🎯 [FlowStructurePanel] No execution found')
+    return undefined
+  }, [activeExecutionData, executionId, latestExecutionData])
 
   // Usar config_structure si está disponible, sino usar los campos individuales
   const stages = config_structure?.stages || etapas || []
@@ -83,7 +133,17 @@ export function FlowStructurePanel({
       {viewMode === 'visual' && (
         <div>
           {hasVisual ? (
-            <FlowVisualizationViewer configVisual={config_visual} />
+            flujoId && effectiveExecutionId ? (
+              // Durante ejecución: mostrar FlowExecutionViewer con seguimiento en tiempo real
+              <FlowExecutionViewerDynamic
+                flujoId={flujoId}
+                ejecucionId={parseInt(effectiveExecutionId)}
+                configVisual={config_visual}
+              />
+            ) : (
+              // Sin ejecución: mostrar visualización estática
+              <FlowVisualizationViewer configVisual={config_visual} />
+            )
           ) : (
             <div className="w-full h-[700px] bg-segal-blue/5 border border-dashed border-segal-blue/20 rounded-lg flex flex-col items-center justify-center">
               <AlertCircle className="h-12 w-12 text-segal-blue/40 mb-3" />

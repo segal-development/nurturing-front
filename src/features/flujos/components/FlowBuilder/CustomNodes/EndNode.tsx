@@ -50,10 +50,13 @@ export function EndNode({
 
   return (
     <>
-      {/* Input handles */}
-      <Handle type="target" position={Position.Top} id="top" />
-      <Handle type="target" position={Position.Left} id="left" />
-      <Handle type="target" position={Position.Right} id="right" />
+      {/* Input handle - only left side (n8n style) */}
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="left"
+        className="!w-3 !h-3 !bg-segal-green !border-2 !border-white"
+      />
 
       <div
         className={`rounded-lg border-2 p-4 min-w-[240px] bg-gradient-to-br from-segal-green/10 to-segal-green/5 shadow-md transition-all duration-200 ${

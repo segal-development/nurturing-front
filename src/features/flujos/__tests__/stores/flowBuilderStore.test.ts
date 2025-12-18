@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useFlowBuilderStore } from '@/features/flujos/stores/flowBuilderStore'
 import {
   INITIAL_FLOW_STATE,
+  EMPTY_FLOW_STATE,
   createInitialNode,
   createStageNode,
   createConditionalNode,
@@ -29,9 +30,14 @@ describe('flowBuilderStore', () => {
   })
 
   describe('Initial State', () => {
-    it('should have empty state on initialization', () => {
+    it('should have initial nodes (initial + end) on initialization', () => {
       const state = useFlowBuilderStore.getState()
-      expect(state.nodes).toEqual([])
+      // Store starts with initial node and end node by default
+      expect(state.nodes).toHaveLength(2)
+      expect(state.nodes[0].type).toBe('initial')
+      expect(state.nodes[0].id).toBe('initial-1')
+      expect(state.nodes[1].type).toBe('end')
+      expect(state.nodes[1].id).toBe('end-1')
       expect(state.edges).toEqual([])
       expect(state.flowName).toBe('')
       expect(state.flowDescription).toBe('')
@@ -41,96 +47,102 @@ describe('flowBuilderStore', () => {
   describe('Node Operations', () => {
     describe('addStageNode', () => {
       it('should add a stage node to the store', () => {
-        const stageNode = createStageNode()
         const { addStageNode } = useFlowBuilderStore.getState()
 
-        addStageNode(stageNode)
+        addStageNode()
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1)
-        expect(state.nodes[0].type).toBe('stage')
-        expect(state.nodes[0].id).toBe(stageNode.id)
+        // Initial state has 2 nodes (initial + end), so now should have 3
+        expect(state.nodes).toHaveLength(3)
+        const stageNodes = state.nodes.filter((n) => n.type === 'stage')
+        expect(stageNodes).toHaveLength(1)
+        expect(stageNodes[0].id).toMatch(/^stage-/)
       })
 
       it('should add multiple stage nodes', () => {
-        const node1 = createStageNode({ x: 0, y: 0 }, 1)
-        const node2 = createStageNode({ x: 200, y: 0 }, 2)
         const { addStageNode } = useFlowBuilderStore.getState()
 
-        addStageNode(node1)
-        addStageNode(node2)
+        addStageNode()
+        addStageNode()
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(2)
-        expect(state.nodes.map((n) => n.id)).toEqual([node1.id, node2.id])
+        // Initial 2 nodes + 2 stage nodes = 4
+        expect(state.nodes).toHaveLength(4)
+        const stageNodes = state.nodes.filter((n) => n.type === 'stage')
+        expect(stageNodes).toHaveLength(2)
       })
 
-      it('should preserve node position and data', () => {
-        const position = { x: 300, y: 150 }
-        const stageNode = createStageNode(position, 5)
+      it('should create stage nodes with correct default data', () => {
         const { addStageNode } = useFlowBuilderStore.getState()
 
-        addStageNode(stageNode)
+        addStageNode()
 
         const state = useFlowBuilderStore.getState()
-        const addedNode = state.nodes[0]
-        expect(addedNode.position).toEqual(position)
-        expect(addedNode.data.dia_envio).toBe(5)
+        const stageNode = state.nodes.find((n) => n.type === 'stage')!
+        expect(stageNode.data.tipo_mensaje).toBe('email')
+        expect(stageNode.data.dia_envio).toBe(0) // First stage is immediate
+        expect(stageNode.data.activo).toBe(true)
       })
     })
 
     describe('addConditionalNode', () => {
       it('should add a conditional node', () => {
-        const condNode = createConditionalNode()
         const { addConditionalNode } = useFlowBuilderStore.getState()
 
-        addConditionalNode(condNode)
+        addConditionalNode()
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1)
-        expect(state.nodes[0].type).toBe('conditional')
+        // Initial 2 nodes + 1 conditional = 3
+        expect(state.nodes).toHaveLength(3)
+        const conditionalNodes = state.nodes.filter((n) => n.type === 'conditional')
+        expect(conditionalNodes).toHaveLength(1)
       })
 
-      it('should preserve condition data', () => {
-        const condNode = createConditionalNode()
+      it('should create conditional node with correct default data', () => {
         const { addConditionalNode } = useFlowBuilderStore.getState()
 
-        addConditionalNode(condNode)
+        addConditionalNode()
 
         const state = useFlowBuilderStore.getState()
-        const addedNode = state.nodes[0]
-        expect(addedNode.data.condition).toBeDefined()
-        expect(addedNode.data.condition.type).toBe('email_opened')
+        const condNode = state.nodes.find((n) => n.type === 'conditional')!
+        expect(condNode.data.condition).toBeDefined()
+        expect(condNode.data.condition.type).toBe('email_opened')
+        expect(condNode.data.yesLabel).toBe('Sí')
+        expect(condNode.data.noLabel).toBe('No')
       })
     })
 
     describe('addEndNode', () => {
       it('should add an end node', () => {
-        const endNode = createEndNode()
         const { addEndNode } = useFlowBuilderStore.getState()
 
-        addEndNode(endNode)
+        addEndNode()
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1)
-        expect(state.nodes[0].type).toBe('end')
+        // Initial 2 nodes (including 1 end) + 1 new end = 3
+        expect(state.nodes).toHaveLength(3)
+        const endNodes = state.nodes.filter((n) => n.type === 'end')
+        expect(endNodes).toHaveLength(2) // Original end-1 plus new one
       })
     })
 
     describe('removeNode', () => {
       it('should remove a node by ID', () => {
-        const node1 = createStageNode({ x: 0, y: 0 })
-        const node2 = createStageNode({ x: 200, y: 0 })
         const { addStageNode, removeNode } = useFlowBuilderStore.getState()
 
-        addStageNode(node1)
-        addStageNode(node2)
+        addStageNode()
+        addStageNode()
 
-        removeNode(node1.id)
+        const stateBeforeRemove = useFlowBuilderStore.getState()
+        const stageNodes = stateBeforeRemove.nodes.filter((n) => n.type === 'stage')
+        const nodeToRemove = stageNodes[0]
+
+        removeNode(nodeToRemove.id)
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1)
-        expect(state.nodes[0].id).toBe(node2.id)
+        // Had 4 nodes (2 initial + 2 stage), now 3
+        expect(state.nodes).toHaveLength(3)
+        expect(state.nodes.find((n) => n.id === nodeToRemove.id)).toBeUndefined()
       })
 
       it('should remove associated edges when node is removed', () => {
@@ -156,27 +168,29 @@ describe('flowBuilderStore', () => {
 
     describe('updateNode', () => {
       it('should update node data', () => {
-        const node = createStageNode()
         const { addStageNode, updateNode } = useFlowBuilderStore.getState()
 
-        addStageNode(node)
-        updateNode(node.id, { dia_envio: 7, tipo_mensaje: 'sms' })
+        addStageNode()
+
+        const stageNode = useFlowBuilderStore.getState().nodes.find((n) => n.type === 'stage')!
+        updateNode(stageNode.id, { dia_envio: 7, tipo_mensaje: 'sms' })
 
         const state = useFlowBuilderStore.getState()
-        const updatedNode = state.nodes[0]
+        const updatedNode = state.nodes.find((n) => n.type === 'stage')!
         expect(updatedNode.data.dia_envio).toBe(7)
         expect(updatedNode.data.tipo_mensaje).toBe('sms')
       })
 
       it('should merge partial updates', () => {
-        const node = createStageNode()
         const { addStageNode, updateNode } = useFlowBuilderStore.getState()
 
-        addStageNode(node)
-        updateNode(node.id, { dia_envio: 3 })
+        addStageNode()
+
+        const stageNode = useFlowBuilderStore.getState().nodes.find((n) => n.type === 'stage')!
+        updateNode(stageNode.id, { dia_envio: 3 })
 
         const state = useFlowBuilderStore.getState()
-        const updatedNode = state.nodes[0]
+        const updatedNode = state.nodes.find((n) => n.type === 'stage')!
         expect(updatedNode.data.dia_envio).toBe(3)
         expect(updatedNode.data.tipo_mensaje).toBe('email') // unchanged
       })
@@ -189,14 +203,16 @@ describe('flowBuilderStore', () => {
 
     describe('setNodePosition', () => {
       it('should update node position', () => {
-        const node = createStageNode({ x: 0, y: 0 })
         const { addStageNode, setNodePosition } = useFlowBuilderStore.getState()
 
-        addStageNode(node)
-        setNodePosition(node.id, { x: 100, y: 200 })
+        addStageNode()
+
+        const stageNode = useFlowBuilderStore.getState().nodes.find((n) => n.type === 'stage')!
+        setNodePosition(stageNode.id, { x: 100, y: 200 })
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes[0].position).toEqual({ x: 100, y: 200 })
+        const updatedNode = state.nodes.find((n) => n.type === 'stage')!
+        expect(updatedNode.position).toEqual({ x: 100, y: 200 })
       })
     })
   })
@@ -204,55 +220,61 @@ describe('flowBuilderStore', () => {
   describe('Edge Operations', () => {
     describe('addEdge', () => {
       it('should add an edge between two nodes', () => {
-        const node1 = createStageNode({ x: 0, y: 0 })
-        const node2 = createStageNode({ x: 200, y: 0 })
-        const edge = createEdge(node1.id, node2.id)
-
         const { addStageNode, addEdge } = useFlowBuilderStore.getState()
-        addStageNode(node1)
-        addStageNode(node2)
+
+        addStageNode()
+        addStageNode()
+
+        const stageNodes = useFlowBuilderStore.getState().nodes.filter((n) => n.type === 'stage')
+        const edge = createEdge(stageNodes[0].id, stageNodes[1].id)
         addEdge(edge)
 
         const state = useFlowBuilderStore.getState()
         expect(state.edges).toHaveLength(1)
-        expect(state.edges[0].source).toBe(node1.id)
-        expect(state.edges[0].target).toBe(node2.id)
+        expect(state.edges[0].source).toBe(stageNodes[0].id)
+        expect(state.edges[0].target).toBe(stageNodes[1].id)
       })
 
       it('should prevent duplicate edges', () => {
-        const node1 = createStageNode({ x: 0, y: 0 })
-        const node2 = createStageNode({ x: 200, y: 0 })
-        const edge1 = createEdge(node1.id, node2.id)
-        const edge2 = createEdge(node1.id, node2.id)
-
         const { addStageNode, addEdge } = useFlowBuilderStore.getState()
-        addStageNode(node1)
-        addStageNode(node2)
+
+        addStageNode()
+        addStageNode()
+
+        const stageNodes = useFlowBuilderStore.getState().nodes.filter((n) => n.type === 'stage')
+        const edge1 = createEdge(stageNodes[0].id, stageNodes[1].id)
+        const edge2 = createEdge(stageNodes[0].id, stageNodes[1].id)
+
         addEdge(edge1)
         addEdge(edge2) // Should be ignored if duplicate
 
         const state = useFlowBuilderStore.getState()
         const duplicateEdges = state.edges.filter(
-          (e) => e.source === node1.id && e.target === node2.id
+          (e) => e.source === stageNodes[0].id && e.target === stageNodes[1].id
         )
-        expect(duplicateEdges.length).toBeLessThanOrEqual(2) // May or may not prevent duplicates
+        // Store prevents duplicates, so should be 1
+        expect(duplicateEdges.length).toBe(1)
       })
 
       it('should handle conditional path labels', () => {
-        const condNode = createConditionalNode({ x: 100, y: 0 })
-        const endNode = createEndNode({ x: 300, y: 0 })
-        const edgeYes = createEdge(condNode.id, endNode.id, 'Sí')
-        const edgeNo = createEdge(condNode.id, endNode.id, 'No')
+        const { addConditionalNode, addEdge } = useFlowBuilderStore.getState()
 
-        const { addConditionalNode, addEndNode, addEdge } = useFlowBuilderStore.getState()
-        addConditionalNode(condNode)
-        addEndNode(endNode)
+        addConditionalNode()
+
+        const state = useFlowBuilderStore.getState()
+        const condNode = state.nodes.find((n) => n.type === 'conditional')!
+        const endNode = state.nodes.find((n) => n.type === 'end')! // Use existing end node
+
+        const edgeYes = createEdge(condNode.id, endNode.id, 'Sí')
+        // Use different target handle for 'No' to avoid duplicate detection
+        const edgeNo = { ...createEdge(condNode.id, endNode.id, 'No'), sourceHandle: 'no' }
+
         addEdge(edgeYes)
         addEdge(edgeNo)
 
-        const state = useFlowBuilderStore.getState()
-        expect(state.edges.filter((e) => e.label === 'Sí')).toHaveLength(1)
-        expect(state.edges.filter((e) => e.label === 'No')).toHaveLength(1)
+        const finalState = useFlowBuilderStore.getState()
+        expect(finalState.edges.filter((e) => e.label === 'Sí')).toHaveLength(1)
+        expect(finalState.edges.filter((e) => e.label === 'No')).toHaveLength(1)
       })
     })
 
@@ -340,7 +362,11 @@ describe('flowBuilderStore', () => {
         resetFlow()
 
         const state = useFlowBuilderStore.getState()
-        expect(state).toEqual(INITIAL_FLOW_STATE)
+        // Compare only the data properties, not the functions
+        expect(state.nodes).toEqual(INITIAL_FLOW_STATE.nodes)
+        expect(state.edges).toEqual(INITIAL_FLOW_STATE.edges)
+        expect(state.flowName).toBe(INITIAL_FLOW_STATE.flowName)
+        expect(state.flowDescription).toBe(INITIAL_FLOW_STATE.flowDescription)
       })
     })
 
@@ -358,7 +384,7 @@ describe('flowBuilderStore', () => {
 
       it('should clear previous configuration', () => {
         const { addStageNode } = useFlowBuilderStore.getState()
-        addStageNode(createStageNode())
+        addStageNode() // This creates a stage node
 
         const { nodes, edges } = createSampleFlow()
         const { loadFlowConfiguration } = useFlowBuilderStore.getState()
@@ -366,7 +392,8 @@ describe('flowBuilderStore', () => {
 
         const state = useFlowBuilderStore.getState()
         expect(state.nodes).toEqual(nodes)
-        expect(state.nodes.length).not.toBe(2) // Old node cleared
+        // Sample flow has 6 nodes, not 3 (the previous state had 3: initial, end, stage)
+        expect(state.nodes.length).toBe(nodes.length)
       })
     })
 
@@ -410,24 +437,37 @@ describe('flowBuilderStore', () => {
     describe('initializeWithOrigin', () => {
       it('should initialize flow with origin data', () => {
         const { initializeWithOrigin } = useFlowBuilderStore.getState()
-        initializeWithOrigin(1, 'Web Origin', 500)
+        initializeWithOrigin('1', 'Web Origin', 500)
 
         const state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1)
-        expect(state.nodes[0].type).toBe('initial')
-        expect(state.nodes[0].data.origen).toBe('Web Origin')
-        expect(state.nodes[0].data.total_prospectos).toBe(500)
+        // Store has 2 nodes: initial + end
+        expect(state.nodes).toHaveLength(2)
+        const initialNode = state.nodes.find((n) => n.type === 'initial')!
+        expect(initialNode).toBeDefined()
+        expect(initialNode.data.origen_nombre).toBe('Web Origin')
+        expect(initialNode.data.prospectos_count).toBe(500)
+      })
+
+      it('should update initial node label with origin name', () => {
+        const { initializeWithOrigin } = useFlowBuilderStore.getState()
+        initializeWithOrigin('1', 'Web Origin', 500)
+
+        const state = useFlowBuilderStore.getState()
+        const initialNode = state.nodes.find((n) => n.type === 'initial')!
+        expect(initialNode.data.label).toContain('Web Origin')
       })
 
       it('should replace previous initialization', () => {
         let state = useFlowBuilderStore.getState()
-        state.initializeWithOrigin(1, 'Web', 100)
-        state.initializeWithOrigin(2, 'Email', 200)
+        state.initializeWithOrigin('1', 'Web', 100)
+        state.initializeWithOrigin('2', 'Email', 200)
 
         state = useFlowBuilderStore.getState()
-        expect(state.nodes).toHaveLength(1) // Only one initial node
-        expect(state.nodes[0].data.origen).toBe('Email')
-        expect(state.nodes[0].data.total_prospectos).toBe(200)
+        // Still has 2 nodes (initial + end)
+        expect(state.nodes).toHaveLength(2)
+        const initialNode = state.nodes.find((n) => n.type === 'initial')!
+        expect(initialNode.data.origen_nombre).toBe('Email')
+        expect(initialNode.data.prospectos_count).toBe(200)
       })
     })
   })
@@ -437,39 +477,43 @@ describe('flowBuilderStore', () => {
       const { initializeWithOrigin, addStageNode, addEdge, setFlowName, setFlowDescription } =
         useFlowBuilderStore.getState()
 
-      initializeWithOrigin(1, 'Web', 100)
+      initializeWithOrigin('1', 'Web', 100)
       setFlowName('Welcome Series')
       setFlowDescription('Send welcome emails to new prospects')
 
+      // Add stage nodes
+      addStageNode()
+      addStageNode()
+
       const state = useFlowBuilderStore.getState()
-      const initialNode = state.nodes[0]
+      const initialNode = state.nodes.find((n) => n.type === 'initial')!
+      const stageNodes = state.nodes.filter((n) => n.type === 'stage')
 
-      const stage1 = createStageNode({ x: 200, y: 0 }, 1)
-      const stage2 = createStageNode({ x: 400, y: 0 }, 7)
-
-      useFlowBuilderStore.getState().addStageNode(stage1)
-      useFlowBuilderStore.getState().addStageNode(stage2)
-      useFlowBuilderStore.getState().addEdge(createEdge(initialNode.id, stage1.id))
-      useFlowBuilderStore.getState().addEdge(createEdge(stage1.id, stage2.id))
+      // Connect initial -> stage1 -> stage2
+      addEdge(createEdge(initialNode.id, stageNodes[0].id))
+      addEdge(createEdge(stageNodes[0].id, stageNodes[1].id))
 
       const finalState = useFlowBuilderStore.getState()
       expect(finalState.flowName).toBe('Welcome Series')
-      expect(finalState.nodes.length).toBeGreaterThanOrEqual(3)
-      expect(finalState.edges.length).toBeGreaterThanOrEqual(2)
+      // 2 initial nodes (initial + end) + 2 stage nodes = 4
+      expect(finalState.nodes.length).toBe(4)
+      expect(finalState.edges.length).toBe(2)
     })
 
     it('should maintain data integrity with multiple operations', () => {
       const { addStageNode, updateNode, setNodePosition } = useFlowBuilderStore.getState()
-      const node = createStageNode()
 
-      addStageNode(node)
-      updateNode(node.id, { dia_envio: 5 })
-      setNodePosition(node.id, { x: 150, y: 100 })
+      addStageNode()
+
+      const stageNode = useFlowBuilderStore.getState().nodes.find((n) => n.type === 'stage')!
+
+      updateNode(stageNode.id, { dia_envio: 5 })
+      setNodePosition(stageNode.id, { x: 150, y: 100 })
 
       const state = useFlowBuilderStore.getState()
-      const updatedNode = state.nodes[0]
+      const updatedNode = state.nodes.find((n) => n.type === 'stage')!
 
-      expect(updatedNode.id).toBe(node.id)
+      expect(updatedNode.id).toBe(stageNode.id)
       expect(updatedNode.data.dia_envio).toBe(5)
       expect(updatedNode.position).toEqual({ x: 150, y: 100 })
     })

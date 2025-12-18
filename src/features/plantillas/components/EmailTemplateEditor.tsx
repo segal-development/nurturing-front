@@ -4,7 +4,7 @@
  * Con edición visual y preview en tiempo real
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   Plus,
   Eye,
@@ -43,8 +43,8 @@ export function EmailTemplateEditor({
     componentes: initialData?.componentes || [],
   })
 
-  // Notificar cambios
-  useMemo(() => {
+  // Notificar cambios al componente padre
+  useEffect(() => {
     onDataChange?.(plantilla)
   }, [plantilla, onDataChange])
 
@@ -313,6 +313,15 @@ export function EmailTemplateEditor({
               Separador
             </Button>
             <Button
+              onClick={() => agregarComponente('imagen')}
+              variant="outline"
+              size="sm"
+              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Imagen
+            </Button>
+            <Button
               onClick={() => agregarComponente('footer')}
               variant="outline"
               size="sm"
@@ -469,6 +478,15 @@ function obtenerContenidoInicial(tipo: EmailComponentFormData['tipo']): any {
     separador: {
       altura: 10,
       color: '#e0e0e0',
+    },
+    imagen: {
+      url: '',
+      alt: 'Imagen',
+      alineacion: 'center',
+      link_url: '',
+      link_target: '_blank',
+      border_radius: 0,
+      padding: 10,
     },
     footer: {
       texto: 'Grupo Segal',

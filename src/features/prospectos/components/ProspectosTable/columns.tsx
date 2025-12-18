@@ -36,7 +36,7 @@ const SortableColumnHeader = ({ label, onClick }: { label: string; onClick: () =
   <Button
     variant="ghost"
     onClick={onClick}
-    className="h-8 p-0 hover:bg-transparent text-segal-dark font-semibold"
+    className="h-8 p-0 hover:bg-transparent text-segal-dark dark:text-white font-semibold"
   >
     {label}
     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -119,7 +119,7 @@ export const columns: ColumnDef<Prospecto>[] = [
       />
     ),
     cell: ({ row }) => (
-      <div className="font-medium text-segal-dark">
+      <div className="font-medium text-segal-dark dark:text-white">
         {row.getValue('nombre')}
       </div>
     ),
@@ -138,7 +138,7 @@ export const columns: ColumnDef<Prospecto>[] = [
       />
     ),
     cell: ({ row }) => (
-      <div className="text-segal-dark/70 text-sm">
+      <div className="text-segal-dark/70 text-sm dark:text-white/70">
         {row.getValue('email')}
       </div>
     ),
@@ -159,7 +159,7 @@ export const columns: ColumnDef<Prospecto>[] = [
     cell: ({ row }) => {
       const telefono = row.getValue('telefono') as string | undefined
       return (
-        <div className="text-segal-dark/70">
+        <div className="text-segal-dark/70 dark:text-white/70">
           {formatPhoneNumber(telefono)}
         </div>
       )
@@ -181,7 +181,7 @@ export const columns: ColumnDef<Prospecto>[] = [
     cell: ({ row }) => {
       const rut = row.getValue('rut') as string | undefined
       return (
-        <div className="text-segal-dark/70 text-sm">
+        <div className="text-segal-dark/70 text-sm dark:text-white/70">
           {formatRut(rut)}
         </div>
       )
@@ -195,7 +195,7 @@ export const columns: ColumnDef<Prospecto>[] = [
   {
     id: 'informe',
     header: () => (
-      <div className="text-segal-dark font-semibold">
+      <div className="text-segal-dark dark:text-white font-semibold">
         Informe
       </div>
     ),
@@ -209,14 +209,14 @@ export const columns: ColumnDef<Prospecto>[] = [
           {hasUrl ? (
             <button
               onClick={() => openUrlInNewTab(urlInforme)}
-              className="p-2 rounded-lg hover:bg-segal-blue/10 transition-colors text-segal-blue hover:text-segal-dark"
+              className="p-2 rounded-lg hover:bg-segal-blue/10 transition-colors text-segal-blue dark:hover:bg-slate-800 dark:text-segal-turquoise dark:hover:text-white"
               aria-label="Ver informe"
               title="Descargar informe"
             >
               <FileText className="h-5 w-5" />
             </button>
           ) : (
-            <span className="text-segal-dark/30 text-sm">-</span>
+            <span className="text-segal-dark/30 dark:text-white/30 text-sm">-</span>
           )}
         </div>
       )
@@ -238,7 +238,7 @@ export const columns: ColumnDef<Prospecto>[] = [
     cell: ({ row }) => {
       const monto = row.getValue('monto_deuda') as number
       return (
-        <div className="font-medium text-segal-dark">
+        <div className="font-medium text-segal-dark dark:text-white">
           {formatCurrencyAmount(monto)}
         </div>
       )
@@ -300,7 +300,7 @@ export const columns: ColumnDef<Prospecto>[] = [
   {
     id: 'acciones',
     header: () => (
-      <div className="text-right text-segal-dark font-semibold">
+      <div className="text-right text-segal-dark dark:text-white font-semibold">
         Acciones
       </div>
     ),
@@ -321,10 +321,10 @@ export const columns: ColumnDef<Prospecto>[] = [
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onViewProspecto(prospecto.id)}>
+            <DropdownMenuContent align="end" className="dark:bg-slate-900 dark:border-slate-700">
+              <DropdownMenuLabel className="dark:text-white">Acciones</DropdownMenuLabel>
+              <DropdownMenuSeparator className="dark:bg-slate-700" />
+              <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-800" onClick={() => onViewProspecto(prospecto.id)}>
                 Ver prospecto
               </DropdownMenuItem>
             </DropdownMenuContent>

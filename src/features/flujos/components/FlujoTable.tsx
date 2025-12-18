@@ -48,7 +48,7 @@ export function FlujoTable({ flujos, loading, onEdit, onDelete }: FlujoTableProp
   }
 
   return (
-    <div className="border border-segal-blue/10 rounded-lg overflow-hidden">
+    <div className="border border-segal-blue/10 rounded-lg overflow-hidden dark:border-segal-blue/30">
       <Table>
         <TableHeader>
           <TableRow className="bg-segal-blue/5 border-b border-segal-blue/10">

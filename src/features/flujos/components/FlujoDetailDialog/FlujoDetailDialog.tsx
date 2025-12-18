@@ -3,7 +3,7 @@
  * Muestra información del flujo, sus etapas, estadísticas, estructura y historial de ejecuciones
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -26,16 +26,21 @@ import {
   Loader2,
   Trash2,
   Play,
+  Activity,
+  Pause,
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
+import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail } from '@/features/flujos/hooks/useFlowExecutionTracking'
 import { flujosService } from '@/api/flujos.service'
 import { FlujoStatisticsPanel } from './FlujoStatisticsPanel'
 import { FlowStructurePanel } from './FlowStructurePanel'
 import { ExecutionHistoryPanel } from './ExecutionHistoryPanel'
 import { ExecuteFlowModal } from './ExecuteFlowModal'
+import { FlowExecutionViewer } from './FlowExecutionViewer'
 import type { FlujoNurturing, EtapaFlujo } from '@/types/flujo'
+import { getCanalEnvioReal, getCanalEnvioLabel, getCanalEnvioIcon } from '@/types/flujo'
 
-type TabType = 'general' | 'estructura' | 'estadisticas' | 'ejecuciones'
+type TabType = 'general' | 'estructura' | 'estadisticas' | 'ejecuciones' | 'monitoreo'
 
 interface FlujoDetailDialogProps {
   open: boolean
@@ -43,6 +48,8 @@ interface FlujoDetailDialogProps {
   flujo: FlujoNurturing | null
   onEdit?: () => void
   onDelete?: () => void
+  executionId?: string
+  onExecutionStart?: (ejecucionId: number) => void
 }
 
 const TABS = [
@@ -50,6 +57,7 @@ const TABS = [
   { id: 'estructura' as TabType, label: 'Estructura', icon: GitBranch },
   { id: 'estadisticas' as TabType, label: 'Estadísticas', icon: BarChart3 },
   { id: 'ejecuciones' as TabType, label: 'Ejecuciones', icon: Clock },
+  { id: 'monitoreo' as TabType, label: 'Monitoreo', icon: Activity },
 ]
 
 export function FlujoDetailDialog({
@@ -58,6 +66,8 @@ export function FlujoDetailDialog({
   flujo: initialFlujo,
   onEdit,
   onDelete,
+  executionId,
+  onExecutionStart,
 }: FlujoDetailDialogProps) {
   const [activeTab, setActiveTab] = useState<TabType>('general')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -69,8 +79,139 @@ export function FlujoDetailDialog({
     enabled: open && initialFlujo !== null,
   })
 
+  // Verificar si hay una ejecución activa
+  const { data: activeExecutionData, isLoading: isLoadingActiveExecution } = useActiveExecution(
+    initialFlujo?.id || 0,
+    open && !!initialFlujo?.id,
+  )
+
+  // Obtener todas las ejecuciones del flujo para la pestaña "Ejecuciones"
+  const { data: executionsData, isLoading: isLoadingExecutions, error: executionsError, isError: isExecutionsError } = useFlowExecutions(
+    initialFlujo?.id || 0,
+    50, // Últimas 50 ejecuciones
+  )
+
+  // DEBUG: Ver estado de las ejecuciones
+  useEffect(() => {
+    if (open) {
+      console.log('🔍 [FlujoDetailDialog] Executions Debug:', {
+        flujoId: initialFlujo?.id,
+        isLoadingExecutions,
+        isExecutionsError,
+        executionsError,
+        executionsData,
+        executionsDataType: typeof executionsData,
+        hasData: !!executionsData?.data,
+        dataLength: executionsData?.data?.length,
+        rawData: executionsData?.data,
+      })
+    }
+  }, [open, initialFlujo?.id, isLoadingExecutions, isExecutionsError, executionsError, executionsData])
+
+  // Obtener la última ejecución para mostrar estado en etapas del tab General
+  const { data: latestExecutionData } = useLatestExecution(
+    initialFlujo?.id || 0,
+    false,
+  )
+
+  // Obtener detalles de la última ejecución (incluye estado de cada etapa)
+  const latestExecutionId = latestExecutionData?.data?.[0]?.id
+  const { data: latestExecutionDetail } = useFlowExecutionDetail(
+    initialFlujo?.id || 0,
+    latestExecutionId || 0,
+    !!latestExecutionId,
+  )
+
   // Usar flujo detallado si está disponible, sino usar el flujo inicial
   const flujo = detailedFlujo || initialFlujo
+
+  // Crear un mapa de estados de etapas por node_id para el tab General
+  // El node_id en config_visual tiene formato "stage_X" donde X es el ID de la etapa
+  const etapaStatesMap = useMemo(() => {
+    const map = new Map<string, { estado: string; enviados?: number; fallidos?: number }>()
+
+    if (latestExecutionDetail?.data?.etapas) {
+      latestExecutionDetail.data.etapas.forEach(etapa => {
+        // Guardar por node_id para coincidencia con ReactFlow
+        map.set(etapa.node_id, {
+          estado: etapa.estado,
+          enviados: etapa.envios?.enviado || 0,
+          fallidos: etapa.envios?.fallido || 0,
+        })
+
+        // También guardar por ID de etapa (formato "stage_123")
+        // Extraer el ID numérico del node_id si tiene formato "stage_X"
+        const idMatch = etapa.node_id.match(/stage[_-](\d+)/)
+        if (idMatch) {
+          map.set(idMatch[1], {
+            estado: etapa.estado,
+            enviados: etapa.envios?.enviado || 0,
+            fallidos: etapa.envios?.fallido || 0,
+          })
+        }
+      })
+    }
+
+    return map
+  }, [latestExecutionDetail])
+
+  // Determinar si hay una ejecución activa
+  const hasActiveExecution = activeExecutionData?.tiene_ejecucion_activa || false
+  const activeExecution = activeExecutionData?.ejecucion || null
+
+  // Determinar si el flujo ya fue ejecutado exitosamente (completed)
+  const latestExecution = latestExecutionData?.data?.[0]
+  const hasCompletedExecution = latestExecution?.estado === 'completed'
+  const hasFailedExecution = latestExecution?.estado === 'failed'
+  const hasCancelledExecution = latestExecution?.estado === 'cancelled'
+
+  // DEBUG: Ver qué responde el backend
+  useEffect(() => {
+    if (activeExecutionData && open) {
+      console.log('🔍 [FlujoDetailDialog] Active Execution Response:', {
+        tiene_ejecucion_activa: activeExecutionData.tiene_ejecucion_activa,
+        ejecucion: activeExecutionData.ejecucion,
+        flujoId: initialFlujo?.id,
+      })
+    }
+  }, [activeExecutionData, open, initialFlujo?.id])
+
+  // Determinar el execution ID efectivo: priorizar el activo del backend sobre el prop
+  const effectiveExecutionId = activeExecution?.id
+    ? activeExecution.id.toString()
+    : executionId || undefined
+
+  // DEBUG: Ver el execution ID efectivo
+  useEffect(() => {
+    if (open) {
+      console.log('🎯 [FlujoDetailDialog] Execution IDs:', {
+        effectiveExecutionId,
+        hasActiveExecution,
+        activeExecutionId: activeExecution?.id,
+        propExecutionId: executionId,
+        currentTab: activeTab,
+      })
+    }
+  }, [effectiveExecutionId, hasActiveExecution, activeExecution?.id, executionId, open, activeTab])
+
+  // Auto-switch to estructura tab when execution starts
+  useEffect(() => {
+    if (effectiveExecutionId && open) {
+      console.log('✅ [FlujoDetailDialog] Auto-switching to estructura tab')
+      setActiveTab('estructura')
+    }
+  }, [effectiveExecutionId, open])
+
+  // Auto-switch to estructura tab when active execution is detected
+  useEffect(() => {
+    if (hasActiveExecution && activeExecution && open) {
+      setActiveTab('estructura')
+      // Notificar al padre que hay una ejecución activa
+      if (onExecutionStart && activeExecution.id) {
+        onExecutionStart(activeExecution.id)
+      }
+    }
+  }, [hasActiveExecution, activeExecution, open, onExecutionStart])
 
   const handleDelete = async () => {
     if (!flujo?.id) {
@@ -204,12 +345,12 @@ export function FlujoDetailDialog({
                       </div>
                     )}
 
-                    {flujo.canal_envio && (
-                      <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-                        <p className="text-sm text-segal-dark/60 font-semibold mb-1">Canal de Envío</p>
-                        <p className="text-lg font-bold text-segal-dark capitalize">{flujo.canal_envio}</p>
-                      </div>
-                    )}
+                    <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+                      <p className="text-sm text-segal-dark/60 font-semibold mb-1">Canal de Envío</p>
+                      <p className="text-lg font-bold text-segal-dark">
+                        {getCanalEnvioIcon(getCanalEnvioReal(flujo))} {getCanalEnvioLabel(getCanalEnvioReal(flujo))}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Descripción */}
@@ -231,13 +372,9 @@ export function FlujoDetailDialog({
                     {(flujo.etapas && flujo.etapas.length > 0) || (flujo.flujo_etapas && flujo.flujo_etapas.length > 0) ? (
                       <div className="space-y-3">
                         {(flujo.etapas || flujo.flujo_etapas || []).map((etapa: EtapaFlujo, index: number) => {
-                          console.log('📋 Etapa detalle:', {
-                            id: etapa.id,
-                            dia_envio: etapa.dia_envio,
-                            tipo_mensaje: etapa.tipo_mensaje,
-                            allKeys: Object.keys(etapa),
-                            etapaCompleta: etapa,
-                          })
+                          // Buscar estado de esta etapa en la última ejecución
+                          const etapaState = etapaStatesMap.get(String(etapa.id))
+
                           return (
                           <div
                             key={etapa.id || index}
@@ -257,6 +394,22 @@ export function FlujoDetailDialog({
                                       '❓ Desconocido'
                                     }
                                   </h4>
+
+                                  {/* Badge de estado de ejecución */}
+                                  {etapaState && (
+                                    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded ${
+                                      etapaState.estado === 'completed' ? 'bg-green-100 text-green-700' :
+                                      etapaState.estado === 'executing' ? 'bg-amber-100 text-amber-700' :
+                                      etapaState.estado === 'failed' ? 'bg-red-100 text-red-700' :
+                                      'bg-gray-100 text-gray-700'
+                                    }`}>
+                                      {etapaState.estado === 'completed' && '✅ Ejecutada'}
+                                      {etapaState.estado === 'executing' && '⚙️ En ejecución'}
+                                      {etapaState.estado === 'failed' && '❌ Fallida'}
+                                      {etapaState.estado === 'pending' && '⏳ Pendiente'}
+                                      {etapaState.enviados && etapaState.enviados > 0 && ` (${etapaState.enviados})`}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3 ml-11">
@@ -330,6 +483,8 @@ export function FlujoDetailDialog({
                   nodos_finales={flujo.flujo_nodos_finales}
                   config_structure={flujo.config_structure}
                   config_visual={flujo.config_visual}
+                  flujoId={flujo?.id}
+                  executionId={effectiveExecutionId}
                 />
               )}
 
@@ -340,7 +495,42 @@ export function FlujoDetailDialog({
 
               {/* Tab: Ejecuciones */}
               {activeTab === 'ejecuciones' && (
-                <ExecutionHistoryPanel ejecuciones={flujo.flujo_ejecuciones} />
+                <ExecutionHistoryPanel
+                  ejecuciones={executionsData?.data}
+                  isLoading={isLoadingExecutions}
+                  configVisual={flujo?.config_visual}
+                  onViewExecution={(ejecucionId) => {
+                    // Navegar al tab de Monitoreo con la ejecución seleccionada
+                    setActiveTab('monitoreo')
+                    if (onExecutionStart) {
+                      onExecutionStart(ejecucionId)
+                    }
+                  }}
+                />
+              )}
+
+              {/* Tab: Monitoreo - Real-time execution monitoring with visual flow */}
+              {activeTab === 'monitoreo' && effectiveExecutionId && flujo?.id && (
+                <FlowExecutionViewer
+                  flujoId={flujo.id}
+                  ejecucionId={parseInt(effectiveExecutionId)}
+                  configVisual={flujo.config_visual}
+                />
+              )}
+
+              {/* Monitoreo - No active execution */}
+              {activeTab === 'monitoreo' && !effectiveExecutionId && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <Activity className="h-12 w-12 text-segal-blue/30 mx-auto mb-4" />
+                    <p className="text-segal-dark/60 dark:text-slate-400">
+                      No hay una ejecución activa en monitoreo
+                    </p>
+                    <p className="text-sm text-segal-dark/40 dark:text-slate-500 mt-2">
+                      Ejecuta el flujo para ver el monitoreo visual en tiempo real
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -350,14 +540,26 @@ export function FlujoDetailDialog({
         <div className="border-t border-segal-blue/10 shrink-0 bg-segal-blue/2 p-6 flex justify-between gap-3">
           {/* Delete button on the left */}
           {!showDeleteConfirm && (
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="border-segal-red/20 text-segal-red hover:bg-segal-red/5"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar
-            </Button>
+            <div className="relative group">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={hasActiveExecution}
+                className={`border-segal-red/20 text-segal-red hover:bg-segal-red/5 ${
+                  hasActiveExecution ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar
+              </Button>
+              {/* Tooltip cuando está deshabilitado */}
+              {hasActiveExecution && (
+                <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  No se puede eliminar un flujo en ejecución
+                  <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                </div>
+              )}
+            </div>
           )}
 
           {/* Delete confirmation buttons */}
@@ -418,14 +620,57 @@ export function FlujoDetailDialog({
               </Button>
             )}
 
-            <Button
-              onClick={() => setIsExecuteModalOpen(true)}
-              className="bg-segal-green hover:bg-segal-green/90 text-white"
-              disabled={showDeleteConfirm}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Ejecutar Flujo
-            </Button>
+            {/* Botón de Ejecutar o Estado de Ejecución */}
+            {hasActiveExecution && activeExecution ? (
+              // Ejecución activa (in_progress o paused)
+              <Button
+                onClick={() => {
+                  setActiveTab('estructura')
+                  if (onExecutionStart) {
+                    onExecutionStart(activeExecution.id)
+                  }
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+                disabled={showDeleteConfirm}
+              >
+                {activeExecution.estado === 'in_progress' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Ejecución en Progreso
+                  </>
+                ) : activeExecution.estado === 'paused' ? (
+                  <>
+                    <Pause className="h-4 w-4 mr-2" />
+                    Ejecución Pausada
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Ver Ejecución
+                  </>
+                )}
+              </Button>
+            ) : hasCompletedExecution ? (
+              // Flujo ya completado exitosamente - NO se puede volver a ejecutar
+              <Button
+                onClick={() => setActiveTab('ejecuciones')}
+                className="bg-green-600 hover:bg-green-700 text-white cursor-default"
+                disabled={showDeleteConfirm}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Flujo Completado
+              </Button>
+            ) : (
+              // Flujo disponible para ejecutar (nunca ejecutado, fallido o cancelado)
+              <Button
+                onClick={() => setIsExecuteModalOpen(true)}
+                className="bg-segal-green hover:bg-segal-green/90 text-white"
+                disabled={showDeleteConfirm || isLoadingActiveExecution}
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {hasFailedExecution || hasCancelledExecution ? 'Re-ejecutar Flujo' : 'Ejecutar Flujo'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -434,6 +679,10 @@ export function FlujoDetailDialog({
           flujo={flujo}
           isOpen={isExecuteModalOpen}
           onClose={() => setIsExecuteModalOpen(false)}
+          onExecuteSuccess={(ejecucionId) => {
+            setIsExecuteModalOpen(false)
+            onExecutionStart?.(ejecucionId)
+          }}
         />
       </DialogContent>
     </Dialog>
