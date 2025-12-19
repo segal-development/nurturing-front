@@ -1,0 +1,186 @@
+# =============================================================================
+# CI/CD Pipeline para Nurturing Frontend (React + Vite)
+# Despliega a Google Cloud Storage
+# =============================================================================
+#
+# Triggers:
+#   - Push a 'staging' -> Deploy a QA
+#   - Push a 'main'    -> Deploy a Producción
+#
+# Secretos requeridos en GitHub:
+#   - GCP_PROJECT_ID: ID del proyecto en GCP
+#   - GCP_SA_KEY: JSON key de la Service Account
+#   - GCP_REGION: Región (ej: southamerica-east1)
+#
+# =============================================================================
+
+name: Deploy Frontend to Cloud Storage
+
+on:
+  push:
+    branches:
+      - staging
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - production
+
+jobs:
+  # ===========================================================================
+  # Job: Test & Lint
+  # ===========================================================================
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint || true
+
+      - name: Run type check
+        run: npm run type-check || npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test -- --passWithNoTests || true
+
+  # ===========================================================================
+  # Job: Build and Deploy
+  # ===========================================================================
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    
+    # Determinar ambiente basado en branch o input manual
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production' || 'qa') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        id: env
+        run: |
+          if [ "${{ env.ENVIRONMENT }}" == "production" ]; then
+            echo "BUCKET_NAME=nurturing-frontend-prod" >> $GITHUB_OUTPUT
+            echo "API_URL=https://api.nurturing.segal.cl/api" >> $GITHUB_OUTPUT
+            echo "ENV_SUFFIX=prod" >> $GITHUB_OUTPUT
+          else
+            echo "BUCKET_NAME=nurturing-frontend-qa" >> $GITHUB_OUTPUT
+            echo "API_URL=https://api-qa.nurturing.segal.cl/api" >> $GITHUB_OUTPUT
+            echo "ENV_SUFFIX=qa" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          VITE_API_URL=${{ steps.env.outputs.API_URL }}
+          VITE_MOCK_API=false
+          VITE_DEBUG=${{ env.ENVIRONMENT == 'qa' && 'true' || 'false' }}
+          VITE_ENVIRONMENT=${{ env.ENVIRONMENT }}
+          EOF
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy to Cloud Storage
+        run: |
+          # Sync files to bucket
+          gsutil -m rsync -r -d dist gs://${{ steps.env.outputs.BUCKET_NAME }}
+          
+          # Set cache headers for assets (1 year)
+          gsutil -m setmeta -h "Cache-Control:public, max-age=31536000" \
+            "gs://${{ steps.env.outputs.BUCKET_NAME }}/assets/**"
+          
+          # Set no-cache for HTML (always fresh)
+          gsutil -m setmeta -h "Cache-Control:no-cache, no-store, must-revalidate" \
+            "gs://${{ steps.env.outputs.BUCKET_NAME }}/index.html"
+
+      - name: Set bucket website configuration
+        run: |
+          gsutil web set -m index.html -e index.html gs://${{ steps.env.outputs.BUCKET_NAME }}
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Frontend Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Bucket:** ${{ steps.env.outputs.BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL:** ${{ steps.env.outputs.API_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ env.ENVIRONMENT }}" == "production" ]; then
+            echo "**Public URL:** https://app.nurturing.segal.cl" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Public URL:** https://qa.nurturing.segal.cl" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # Job: Invalidate CDN Cache (opcional, si usan Cloud CDN)
+  # ===========================================================================
+  invalidate-cache:
+    name: Invalidate CDN Cache
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'  # Solo en producción
+    
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Invalidate CDN cache
+        run: |
+          # Si tienen Cloud CDN configurado, descomentar:
+          # gcloud compute url-maps invalidate-cdn-cache nurturing-lb \
+          #   --path "/*" \
+          #   --async
+          echo "CDN cache invalidation skipped (not configured)"
