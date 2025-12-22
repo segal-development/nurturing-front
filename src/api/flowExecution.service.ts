@@ -14,6 +14,7 @@ import type {
   FlowExecutionResponse,
   StartFlowExecutionPayload,
   StartFlowExecutionResponse,
+  BatchingStatusResponse,
 } from '@/types/flowExecution'
 import { apiClient } from './client'
 
@@ -135,6 +136,26 @@ class FlowExecutionService {
         limit,
       },
     })
+    return response.data
+  }
+
+  /**
+   * Get batching status for an execution
+   *
+   * @param flujoId - Flow ID
+   * @param ejecucionId - Execution ID
+   * @returns Batching progress information
+   *
+   * @example
+   * const status = await flowExecutionService.getBatchingStatus(1, 'exec-123')
+   */
+  async getBatchingStatus(
+    flujoId: number,
+    ejecucionId: string,
+  ): Promise<BatchingStatusResponse> {
+    const response = await apiClient.get<BatchingStatusResponse>(
+      `${BASE_URL}/${flujoId}/ejecuciones/${ejecucionId}/batching-status`,
+    )
     return response.data
   }
 }

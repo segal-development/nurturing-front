@@ -94,3 +94,88 @@ export interface StartFlowExecutionResponse {
   estado: FlowExecutionState
   timestamp: string
 }
+
+// ============================================================================
+// BATCHING TYPES
+// ============================================================================
+
+/**
+ * Estado del batching
+ */
+export type BatchingStatus = 'in_progress' | 'completed' | 'failed' | 'partial_failure'
+
+/**
+ * Información de un lote individual
+ */
+export interface BatchInfo {
+  batch_number: number
+  prospectos_count: number
+  completed_at: string | null
+  failed_at: string | null
+  error: string | null
+  response: {
+    exitosos: number
+    errores: number
+  } | null
+  status: 'pending' | 'completed' | 'failed'
+}
+
+/**
+ * Progreso de batching para una etapa
+ */
+export interface EtapaBatchingInfo {
+  etapa_id: number
+  node_id: string
+  estado_etapa: string
+  has_batching: boolean
+  status?: BatchingStatus
+  progress?: {
+    total_batches: number
+    batches_completed: number
+    batches_pending: number
+    percentage: number
+  }
+  prospectos?: {
+    total: number
+    enviados: number
+    pendientes: number
+  }
+  timing?: {
+    started_at: string | null
+    completed_at: string | null
+    estimated_completion: string | null
+  }
+  batches?: BatchInfo[]
+}
+
+/**
+ * Resumen de batching para la ejecución completa
+ */
+export interface BatchingSummary {
+  total_etapas_con_batching: number
+  status: BatchingStatus | 'none'
+  batches?: {
+    total: number
+    completed: number
+    pending: number
+    percentage: number
+  }
+  prospectos?: {
+    total: number
+    enviados: number
+    pendientes: number
+  }
+}
+
+/**
+ * Respuesta del endpoint de batching status
+ */
+export interface BatchingStatusResponse {
+  error: boolean
+  data: {
+    has_batching: boolean
+    mensaje?: string
+    resumen?: BatchingSummary
+    etapas?: EtapaBatchingInfo[]
+  }
+}

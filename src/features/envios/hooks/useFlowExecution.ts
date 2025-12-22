@@ -208,3 +208,27 @@ export function useExecutionHistory(flujoId: number) {
     enabled: !!flujoId,
   })
 }
+
+/**
+ * Hook to monitor batching status for an execution
+ *
+ * @param flujoId - Flow ID
+ * @param ejecucionId - Execution ID
+ * @param enabled - Enable/disable polling (default: true)
+ * @returns Batching status with auto-refresh every 5 seconds
+ *
+ * @example
+ * const { data, isLoading } = useBatchingStatus(1, 'exec-123')
+ * if (data?.data.has_batching) {
+ *   // Show batching progress UI
+ * }
+ */
+export function useBatchingStatus(flujoId: number, ejecucionId: string, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['flowExecution', flujoId, ejecucionId, 'batching-status'],
+    queryFn: () => flowExecutionService.getBatchingStatus(flujoId, ejecucionId),
+    refetchInterval: enabled ? 5000 : false, // 5 segundos - batching es más lento
+    staleTime: 2000,
+    enabled: enabled && !!flujoId && !!ejecucionId,
+  })
+}
