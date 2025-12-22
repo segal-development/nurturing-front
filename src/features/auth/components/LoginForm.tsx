@@ -49,7 +49,7 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
           name="email"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold text-segal-dark">
+              <FormLabel className="text-sm font-semibold text-foreground">
                 Correo Electrónico
               </FormLabel>
               <FormControl>
@@ -60,12 +60,12 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
                   disabled={isLoading}
                   className={`${
                     fieldState.error
-                      ? 'border-segal-red/50 focus:border-segal-red focus:ring-segal-red/20'
-                      : 'border-segal-blue/20 focus:border-segal-blue focus:ring-segal-blue/20'
+                      ? 'border-destructive/50 focus:border-destructive focus:ring-destructive/20'
+                      : 'border-input focus:border-primary focus:ring-primary/20'
                   } transition-colors`}
                 />
               </FormControl>
-              <FormMessage className="text-segal-red font-medium" />
+              <FormMessage className="text-destructive font-medium" />
             </FormItem>
           )}
         />
@@ -76,7 +76,7 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
           name="password"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold text-segal-dark">
+              <FormLabel className="text-sm font-semibold text-foreground">
                 Contraseña
               </FormLabel>
               <FormControl>
@@ -88,8 +88,8 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
                     disabled={isLoading}
                     className={`pr-10 transition-colors ${
                       fieldState.error
-                        ? 'border-segal-red/50 focus:border-segal-red focus:ring-segal-red/20'
-                        : 'border-segal-blue/20 focus:border-segal-blue focus:ring-segal-blue/20'
+                        ? 'border-destructive/50 focus:border-destructive focus:ring-destructive/20'
+                        : 'border-input focus:border-primary focus:ring-primary/20'
                     }`}
                   />
                   <button
@@ -98,8 +98,8 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
                     disabled={isLoading}
                     className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 rounded px-1 ${
                       fieldState.error
-                        ? 'text-segal-red/60 hover:text-segal-red focus:ring-segal-red/50'
-                        : 'text-segal-dark/60 hover:text-segal-blue focus:ring-segal-blue/50'
+                        ? 'text-destructive/60 hover:text-destructive focus:ring-destructive/50'
+                        : 'text-muted-foreground hover:text-primary focus:ring-primary/50'
                     }`}
                     aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
@@ -111,7 +111,7 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
                   </button>
                 </div>
               </FormControl>
-              <FormMessage className="text-segal-red font-medium" />
+              <FormMessage className="text-destructive font-medium" />
             </FormItem>
           )}
         />
@@ -122,9 +122,9 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
             role="alert"
             aria-live="polite"
             aria-atomic="true"
-            className="p-4 bg-segal-red/10 border border-segal-red/30 rounded-lg"
+            className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg"
           >
-            <p className="text-sm text-segal-red font-medium">
+            <p className="text-sm text-destructive font-medium">
               {error}
             </p>
           </div>
@@ -133,7 +133,7 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full bg-segal-blue hover:bg-segal-blue/90 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover:shadow-lg transition-all duration-200"
           disabled={isLoading || form.formState.isSubmitting}
           aria-busy={isLoading || form.formState.isSubmitting}
         >
