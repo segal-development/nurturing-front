@@ -3,8 +3,7 @@
  * Maneja todas las operaciones CRUD de flujos de nurturing
  */
 
-import { apiClient, isApiError, getApiErrorMessage } from './client'
-import type { ApiError } from './client'
+import { apiClient, getApiErrorMessage } from './client'
 import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure } from '@/types/flujo'
 
 /**
@@ -183,13 +182,36 @@ export const flujosService = {
   /**
    * Crear un nuevo flujo con prospectos e información de distribución
    * @param payload Objeto completo con flujo, prospectos, distribución y costos
+   * 
+   * Acepta dos formatos de payload:
+   * 1. Formato FlowBuilder: { flujo: {...}, prospectos: {...}, visual: {...}, structure: {...} }
+   * 2. Formato legacy: { nombre, tipo_prospecto_id, prospectos_ids, ... }
    */
   async createWithProspectos(payload: {
-    nombre: string;
+    // Formato FlowBuilder
+    flujo?: {
+      nombre: string;
+      descripcion?: string;
+      tipo_prospecto?: number | string | null;
+      activo?: boolean;
+    };
+    origen_id?: string | null;
+    origen_nombre?: string | null;
+    prospectos?: {
+      total_seleccionados: number;
+      ids_seleccionados: number[];
+      total_disponibles: number;
+      tipo_prospecto_id?: number | null;
+    };
+    visual?: ConfigVisual;
+    structure?: ConfigStructure;
+    stages?: unknown;
+    metadata?: Record<string, unknown>;
+    // Formato legacy (para compatibilidad)
+    nombre?: string;
     descripcion?: string;
-    tipo_prospecto_id: number;
-    origen_id?: string;
-    prospectos_ids: number[];
+    tipo_prospecto_id?: number;
+    prospectos_ids?: number[];
     config_visual?: ConfigVisual;
     config_structure?: ConfigStructure;
   }): Promise<FlujoNurturing> {

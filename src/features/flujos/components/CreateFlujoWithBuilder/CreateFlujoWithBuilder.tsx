@@ -4,7 +4,7 @@
  * Steps: Origin -> Prospects -> FlowBuilder
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -60,21 +60,41 @@ export function CreateFlujoWithBuilder({
   /**
    * Obtiene el nombre de un origen por su ID
    */
-  const getOriginNameById = (originId: string): string | null => {
-    return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
-  }
+  const getOriginNameById = useCallback(
+    (originId: string): string | null => {
+      return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
+    },
+    [opciones?.origenes]
+  )
 
   /**
-   * Reinicia estado del diálogo
+   * Carga prospectos del origen seleccionado
+   * Early return si hay error de carga
    */
-  const resetDialogState = () => {
-    setCurrentStep('origin')
-    setSelectedOriginId(null)
-    setSelectedOriginName(null)
-    setSelectedProspectoIds(new Set())
-    setSelectedTipoProspectoId(null)
-    setError(null)
-  }
+  const handleOriginSelect = useCallback(
+    async (originId: string) => {
+      setSelectedOriginId(originId)
+      setSelectedOriginName(getOriginNameById(originId))
+      setLoadingProspectos(true)
+      setError(null)
+
+      try {
+        const response = await prospectosService.getAll({
+          origen: originId,
+          per_page: 1000,
+        })
+        setProspectos(response.data)
+        setCurrentStep('prospects')
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+        setError(`Error al cargar prospectos: ${errorMessage}`)
+        console.error('❌ Error cargando prospectos:', { originId, error })
+      } finally {
+        setLoadingProspectos(false)
+      }
+    },
+    [getOriginNameById]
+  )
 
   /**
    * Maneja la apertura del diálogo y carga origen inicial si existe
@@ -82,39 +102,19 @@ export function CreateFlujoWithBuilder({
   useEffect(() => {
     if (!open) return
 
-    resetDialogState()
+    // Reset state when dialog opens
+    setCurrentStep('origin')
+    setSelectedOriginId(null)
+    setSelectedOriginName(null)
+    setSelectedProspectoIds(new Set())
+    setSelectedTipoProspectoId(null)
+    setError(null)
 
     // Si hay origen inicial, lo carga automáticamente
     if (initialOriginId) {
       handleOriginSelect(initialOriginId)
     }
-  }, [open, initialOriginId])
-
-  /**
-   * Carga prospectos del origen seleccionado
-   * Early return si hay error de carga
-   */
-  const handleOriginSelect = async (originId: string) => {
-    setSelectedOriginId(originId)
-    setSelectedOriginName(getOriginNameById(originId))
-    setLoadingProspectos(true)
-    setError(null)
-
-    try {
-      const response = await prospectosService.getAll({
-        origen: originId,
-        per_page: 1000,
-      })
-      setProspectos(response.data)
-      setCurrentStep('prospects')
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setError(`Error al cargar prospectos: ${errorMessage}`)
-      console.error('❌ Error cargando prospectos:', { originId, error })
-    } finally {
-      setLoadingProspectos(false)
-    }
-  }
+  }, [open, initialOriginId, handleOriginSelect])
 
   /**
    * Valida y avanza a step de builder
@@ -155,13 +155,16 @@ export function CreateFlujoWithBuilder({
 
   /**
    * Construye payload para crear flujo en backend
+   * IMPORTANTE: El backend espera 'tipo_prospecto' (no 'tipo_prospecto_id')
+   * y acepta tanto ID numérico como nombre string
    */
   const buildFlowPayload = (config: any) => {
     return {
       flujo: {
         nombre: config.nombre,
         descripcion: config.descripcion,
-        tipo_prospecto_id: selectedTipoProspectoId,
+        // Backend busca por ID, nombre o slug - enviar el ID es lo más confiable
+        tipo_prospecto: selectedTipoProspectoId,
         activo: true,
       },
       origen_id: selectedOriginId,
@@ -255,6 +258,7 @@ export function CreateFlujoWithBuilder({
 
             {currentStep !== 'origin' && (
               <button
+                type="button"
                 onClick={handleBack}
                 className="p-2 hover:bg-segal-blue/10 rounded-lg transition-colors"
               >
