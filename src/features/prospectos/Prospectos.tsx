@@ -196,10 +196,10 @@ export function Prospectos() {
 
       {/* Empty state */}
       {!filtros.importacionId && (
-        <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-12 text-center">
-          <AlertCircle className="h-12 w-12 text-segal-blue/50 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-segal-dark mb-2">Selecciona una fuente de importación</p>
-          <p className="text-segal-dark/60">
+        <div className="rounded-lg border border-segal-blue/20 dark:border-gray-700 bg-segal-blue/5 dark:bg-gray-800 p-12 text-center">
+          <AlertCircle className="h-12 w-12 text-segal-blue/50 dark:text-segal-turquoise/50 mx-auto mb-4" />
+          <p className="text-lg font-semibold text-segal-dark dark:text-white mb-2">Selecciona una fuente de importación</p>
+          <p className="text-segal-dark/60 dark:text-gray-400">
             Elige una fuente de importación del selector anterior para ver los prospectos disponibles
           </p>
         </div>
