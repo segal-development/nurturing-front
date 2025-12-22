@@ -5,21 +5,24 @@
  */
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import { Handle, Position } from 'reactflow'
-import type { NodeProps } from 'reactflow'
+import { format, parseISO } from 'date-fns'
 import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Loader2,
   Mail,
   MessageSquare,
+  Send,
   Settings2,
   Trash2,
-  CheckCircle2,
-  Calendar,
-  Clock,
-  AlertCircle,
-  Loader2,
-  Send,
-  DollarSign,
 } from 'lucide-react'
+import { Handle, Position } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Tooltip,
   TooltipContent,
@@ -435,17 +438,19 @@ export function StageNode({
 
             {/* Custom Start Date (Optional) */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-segal-dark">Fecha Personalizada (Opcional)</label>
+              <span className="text-xs font-semibold text-segal-dark">Fecha Personalizada (Opcional)</span>
               <p className="text-xs text-segal-dark/60 mb-1">
                 Usa esto para override de la fecha basada en días
               </p>
-              <input
-                type="date"
-                value={localData.fecha_inicio_personalizada || ''}
-                onChange={(e) =>
-                  setLocalData({ ...localData, fecha_inicio_personalizada: e.target.value })
+              <DatePicker
+                date={localData.fecha_inicio_personalizada ? parseISO(localData.fecha_inicio_personalizada) : undefined}
+                onDateChange={(date) =>
+                  setLocalData({ ...localData, fecha_inicio_personalizada: date ? format(date, 'yyyy-MM-dd') : '' })
                 }
-                className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                placeholder="Seleccionar fecha"
+                fromDate={new Date()}
+                dateFormat="dd/MM/yyyy"
+                className="w-full"
               />
             </div>
 

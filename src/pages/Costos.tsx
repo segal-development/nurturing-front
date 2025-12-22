@@ -4,40 +4,41 @@
  */
 
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { format, startOfMonth } from 'date-fns'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
+import { formatCurrency, useCostoDashboard } from '@/features/costos/hooks'
 import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Mail,
-  Smartphone,
+  AlertCircle,
   BarChart3,
   Calendar,
-  RefreshCw,
+  DollarSign,
   Loader2,
-  AlertCircle,
+  Mail,
+  RefreshCw,
+  Smartphone,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react'
-import { formatCurrency, useCostoDashboard } from '@/features/costos/hooks'
 
 /**
  * Main Costos Dashboard Page
  */
 export default function Costos() {
-  // Date range state
-  const [fechaInicio, setFechaInicio] = useState<string>(() => {
-    const date = new Date()
-    date.setDate(1) // First day of month
-    return date.toISOString().split('T')[0]
-  })
-  const [fechaFin, setFechaFin] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0]
-  })
+  // Date range state - using Date objects now
+  const [fechaInicio, setFechaInicio] = useState<Date>(() => startOfMonth(new Date()))
+  const [fechaFin, setFechaFin] = useState<Date>(() => new Date())
+
+  // Format dates for API (yyyy-MM-dd)
+  const fechaInicioStr = format(fechaInicio, 'yyyy-MM-dd')
+  const fechaFinStr = format(fechaFin, 'yyyy-MM-dd')
 
   // Fetch dashboard data
   const { data: dashboardData, isLoading, isError, error, refetch } = useCostoDashboard(
-    fechaInicio,
-    fechaFin
+    fechaInicioStr,
+    fechaFinStr
   )
 
   // Quick date filters
@@ -57,8 +58,8 @@ export default function Costos() {
         break
     }
 
-    setFechaInicio(start.toISOString().split('T')[0])
-    setFechaFin(end.toISOString().split('T')[0])
+    setFechaInicio(start)
+    setFechaFin(end)
   }
 
   return (
@@ -110,18 +111,21 @@ export default function Costos() {
 
             {/* Custom date inputs */}
             <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-segal-blue/20 rounded"
+              <DatePicker
+                date={fechaInicio}
+                onDateChange={(date) => date && setFechaInicio(date)}
+                placeholder="Fecha inicio"
+                toDate={fechaFin}
+                dateFormat="dd/MM/yyyy"
               />
               <span className="text-segal-dark/40">→</span>
-              <input
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-segal-blue/20 rounded"
+              <DatePicker
+                date={fechaFin}
+                onDateChange={(date) => date && setFechaFin(date)}
+                placeholder="Fecha fin"
+                fromDate={fechaInicio}
+                toDate={new Date()}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
 

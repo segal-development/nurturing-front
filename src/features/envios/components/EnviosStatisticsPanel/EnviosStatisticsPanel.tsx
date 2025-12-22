@@ -10,11 +10,13 @@
  */
 
 import { useState } from 'react'
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { endOfMonth, format, startOfMonth, subDays } from 'date-fns'
+import { AlertCircle, BarChart3, Loader2, PieChart as PieChartIcon } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AlertCircle, Loader2, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
 import { useEnviosDailyStats, useEnviosFlowStats } from '@/features/envios/hooks'
 import DailyStatsChart from './DailyStatsChart'
 import ChannelBreakdown from './ChannelBreakdown'
@@ -91,25 +93,28 @@ export function EnviosStatisticsPanel() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
+              <span className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
                 Fecha Inicio
-              </label>
-              <input
-                type="date"
-                value={format(startDate, 'yyyy-MM-dd')}
-                onChange={(e) => setStartDate(new Date(e.target.value))}
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              </span>
+              <DatePicker
+                date={startDate}
+                onDateChange={(date) => date && setStartDate(date)}
+                placeholder="Seleccionar fecha"
+                toDate={endDate}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
+              <span className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
                 Fecha Fin
-              </label>
-              <input
-                type="date"
-                value={format(endDate, 'yyyy-MM-dd')}
-                onChange={(e) => setEndDate(new Date(e.target.value))}
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+              </span>
+              <DatePicker
+                date={endDate}
+                onDateChange={(date) => date && setEndDate(date)}
+                placeholder="Seleccionar fecha"
+                fromDate={startDate}
+                toDate={new Date()}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
           </div>

@@ -3,10 +3,13 @@
  * Provides filtering controls for envios list
  */
 
-import type { EnviosFilterOptions } from '@/types/envios'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { format, parseISO } from 'date-fns'
 import { X } from 'lucide-react'
+
+import type { EnviosFilterOptions } from '@/types/envios'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 
 interface EnviosFiltersProps {
   filters: EnviosFilterOptions
@@ -33,7 +36,7 @@ export function EnviosFilters({ filters, onFiltersChange }: EnviosFiltersProps) 
                 onChange={(e) =>
                   onFiltersChange({ estado: (e.target.value as any) || undefined })
                 }
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos</option>
                 <option value="pendiente">Pendiente</option>
@@ -52,7 +55,7 @@ export function EnviosFilters({ filters, onFiltersChange }: EnviosFiltersProps) 
                 onChange={(e) =>
                   onFiltersChange({ canal: (e.target.value as any) || undefined })
                 }
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos</option>
                 <option value="email">📧 Email</option>
@@ -74,7 +77,7 @@ export function EnviosFilters({ filters, onFiltersChange }: EnviosFiltersProps) 
                     flujo_id: e.target.value ? parseInt(e.target.value) : undefined,
                   })
                 }
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
 
@@ -105,29 +108,32 @@ export function EnviosFilters({ filters, onFiltersChange }: EnviosFiltersProps) 
           {/* Date range filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-segal-blue/10 dark:border-slate-700 pt-4">
             <div>
-              <label className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
+              <span className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
                 Desde
-              </label>
-              <input
-                type="date"
-                value={filters.fecha_desde || ''}
-                onChange={(e) =>
-                  onFiltersChange({ fecha_desde: e.target.value || undefined })
+              </span>
+              <DatePicker
+                date={filters.fecha_desde ? parseISO(filters.fecha_desde) : undefined}
+                onDateChange={(date) =>
+                  onFiltersChange({ fecha_desde: date ? format(date, 'yyyy-MM-dd') : undefined })
                 }
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                placeholder="Seleccionar fecha"
+                toDate={filters.fecha_hasta ? parseISO(filters.fecha_hasta) : new Date()}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
+              <span className="block text-sm font-medium text-segal-dark dark:text-white mb-2">
                 Hasta
-              </label>
-              <input
-                type="date"
-                value={filters.fecha_hasta || ''}
-                onChange={(e) =>
-                  onFiltersChange({ fecha_hasta: e.target.value || undefined })
+              </span>
+              <DatePicker
+                date={filters.fecha_hasta ? parseISO(filters.fecha_hasta) : undefined}
+                onDateChange={(date) =>
+                  onFiltersChange({ fecha_hasta: date ? format(date, 'yyyy-MM-dd') : undefined })
                 }
-                className="w-full px-3 py-2 border border-segal-blue/20 rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"
+                placeholder="Seleccionar fecha"
+                fromDate={filters.fecha_desde ? parseISO(filters.fecha_desde) : undefined}
+                toDate={new Date()}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
           </div>
