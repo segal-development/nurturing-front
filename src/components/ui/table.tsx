@@ -6,7 +6,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto rounded-lg border border-border shadow-sm"
+      className="relative w-full overflow-x-auto rounded-lg border border-segal-blue/10 dark:border-segal-blue/30 shadow-sm"
     >
       <table
         data-slot="table"
@@ -21,7 +21,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b [&_tr]:border-border", className)}
+      className={cn("[&_tr]:border-b [&_tr]:border-segal-blue/10 dark:[&_tr]:border-segal-blue/30", className)}
       {...props}
     />
   )
@@ -42,7 +42,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
+        "bg-segal-blue/5 dark:bg-segal-blue/10 border-t border-segal-blue/10 dark:border-segal-blue/30 font-medium [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-accent/50 data-[state=selected]:bg-muted border-b transition-colors duration-150",
+        "hover:bg-segal-blue/5 dark:hover:bg-segal-blue/10 data-[state=selected]:bg-segal-blue/10 border-b border-segal-blue/10 dark:border-segal-blue/30 transition-colors duration-150",
         className
       )}
       {...props}
@@ -68,7 +68,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-12 px-4 py-3 text-left align-middle font-semibold text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5 bg-muted/30",
+        "text-segal-dark dark:text-segal-light h-12 px-4 py-3 text-left align-middle font-semibold text-sm whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5 bg-segal-blue/5 dark:bg-segal-blue/10",
         className
       )}
       {...props}
