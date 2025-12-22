@@ -66,19 +66,19 @@ export default function Costos() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-segal-dark">Dashboard de Costos</h1>
-        <p className="text-sm text-segal-dark/60">
+        <h1 className="text-2xl font-bold text-segal-dark dark:text-white">Dashboard de Costos</h1>
+        <p className="text-sm text-segal-dark/60 dark:text-gray-400">
           Monitorea los gastos de tus campañas de nurturing
         </p>
       </div>
 
       {/* Date Filters */}
-      <Card className="border-segal-blue/10">
+      <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900">
         <CardContent className="pt-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-segal-blue" />
-              <span className="text-sm font-medium text-segal-dark">Período:</span>
+              <Calendar className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
+              <span className="text-sm font-medium text-segal-dark dark:text-white">Período:</span>
             </div>
 
             {/* Quick filters */}
@@ -87,7 +87,7 @@ export default function Costos() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDateRange('week')}
-                className="text-xs"
+                className="text-xs dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
               >
                 Última semana
               </Button>
@@ -95,7 +95,7 @@ export default function Costos() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDateRange('month')}
-                className="text-xs"
+                className="text-xs dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
               >
                 Este mes
               </Button>
@@ -103,7 +103,7 @@ export default function Costos() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDateRange('quarter')}
-                className="text-xs"
+                className="text-xs dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
               >
                 Último trimestre
               </Button>
@@ -118,7 +118,7 @@ export default function Costos() {
                 toDate={fechaFin}
                 dateFormat="dd/MM/yyyy"
               />
-              <span className="text-segal-dark/40">→</span>
+              <span className="text-segal-dark/40 dark:text-gray-500">→</span>
               <DatePicker
                 date={fechaFin}
                 onDateChange={(date) => date && setFechaFin(date)}
@@ -134,7 +134,7 @@ export default function Costos() {
               size="sm"
               onClick={() => refetch()}
               disabled={isLoading}
-              className="ml-auto"
+              className="ml-auto dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -148,12 +148,12 @@ export default function Costos() {
 
       {/* Error state */}
       {isError && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30">
           <CardContent className="flex items-center gap-3 py-4">
-            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
             <div>
-              <p className="font-medium text-red-800">Error al cargar datos</p>
-              <p className="text-sm text-red-600">{error?.message || 'Intenta de nuevo más tarde'}</p>
+              <p className="font-medium text-red-800 dark:text-red-300">Error al cargar datos</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error?.message || 'Intenta de nuevo más tarde'}</p>
             </div>
           </CardContent>
         </Card>
@@ -172,63 +172,63 @@ export default function Costos() {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Cost */}
-            <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+            <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/50 dark:to-gray-900">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-emerald-700">
+                <CardDescription className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
                   <DollarSign className="h-4 w-4" />
                   Costo Total
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-emerald-800">
+                <p className="text-3xl font-bold text-emerald-800 dark:text-emerald-300">
                   {formatCurrency(dashboardData.resumen.costo_total)}
                 </p>
-                <p className="text-xs text-emerald-600 mt-1">
+                <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-1">
                   {dashboardData.resumen.total_ejecuciones} ejecuciones
                 </p>
               </CardContent>
             </Card>
 
             {/* Email Cost */}
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+            <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/50 dark:to-gray-900">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-blue-700">
+                <CardDescription className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                   <Mail className="h-4 w-4" />
                   Costo Emails
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-blue-800">
+                <p className="text-3xl font-bold text-blue-800 dark:text-blue-300">
                   {formatCurrency(dashboardData.resumen.costo_emails)}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
                   {dashboardData.resumen.total_emails?.toLocaleString()} enviados • ${dashboardData.precios_actuales.email}/email
                 </p>
               </CardContent>
             </Card>
 
             {/* SMS Cost */}
-            <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white">
+            <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-white dark:from-green-950/50 dark:to-gray-900">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-green-700">
+                <CardDescription className="flex items-center gap-2 text-green-700 dark:text-green-400">
                   <Smartphone className="h-4 w-4" />
                   Costo SMS
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-green-800">
+                <p className="text-3xl font-bold text-green-800 dark:text-green-300">
                   {formatCurrency(dashboardData.resumen.costo_sms)}
                 </p>
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-green-600 dark:text-green-500 mt-1">
                   {dashboardData.resumen.total_sms?.toLocaleString()} enviados • ${dashboardData.precios_actuales.sms}/SMS
                 </p>
               </CardContent>
             </Card>
 
             {/* Estimated vs Real */}
-            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+            <Card className="border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/50 dark:to-gray-900">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-purple-700">
+                <CardDescription className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
                   <BarChart3 className="h-4 w-4" />
                   Estimado vs Real
                 </CardDescription>
@@ -236,22 +236,22 @@ export default function Costos() {
               <CardContent>
                 <div className="flex items-center gap-2">
                   {dashboardData.comparacion_estimado_real.diferencia_porcentaje > 0 ? (
-                    <TrendingUp className="h-5 w-5 text-red-500" />
+                    <TrendingUp className="h-5 w-5 text-red-500 dark:text-red-400" />
                   ) : dashboardData.comparacion_estimado_real.diferencia_porcentaje < 0 ? (
-                    <TrendingDown className="h-5 w-5 text-green-500" />
+                    <TrendingDown className="h-5 w-5 text-green-500 dark:text-green-400" />
                   ) : null}
                   <p className={`text-3xl font-bold ${
                     dashboardData.comparacion_estimado_real.diferencia_porcentaje > 0
-                      ? 'text-red-600'
+                      ? 'text-red-600 dark:text-red-400'
                       : dashboardData.comparacion_estimado_real.diferencia_porcentaje < 0
-                        ? 'text-green-600'
-                        : 'text-purple-800'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-purple-800 dark:text-purple-300'
                   }`}>
                     {dashboardData.comparacion_estimado_real.diferencia_porcentaje > 0 ? '+' : ''}
                     {dashboardData.comparacion_estimado_real.diferencia_porcentaje}%
                   </p>
                 </div>
-                <p className="text-xs text-purple-600 mt-1">
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
                   Est: {formatCurrency(dashboardData.comparacion_estimado_real.total_estimado)} →
                   Real: {formatCurrency(dashboardData.comparacion_estimado_real.total_real)}
                 </p>
@@ -262,16 +262,16 @@ export default function Costos() {
           {/* Two-column layout for tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Costs by Day */}
-            <Card className="border-segal-blue/10">
+            <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-segal-blue" />
+                <CardTitle className="text-base flex items-center gap-2 dark:text-white">
+                  <Calendar className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
                   Costos por Día
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {dashboardData.costos_por_dia.length === 0 ? (
-                  <p className="text-sm text-segal-dark/60 text-center py-8">
+                  <p className="text-sm text-segal-dark/60 dark:text-gray-400 text-center py-8">
                     No hay datos para el período seleccionado
                   </p>
                 ) : (
@@ -279,25 +279,25 @@ export default function Costos() {
                     {dashboardData.costos_por_dia.map((dia) => (
                       <div
                         key={dia.fecha}
-                        className="flex items-center justify-between p-3 rounded-lg bg-segal-blue/5 hover:bg-segal-blue/10 transition-colors"
+                        className="flex items-center justify-between p-3 rounded-lg bg-segal-blue/5 dark:bg-gray-800 hover:bg-segal-blue/10 dark:hover:bg-gray-700 transition-colors"
                       >
                         <div>
-                          <p className="text-sm font-medium text-segal-dark">
+                          <p className="text-sm font-medium text-segal-dark dark:text-white">
                             {new Date(dia.fecha + 'T00:00:00').toLocaleDateString('es-CL', {
                               weekday: 'short',
                               day: 'numeric',
                               month: 'short',
                             })}
                           </p>
-                          <p className="text-xs text-segal-dark/60">
+                          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
                             {dia.ejecuciones} ejecución{dia.ejecuciones !== 1 ? 'es' : ''}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-700">
+                          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                             {formatCurrency(dia.costo_total)}
                           </p>
-                          <p className="text-xs text-segal-dark/60">
+                          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
                             📧 {formatCurrency(dia.costo_emails)} • 📱 {formatCurrency(dia.costo_sms)}
                           </p>
                         </div>
@@ -309,16 +309,16 @@ export default function Costos() {
             </Card>
 
             {/* Costs by Flow */}
-            <Card className="border-segal-blue/10">
+            <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-segal-blue" />
+                <CardTitle className="text-base flex items-center gap-2 dark:text-white">
+                  <BarChart3 className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
                   Costos por Flujo
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {dashboardData.costos_por_flujo.length === 0 ? (
-                  <p className="text-sm text-segal-dark/60 text-center py-8">
+                  <p className="text-sm text-segal-dark/60 dark:text-gray-400 text-center py-8">
                     No hay datos para el período seleccionado
                   </p>
                 ) : (
@@ -326,19 +326,19 @@ export default function Costos() {
                     {dashboardData.costos_por_flujo.map((flujo) => (
                       <div
                         key={flujo.flujo_id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-segal-blue/5 hover:bg-segal-blue/10 transition-colors"
+                        className="flex items-center justify-between p-3 rounded-lg bg-segal-blue/5 dark:bg-gray-800 hover:bg-segal-blue/10 dark:hover:bg-gray-700 transition-colors"
                       >
                         <div className="flex-1 min-w-0 mr-3">
-                          <p className="text-sm font-medium text-segal-dark truncate">
+                          <p className="text-sm font-medium text-segal-dark dark:text-white truncate">
                             {flujo.flujo_nombre}
                           </p>
-                          <p className="text-xs text-segal-dark/60">
+                          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
                             {flujo.ejecuciones} ejecución{flujo.ejecuciones !== 1 ? 'es' : ''} •
                             📧 {flujo.total_emails} • 📱 {flujo.total_sms}
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-bold text-emerald-700">
+                          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                             {formatCurrency(flujo.costo_total)}
                           </p>
                         </div>
@@ -351,19 +351,19 @@ export default function Costos() {
           </div>
 
           {/* Pricing Info */}
-          <Card className="border-segal-blue/10 bg-segal-blue/5">
+          <Card className="border-segal-blue/10 dark:border-gray-700 bg-segal-blue/5 dark:bg-gray-800">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-4">
-                  <span className="text-segal-dark/70">Precios actuales:</span>
-                  <span className="font-medium text-blue-700">
+                  <span className="text-segal-dark/70 dark:text-gray-400">Precios actuales:</span>
+                  <span className="font-medium text-blue-700 dark:text-blue-400">
                     📧 Email: ${dashboardData.precios_actuales.email}
                   </span>
-                  <span className="font-medium text-green-700">
+                  <span className="font-medium text-green-700 dark:text-green-400">
                     📱 SMS: ${dashboardData.precios_actuales.sms}
                   </span>
                 </div>
-                <span className="text-xs text-segal-dark/50">
+                <span className="text-xs text-segal-dark/50 dark:text-gray-500">
                   Período: {new Date(dashboardData.periodo.fecha_inicio).toLocaleDateString('es-CL')} - {new Date(dashboardData.periodo.fecha_fin).toLocaleDateString('es-CL')}
                 </span>
               </div>
