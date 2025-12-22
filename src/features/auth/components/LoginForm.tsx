@@ -133,7 +133,8 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
         {/* Submit Button */}
         <Button
           type="submit"
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+          className="w-full font-semibold"
+          size="lg"
           disabled={isLoading || form.formState.isSubmitting}
           aria-busy={isLoading || form.formState.isSubmitting}
         >
