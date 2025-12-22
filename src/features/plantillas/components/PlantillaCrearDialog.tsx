@@ -204,26 +204,28 @@ export function PlantillaCrearDialog({
         {!plantillaSMS.nombre && !plantillaEmail.nombre && (
           <div className="grid grid-cols-2 gap-4 my-6">
             <button
+              type="button"
               onClick={() => setTipo('sms')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 tipo === 'sms'
-                  ? 'border-segal-blue bg-segal-blue/10'
-                  : 'border-segal-blue/20 hover:border-segal-blue/40'
+                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
+                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
               }`}
             >
-              <p className="font-semibold text-segal-dark text-lg mb-1">📱 SMS</p>
-              <p className="text-sm text-segal-dark/60">Máx 160 caracteres</p>
+              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">📱 SMS</p>
+              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Máx 160 caracteres</p>
             </button>
             <button
+              type="button"
               onClick={() => setTipo('email')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 tipo === 'email'
-                  ? 'border-segal-blue bg-segal-blue/10'
-                  : 'border-segal-blue/20 hover:border-segal-blue/40'
+                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
+                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
               }`}
             >
-              <p className="font-semibold text-segal-dark text-lg mb-1">📧 Email</p>
-              <p className="text-sm text-segal-dark/60">Con componentes</p>
+              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">📧 Email</p>
+              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Con componentes</p>
             </button>
           </div>
         )}
@@ -232,26 +234,28 @@ export function PlantillaCrearDialog({
         {tipo === 'email' && !plantillaEmail.nombre && !plantillaEmailAvanzada.nombre && (
           <div className="grid grid-cols-2 gap-4 my-6">
             <button
+              type="button"
               onClick={() => setModoEmail('modular')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 modoEmail === 'modular'
-                  ? 'border-segal-blue bg-segal-blue/10'
-                  : 'border-segal-blue/20 hover:border-segal-blue/40'
+                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
+                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
               }`}
             >
-              <p className="font-semibold text-segal-dark text-lg mb-1">🧩 Email Modular</p>
-              <p className="text-sm text-segal-dark/60">Logo, Texto, Botón, etc</p>
+              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">🧩 Email Modular</p>
+              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Logo, Texto, Botón, etc</p>
             </button>
             <button
+              type="button"
               onClick={() => setModoEmail('avanzado')}
               className={`p-4 rounded-lg border-2 transition-all ${
                 modoEmail === 'avanzado'
-                  ? 'border-segal-blue bg-segal-blue/10'
-                  : 'border-segal-blue/20 hover:border-segal-blue/40'
+                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
+                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
               }`}
             >
-              <p className="font-semibold text-segal-dark text-lg mb-1">⚡ Email Avanzado</p>
-              <p className="text-sm text-segal-dark/60">Bloques personalizables</p>
+              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">⚡ Email Avanzado</p>
+              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Bloques personalizables</p>
             </button>
           </div>
         )}
@@ -276,26 +280,26 @@ export function PlantillaCrearDialog({
         {tipo === 'email' && modoEmail === 'avanzado' && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-segal-dark">Nombre de la Plantilla</label>
+              <label className="text-sm font-semibold text-segal-dark dark:text-white">Nombre de la Plantilla</label>
               <input
                 type="text"
                 value={plantillaEmailAvanzada.nombre}
                 onChange={(e) =>
                   setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, nombre: e.target.value })
                 }
-                className="w-full px-3 py-2 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20"
                 placeholder="Ej: Newsletter Mensual"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-segal-dark">Descripción (Opcional)</label>
+              <label className="text-sm font-semibold text-segal-dark dark:text-white">Descripción (Opcional)</label>
               <textarea
                 value={plantillaEmailAvanzada.descripcion}
                 onChange={(e) =>
                   setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, descripcion: e.target.value })
                 }
-                className="w-full px-3 py-2 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20 resize-none h-20"
+                className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20 resize-none h-20"
                 placeholder="Describe para qué sirve esta plantilla..."
               />
             </div>
@@ -322,14 +326,14 @@ export function PlantillaCrearDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            className="border-segal-blue/20 dark:border-gray-600 text-segal-dark dark:text-gray-300 hover:bg-segal-blue/5 dark:hover:bg-gray-800"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleGuardar}
             disabled={!esValido || isSaving}
-            className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
+            className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900 disabled:opacity-50"
           >
             {isSaving ? (
               <>

@@ -58,8 +58,8 @@ export function PlantillaEliminarDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="bg-red-100 rounded-full p-3">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div className="bg-red-100 dark:bg-red-950 rounded-full p-3">
+              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
             <div>
               <DialogTitle>Eliminar Plantilla</DialogTitle>
@@ -71,14 +71,14 @@ export function PlantillaEliminarDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-800">
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <p className="text-sm text-red-800 dark:text-red-300">
               ¿Estás seguro de que deseas eliminar la plantilla{' '}
               <span className="font-semibold">"{plantilla?.nombre}"</span>?
             </p>
           </div>
 
-          <p className="text-sm text-segal-dark/70">
+          <p className="text-sm text-segal-dark/70 dark:text-gray-400">
             Una vez eliminada, no podrás recuperar esta plantilla. Si aún la necesitas, considera duplicarla antes.
           </p>
         </div>
@@ -88,14 +88,14 @@ export function PlantillaEliminarDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
-            className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            className="border-segal-blue/20 dark:border-gray-600 text-segal-dark dark:text-gray-300 hover:bg-segal-blue/5 dark:hover:bg-gray-800"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleEliminar}
             disabled={isDeleting}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white"
           >
             {isDeleting ? (
               <>
