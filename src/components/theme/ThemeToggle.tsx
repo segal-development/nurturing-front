@@ -29,7 +29,7 @@ export function ThemeToggle({
       onClick={handleToggle}
       aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
       title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      className="transition-colors duration-200"
+      className="transition-colors duration-200 dark:border-gray-600 dark:bg-gray-800 dark:text-yellow-400 dark:hover:bg-gray-700 dark:hover:text-yellow-300"
     >
       {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </Button>
