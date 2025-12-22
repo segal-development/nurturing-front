@@ -5,6 +5,7 @@ import { formatNumber, formatPercentage } from '@/lib/utils';
 import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveLine } from '@nivo/line';
 import { dashboardService } from '@/api/dashboard.service';
+import { useTheme } from '@/hooks/useTheme';
 
 
 // Transform data for nivo Pie chart
@@ -44,6 +45,9 @@ function transformLineChartData(
 }
 
 export default function Dashboard() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   // Obtener datos del backend en tiempo real
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
@@ -190,6 +194,15 @@ export default function Dashboard() {
                   min: 0,
                   max: 'auto',
                 }}
+                theme={{
+                  text: { fill: isDark ? '#e5e7eb' : '#333333' },
+                  axis: {
+                    ticks: { text: { fill: isDark ? '#9ca3af' : '#666666' } },
+                    legend: { text: { fill: isDark ? '#e5e7eb' : '#333333' } },
+                  },
+                  grid: { line: { stroke: isDark ? '#374151' : '#e0e0e0' } },
+                  crosshair: { line: { stroke: isDark ? '#9ca3af' : '#666666' } },
+                }}
                 axisBottom={{
                   tickSize: 5,
                   tickPadding: 5,
@@ -213,9 +226,10 @@ export default function Dashboard() {
                 tooltip={({ point }: any) => (
                   <div
                     style={{
-                      background: 'white',
+                      background: isDark ? '#1f2937' : 'white',
+                      color: isDark ? '#e5e7eb' : '#333333',
                       padding: '8px 12px',
-                      border: '1px solid #ccc',
+                      border: `1px solid ${isDark ? '#374151' : '#ccc'}`,
                       borderRadius: '4px',
                       fontSize: '12px'
                     }}
@@ -253,9 +267,13 @@ export default function Dashboard() {
                 arcLabelsRadiusOffset={0.6}
                 enableArcLinkLabels={true}
                 arcLinkLabelsSkipAngle={5}
-                arcLinkLabelsTextColor="#333333"
+                arcLinkLabelsTextColor={isDark ? '#e5e7eb' : '#333333'}
                 arcLinkLabelsThickness={2}
                 arcLinkLabelsColor={{ from: 'color' }}
+                theme={{
+                  text: { fill: isDark ? '#e5e7eb' : '#333333' },
+                  labels: { text: { fill: isDark ? '#e5e7eb' : '#333333' } },
+                }}
                 tooltip={({ datum }: any) => {
                   const total = (stats?.prospectos_por_flujo || []).reduce(
                     (sum: number, item: any) => sum + item.cantidad,
@@ -265,21 +283,21 @@ export default function Dashboard() {
                   return (
                     <div
                       style={{
-                        background: 'white',
+                        background: isDark ? '#1f2937' : 'white',
                         padding: '12px 16px',
-                        border: '2px solid #086DBD',
+                        border: `2px solid ${isDark ? '#32BFD0' : '#086DBD'}`,
                         borderRadius: '6px',
                         fontSize: '13px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                       }}
                     >
-                      <div style={{ fontWeight: 'bold', color: '#086DBD', marginBottom: '4px' }}>
+                      <div style={{ fontWeight: 'bold', color: isDark ? '#32BFD0' : '#086DBD', marginBottom: '4px' }}>
                         {datum.label}
                       </div>
-                      <div style={{ color: '#333' }}>
+                      <div style={{ color: isDark ? '#e5e7eb' : '#333' }}>
                         Cantidad: <strong>{datum.value.toLocaleString()}</strong>
                       </div>
-                      <div style={{ color: '#666', fontSize: '12px', marginTop: '4px' }}>
+                      <div style={{ color: isDark ? '#9ca3af' : '#666', fontSize: '12px', marginTop: '4px' }}>
                         {percentage}% del total
                       </div>
                     </div>
@@ -295,7 +313,7 @@ export default function Dashboard() {
                     itemsSpacing: 15,
                     itemWidth: 120,
                     itemHeight: 18,
-                    itemTextColor: '#333333',
+                    itemTextColor: isDark ? '#e5e7eb' : '#333333',
                     itemDirection: 'left-to-right',
                     symbolSize: 16,
                     symbolShape: 'circle',
@@ -303,7 +321,7 @@ export default function Dashboard() {
                       {
                         on: 'hover',
                         style: {
-                          itemTextColor: '#086DBD',
+                          itemTextColor: isDark ? '#32BFD0' : '#086DBD',
                           itemOpacity: 1,
                         },
                       },
