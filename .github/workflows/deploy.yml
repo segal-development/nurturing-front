@@ -61,7 +61,7 @@ jobs:
             echo "ENV_SUFFIX=prod" >> $GITHUB_OUTPUT
           else
             echo "SERVICE_NAME=nurturing-frontend-qa" >> $GITHUB_OUTPUT
-            echo "API_URL=https://nurturing-api-qa-751446065129.us-central1.run.app" >> $GITHUB_OUTPUT
+            echo "API_URL=https://api-nurturing-qa.segal.cl" >> $GITHUB_OUTPUT
             echo "ENV_SUFFIX=qa" >> $GITHUB_OUTPUT
           fi
 
