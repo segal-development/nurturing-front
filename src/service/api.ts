@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// En producción/QA usa la URL del backend, en local usa /api (proxy de Vite)
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   withCredentials: true, // ⚠️ IMPORTANTE: Enviar cookies automáticamente
   headers: {
     'Content-Type': 'application/json',
