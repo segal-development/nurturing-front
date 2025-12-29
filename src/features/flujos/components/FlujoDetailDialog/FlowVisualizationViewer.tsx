@@ -191,7 +191,7 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
  */
 export function FlowVisualizationViewer({ configVisual }: FlowVisualizationViewerProps) {
   return (
-    <div className="w-full h-[700px] bg-white border border-segal-blue/10 rounded-lg overflow-hidden">
+    <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 border border-segal-blue/10 dark:border-segal-blue/30 rounded-xl overflow-hidden">
       <ReactFlowProvider>
         <FlowVisualizationContent configVisual={configVisual} />
       </ReactFlowProvider>

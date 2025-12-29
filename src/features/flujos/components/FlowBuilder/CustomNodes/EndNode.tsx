@@ -59,7 +59,7 @@ export function EndNode({
       />
 
       <div
-        className={`rounded-lg border-2 p-4 min-w-[240px] bg-gradient-to-br from-segal-green/10 to-segal-green/5 shadow-md transition-all duration-200 ${
+        className={`rounded-xl border-2 p-4 min-w-[240px] bg-white shadow-md transition-all duration-200 ${
           isSelected ? 'border-segal-green ring-2 ring-segal-green/30' : 'border-segal-green/50'
         } ${isEditing ? 'ring-2 ring-segal-green/30' : ''}`}
       >

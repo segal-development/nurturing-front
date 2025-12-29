@@ -17,14 +17,14 @@ export function InitialNode({ data, isSelected = false }: InitialNodeProps) {
   return (
     <>
       <div
-        className={`rounded-lg border-2 p-4 min-w-60 bg-linear-to-br from-segal-blue/10 to-segal-turquoise/10 shadow-md transition-all duration-200 ${
+        className={`rounded-xl border-2 p-4 min-w-60 bg-white shadow-md transition-all duration-200 ${
           // Estado de ejecución tiene prioridad
           data.executionState === 'executing'
             ? 'border-amber-500 ring-2 ring-amber-400/30'
             : data.executionState === 'completed'
-              ? 'border-green-500 ring-2 ring-green-400/20'
+              ? 'border-segal-green ring-2 ring-segal-green/20'
               : data.executionState === 'failed'
-                ? 'border-red-500 ring-2 ring-red-400/20'
+                ? 'border-segal-red ring-2 ring-segal-red/20'
                 : data.executionState === 'pending'
                   ? 'border-gray-400 opacity-60'
                   : isSelected

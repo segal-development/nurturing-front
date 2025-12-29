@@ -160,18 +160,18 @@ export function StageNode({
 
       <div
         ref={containerRef}
-        className={`rounded-lg border-2 p-4 min-w-[220px] bg-white shadow-md transition-all duration-200 ${
+        className={`rounded-xl border-2 p-4 min-w-[220px] bg-white shadow-md transition-all duration-200 ${
           // Estado de ejecución tiene prioridad en los estilos
           data.executionState === 'executing'
             ? 'border-amber-500 ring-2 ring-amber-400/30 executing-node'
             : data.executionState === 'completed'
-              ? 'border-green-500 ring-2 ring-green-400/20 border-opacity-100'
+              ? 'border-segal-green ring-2 ring-segal-green/20'
               : data.executionState === 'failed'
-                ? 'border-red-500 ring-2 ring-red-400/20'
+                ? 'border-segal-red ring-2 ring-segal-red/20'
                 : data.executionState === 'pending'
                   ? 'border-gray-400 opacity-60'
                   : isNextNode
-                    ? 'border-blue-500 ring-2 ring-blue-400/30 next-node'
+                    ? 'border-segal-blue ring-2 ring-segal-blue/30 next-node'
                     : isSelected
                     ? 'border-segal-blue ring-2 ring-segal-blue/20'
                     : 'border-segal-blue/30'

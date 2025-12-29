@@ -466,7 +466,7 @@ function FlowBuilderContent({
       {/* Main Content - Canvas + Sidebar */}
       <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
         {/* ReactFlow Canvas */}
-        <div className="flex-1 rounded-lg border border-segal-blue/10 overflow-hidden bg-gradient-to-br from-white to-segal-blue/5 flex flex-col">
+        <div className="flex-1 rounded-lg border border-segal-blue/10 dark:border-segal-blue/30 overflow-hidden bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 flex flex-col">
           <div ref={flowContainerRef} className="flex-1 w-full" style={{ minHeight: 0 }}>
             <ReactFlow
               nodes={nodes}
