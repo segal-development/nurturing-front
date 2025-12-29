@@ -81,41 +81,41 @@ export function PlantillaDetailDialog({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
+            <Loader2 className="h-8 w-8 animate-spin text-segal-blue dark:text-segal-turquoise" />
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-red-800 text-sm">Error al cargar</h3>
-              <p className="text-sm text-red-700">{error}</p>
+              <h3 className="font-semibold text-red-800 dark:text-red-300 text-sm">Error al cargar</h3>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
           </div>
         ) : plantilla ? (
           <div className="space-y-6">
             {/* Información general */}
-            <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+            <div className="space-y-4 bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-4 border border-segal-blue/10 dark:border-gray-700">
               <div>
-                <label className="text-sm font-semibold text-segal-dark">Nombre</label>
-                <p className="text-sm text-segal-dark/80 mt-1">{plantilla.nombre}</p>
+                <label className="text-sm font-semibold text-segal-dark dark:text-white">Nombre</label>
+                <p className="text-sm text-segal-dark/80 dark:text-gray-300 mt-1">{plantilla.nombre}</p>
               </div>
 
               {plantilla.descripcion && (
                 <div>
-                  <label className="text-sm font-semibold text-segal-dark">Descripción</label>
-                  <p className="text-sm text-segal-dark/80 mt-1">{plantilla.descripcion}</p>
+                  <label className="text-sm font-semibold text-segal-dark dark:text-white">Descripción</label>
+                  <p className="text-sm text-segal-dark/80 dark:text-gray-300 mt-1">{plantilla.descripcion}</p>
                 </div>
               )}
 
               <div>
-                <label className="text-sm font-semibold text-segal-dark">Estado</label>
-                <p className="text-sm text-segal-dark/80 mt-1">
+                <label className="text-sm font-semibold text-segal-dark dark:text-white">Estado</label>
+                <p className="text-sm text-segal-dark/80 dark:text-gray-300 mt-1">
                   {plantilla.activo ? (
-                    <span className="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                    <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 rounded text-xs font-medium">
                       ✓ Activo
                     </span>
                   ) : (
-                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                    <span className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded text-xs font-medium">
                       ✗ Inactivo
                     </span>
                   )}
@@ -124,8 +124,8 @@ export function PlantillaDetailDialog({
 
               {plantilla.fecha_creacion && (
                 <div>
-                  <label className="text-sm font-semibold text-segal-dark">Creada</label>
-                  <p className="text-sm text-segal-dark/80 mt-1">
+                  <label className="text-sm font-semibold text-segal-dark dark:text-white">Creada</label>
+                  <p className="text-sm text-segal-dark/80 dark:text-gray-300 mt-1">
                     {new Date(plantilla.fecha_creacion).toLocaleDateString('es-ES')}
                   </p>
                 </div>
@@ -134,23 +134,23 @@ export function PlantillaDetailDialog({
 
             {/* Contenido específico por tipo */}
             {plantilla.tipo === 'sms' ? (
-              <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-                <label className="text-sm font-semibold text-segal-dark block">Contenido SMS</label>
-                <div className="bg-white rounded border border-segal-blue/20 p-4 min-h-24 max-h-40 overflow-y-auto">
-                  <p className="text-sm text-segal-dark whitespace-pre-wrap">
+              <div className="space-y-4 bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-4 border border-segal-blue/10 dark:border-gray-700">
+                <label className="text-sm font-semibold text-segal-dark dark:text-white block">Contenido SMS</label>
+                <div className="bg-white dark:bg-gray-900 rounded border border-segal-blue/20 dark:border-gray-600 p-4 min-h-24 max-h-40 overflow-y-auto">
+                  <p className="text-sm text-segal-dark dark:text-gray-300 whitespace-pre-wrap">
                     {(plantilla as PlantillaSMS).contenido}
                   </p>
                 </div>
-                <p className="text-xs text-segal-dark/60">
+                <p className="text-xs text-segal-dark/60 dark:text-gray-400">
                   {(plantilla as PlantillaSMS).contenido.length}/160 caracteres
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
+                <div className="bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-4 border border-segal-blue/10 dark:border-gray-700">
                   <div>
-                    <label className="text-sm font-semibold text-segal-dark">Asunto</label>
-                    <p className="text-sm text-segal-dark/80 mt-1">
+                    <label className="text-sm font-semibold text-segal-dark dark:text-white">Asunto</label>
+                    <p className="text-sm text-segal-dark/80 dark:text-gray-300 mt-1">
                       {(plantilla as PlantillaEmail).asunto}
                     </p>
                   </div>
@@ -158,8 +158,8 @@ export function PlantillaDetailDialog({
 
                 {/* Email Avanzado (react-email) */}
                 {((plantilla as PlantillaEmail).componentes as any)?.some((c: any) => c.tipo === 'html-avanzado') ? (
-                  <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-                    <label className="text-sm font-semibold text-segal-dark block">Vista Previa</label>
+                  <div className="space-y-4 bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-4 border border-segal-blue/10 dark:border-gray-700">
+                    <label className="text-sm font-semibold text-segal-dark dark:text-white block">Vista Previa</label>
                     {(() => {
                       const componenteAvanzado = ((plantilla as PlantillaEmail).componentes as any)?.find(
                         (c: any) => c.tipo === 'html-avanzado'
@@ -187,17 +187,17 @@ export function PlantillaDetailDialog({
                   </div>
                 ) : (
                   /* Email Modular */
-                  <div className="space-y-4 bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-                    <label className="text-sm font-semibold text-segal-dark">Componentes</label>
+                  <div className="space-y-4 bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-4 border border-segal-blue/10 dark:border-gray-700">
+                    <label className="text-sm font-semibold text-segal-dark dark:text-white">Componentes</label>
                     <div className="mt-1 space-y-2">
                       {(plantilla as PlantillaEmail).componentes.map((comp, idx) => (
                         <div
                           key={comp.id}
-                          className="text-sm bg-white rounded p-2 border border-segal-blue/10"
+                          className="text-sm bg-white dark:bg-gray-900 rounded p-2 border border-segal-blue/10 dark:border-gray-600"
                         >
-                          <span className="font-medium text-segal-dark">{idx + 1}.</span>
+                          <span className="font-medium text-segal-dark dark:text-white">{idx + 1}.</span>
                           {' '}
-                          <span className="capitalize text-segal-dark/80">
+                          <span className="capitalize text-segal-dark/80 dark:text-gray-300">
                             {comp.tipo === 'texto' ? '📝 Texto' : ''}
                             {comp.tipo === 'logo' ? '🖼️ Logo' : ''}
                             {comp.tipo === 'boton' ? '🔘 Botón' : ''}
@@ -218,14 +218,14 @@ export function PlantillaDetailDialog({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            className="border-segal-blue/20 dark:border-gray-600 text-segal-dark dark:text-gray-300 hover:bg-segal-blue/5 dark:hover:bg-gray-800"
           >
             Cerrar
           </Button>
           {plantilla && (
             <Button
               onClick={handleCopiar}
-              className="bg-segal-blue hover:bg-segal-blue/90 text-white"
+              className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900"
             >
               <Copy className="h-4 w-4 mr-2" />
               Duplicar

@@ -27,7 +27,7 @@ export function SidebarToggle({
       onClick={handleToggle}
       aria-label={isOpen ? 'Ocultar sidebar' : 'Mostrar sidebar'}
       title={isOpen ? 'Ocultar sidebar' : 'Mostrar sidebar'}
-      className="transition-colors duration-200"
+      className="transition-colors duration-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
     >
       {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
     </Button>

@@ -195,50 +195,50 @@ export function EmailTemplateEditor({
   )
 
   return (
-    <div className="space-y-6 bg-white rounded-lg border border-segal-blue/10 p-6">
+    <div className="space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">
       {/* Información general */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-segal-dark">Información General</h3>
+        <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Información General</h3>
 
         {/* Nombre */}
         <div className="space-y-2">
-          <Label htmlFor="email-nombre" className="text-sm font-semibold text-segal-dark">
-            Nombre de la Plantilla <span className="text-segal-red">*</span>
+          <Label htmlFor="email-nombre" className="text-sm font-semibold text-segal-dark dark:text-white">
+            Nombre de la Plantilla <span className="text-segal-red dark:text-red-400">*</span>
           </Label>
           <Input
             id="email-nombre"
             value={plantilla.nombre}
             onChange={handleNombreChange}
             placeholder="Ej: Email de Bienvenida"
-            className="border-segal-blue/30"
+            className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             maxLength={100}
           />
-          <p className="text-xs text-segal-dark/60">
+          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
             {plantilla.nombre.length}/100 caracteres
           </p>
         </div>
 
         {/* Asunto */}
         <div className="space-y-2">
-          <Label htmlFor="email-asunto" className="text-sm font-semibold text-segal-dark">
-            Asunto del Email <span className="text-segal-red">*</span>
+          <Label htmlFor="email-asunto" className="text-sm font-semibold text-segal-dark dark:text-white">
+            Asunto del Email <span className="text-segal-red dark:text-red-400">*</span>
           </Label>
           <Input
             id="email-asunto"
             value={plantilla.asunto}
             onChange={handleAsuntoChange}
             placeholder="Ej: Bienvenido a nuestro servicio"
-            className="border-segal-blue/30"
+            className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             maxLength={200}
           />
-          <p className="text-xs text-segal-dark/60">
+          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
             {plantilla.asunto.length}/200 caracteres
           </p>
         </div>
 
         {/* Descripción */}
         <div className="space-y-2">
-          <Label htmlFor="email-desc" className="text-sm font-semibold text-segal-dark">
+          <Label htmlFor="email-desc" className="text-sm font-semibold text-segal-dark dark:text-white">
             Descripción (Opcional)
           </Label>
           <textarea
@@ -246,10 +246,10 @@ export function EmailTemplateEditor({
             value={plantilla.descripcion || ''}
             onChange={handleDescripcionChange}
             placeholder="Describe el propósito de esta plantilla..."
-            className="w-full min-h-20 px-3 py-2 rounded-md border border-segal-blue/30 text-sm focus:outline-none focus:ring-2 focus:ring-segal-blue/20 focus:border-segal-blue"
+            className="w-full min-h-20 px-3 py-2 rounded-md border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20 focus:border-segal-blue dark:focus:border-segal-turquoise"
             maxLength={500}
           />
-          <p className="text-xs text-segal-dark/60">
+          <p className="text-xs text-segal-dark/60 dark:text-gray-400">
             {(plantilla.descripcion || '').length}/500 caracteres
           </p>
         </div>
@@ -261,18 +261,18 @@ export function EmailTemplateEditor({
             type="checkbox"
             checked={plantilla.activo}
             onChange={handleActivoChange}
-            className="rounded border-segal-blue/30 text-segal-blue"
+            className="rounded border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise"
           />
-          <Label htmlFor="email-activo" className="text-sm font-medium text-segal-dark cursor-pointer">
+          <Label htmlFor="email-activo" className="text-sm font-medium text-segal-dark dark:text-white cursor-pointer">
             Plantilla activa
           </Label>
         </div>
       </div>
 
       {/* Editor de componentes */}
-      <div className="border-t border-segal-blue/10 pt-6 space-y-4">
+      <div className="border-t border-segal-blue/10 dark:border-gray-700 pt-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-segal-dark">Componentes del Email</h3>
+          <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Componentes del Email</h3>
 
           {/* Botón para agregar componentes */}
           <div className="flex gap-2 flex-wrap">
@@ -280,7 +280,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('logo')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Logo
@@ -289,7 +289,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('texto')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Texto
@@ -298,7 +298,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('boton')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Botón
@@ -307,7 +307,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('separador')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Separador
@@ -316,7 +316,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('imagen')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Imagen
@@ -325,7 +325,7 @@ export function EmailTemplateEditor({
               onClick={() => agregarComponente('footer')}
               variant="outline"
               size="sm"
-              className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+              className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
             >
               <Plus className="h-4 w-4 mr-1" />
               Footer
@@ -334,23 +334,25 @@ export function EmailTemplateEditor({
         </div>
 
         {/* Tabs: Editor/Preview */}
-        <div className="flex gap-2 border-b border-segal-blue/10">
+        <div className="flex gap-2 border-b border-segal-blue/10 dark:border-gray-700">
           <button
+            type="button"
             onClick={() => setVistaActiva('editor')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               vistaActiva === 'editor'
-                ? 'border-segal-blue text-segal-blue'
-                : 'border-transparent text-segal-dark/60 hover:text-segal-dark'
+                ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
+                : 'border-transparent text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
             }`}
           >
             Editor
           </button>
           <button
+            type="button"
             onClick={() => setVistaActiva('preview')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1 ${
               vistaActiva === 'preview'
-                ? 'border-segal-blue text-segal-blue'
-                : 'border-transparent text-segal-dark/60 hover:text-segal-dark'
+                ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
+                : 'border-transparent text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
             }`}
           >
             <Eye className="h-4 w-4" />
@@ -362,8 +364,8 @@ export function EmailTemplateEditor({
         {vistaActiva === 'editor' && (
           <div className="space-y-4">
             {plantilla.componentes.length === 0 ? (
-              <div className="text-center py-8 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
-                <p className="text-segal-dark/60 text-sm">
+              <div className="text-center py-8 bg-segal-blue/5 dark:bg-gray-800 rounded-lg border border-segal-blue/10 dark:border-gray-700">
+                <p className="text-segal-dark/60 dark:text-gray-400 text-sm">
                   No hay componentes. Haz clic en los botones arriba para agregar
                 </p>
               </div>
@@ -398,15 +400,15 @@ export function EmailTemplateEditor({
 
       {/* Validación */}
       {!validacion.esValida || validacion.advertencias.length > 0 ? (
-        <div className="space-y-3 border-t border-segal-blue/10 pt-6">
+        <div className="space-y-3 border-t border-segal-blue/10 dark:border-gray-700 pt-6">
           {/* Errores */}
           {validacion.errores.length > 0 && (
-            <div className="bg-segal-red/10 border border-segal-red/30 rounded-lg p-4">
+            <div className="bg-segal-red/10 dark:bg-red-950/30 border border-segal-red/30 dark:border-red-800 rounded-lg p-4">
               <div className="flex gap-2 items-start mb-2">
-                <AlertCircle className="h-5 w-5 text-segal-red shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-segal-red dark:text-red-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-segal-red text-sm mb-1">Errores</h4>
-                  <ul className="space-y-1 text-xs text-segal-red/80">
+                  <h4 className="font-semibold text-segal-red dark:text-red-400 text-sm mb-1">Errores</h4>
+                  <ul className="space-y-1 text-xs text-segal-red/80 dark:text-red-400/80">
                     {validacion.errores.map((error, idx) => (
                       <li key={idx} className="flex gap-1">
                         <span>•</span>
@@ -421,12 +423,12 @@ export function EmailTemplateEditor({
 
           {/* Advertencias */}
           {validacion.advertencias.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
               <div className="flex gap-2 items-start">
-                <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-orange-800 text-sm mb-1">Sugerencias</h4>
-                  <ul className="space-y-1 text-xs text-orange-700">
+                  <h4 className="font-semibold text-orange-800 dark:text-orange-300 text-sm mb-1">Sugerencias</h4>
+                  <ul className="space-y-1 text-xs text-orange-700 dark:text-orange-400">
                     {validacion.advertencias.map((adv, idx) => (
                       <li key={idx} className="flex gap-1">
                         <span>•</span>
@@ -440,9 +442,9 @@ export function EmailTemplateEditor({
           )}
         </div>
       ) : (
-        <div className="flex gap-2 items-center bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
-          <CheckCircle2 className="h-5 w-5 text-segal-green shrink-0" />
-          <p className="text-sm text-segal-green font-medium">Plantilla Email válida</p>
+        <div className="flex gap-2 items-center bg-segal-green/10 dark:bg-green-950/30 border border-segal-green/30 dark:border-green-800 rounded-lg p-4">
+          <CheckCircle2 className="h-5 w-5 text-segal-green dark:text-green-400 shrink-0" />
+          <p className="text-sm text-segal-green dark:text-green-400 font-medium">Plantilla Email válida</p>
         </div>
       )}
     </div>

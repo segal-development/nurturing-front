@@ -22,3 +22,6 @@ export { EnvioDetailDialog } from './EnvioDetail/EnvioDetailDialog'
 
 // Execution Monitor
 export { ExecutionMonitor } from './ExecutionMonitor/ExecutionMonitor'
+
+// Batching Progress
+export { BatchingProgress } from './BatchingProgress/BatchingProgress'

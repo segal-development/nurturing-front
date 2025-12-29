@@ -27,9 +27,9 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 dark:from-segal-blue/10 dark:to-segal-turquoise/10 flex items-center justify-center p-4">
       <main className="w-full max-w-md">
-        <div className="bg-background rounded-xl shadow-lg p-8 space-y-8 border border-segal-blue/10">
+        <div className="bg-background rounded-xl shadow-lg p-8 space-y-8 border border-segal-blue/10 dark:border-segal-blue/30">
           {/* Header with Segal Branding */}
           <div className="space-y-4 text-center">
             {/* Logo Placeholder */}
@@ -40,10 +40,10 @@ export const Login = () => {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-segal-dark">
+              <h1 className="text-3xl font-bold tracking-tight text-segal-dark dark:text-segal-light">
                 Nurturing System
               </h1>
-              <p className="text-segal-dark/60">
+              <p className="text-segal-dark/60 dark:text-segal-light/70">
                 Sistema de gestión de clientes - Segal
               </p>
             </div>
@@ -53,8 +53,8 @@ export const Login = () => {
           <LoginForm onSubmit={handleSubmit} isLoading={isLoading} error={error} />
 
           {/* Footer */}
-          <div className="space-y-4 border-t border-segal-blue/10 pt-4">
-            <div className="text-center text-sm text-segal-dark/60">
+          <div className="space-y-4 border-t border-segal-blue/10 dark:border-segal-blue/30 pt-4">
+            <div className="text-center text-sm text-segal-dark/60 dark:text-segal-light/70">
               <p>
                 ¿Problemas para iniciar sesión?{' '}
                 <a
@@ -67,7 +67,7 @@ export const Login = () => {
             </div>
 
             {/* Segal Branding Footer */}
-            <div className="text-center text-xs text-segal-dark/40">
+            <div className="text-center text-xs text-segal-dark/40 dark:text-segal-light/50">
               <p>© 2024 Segal - Defensa de Deudores</p>
             </div>
           </div>

@@ -224,7 +224,7 @@ export function PlantillaEditarDialog({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
+            <Loader2 className="h-8 w-8 animate-spin text-segal-blue dark:text-segal-turquoise" />
           </div>
         ) : (
           <>
@@ -248,26 +248,26 @@ export function PlantillaEditarDialog({
             {plantilla.tipo === 'email' && modoEmail === 'avanzado' && (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-segal-dark">Nombre de la Plantilla</label>
+                  <label className="text-sm font-semibold text-segal-dark dark:text-white">Nombre de la Plantilla</label>
                   <input
                     type="text"
                     value={plantillaEmailAvanzada.nombre}
                     onChange={(e) =>
                       setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, nombre: e.target.value })
                     }
-                    className="w-full px-3 py-2 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
+                    className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20"
                     placeholder="Ej: Newsletter Mensual"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-segal-dark">Descripción (Opcional)</label>
+                  <label className="text-sm font-semibold text-segal-dark dark:text-white">Descripción (Opcional)</label>
                   <textarea
                     value={plantillaEmailAvanzada.descripcion}
                     onChange={(e) =>
                       setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, descripcion: e.target.value })
                     }
-                    className="w-full px-3 py-2 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20 resize-none h-20"
+                    className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20 resize-none h-20"
                     placeholder="Describe para qué sirve esta plantilla..."
                   />
                 </div>
@@ -297,14 +297,14 @@ export function PlantillaEditarDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSaving}
-            className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            className="border-segal-blue/20 dark:border-gray-600 text-segal-dark dark:text-gray-300 hover:bg-segal-blue/5 dark:hover:bg-gray-800"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleGuardar}
             disabled={!esValido || isSaving || isLoading}
-            className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
+            className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900 disabled:opacity-50"
           >
             {isSaving ? (
               <>

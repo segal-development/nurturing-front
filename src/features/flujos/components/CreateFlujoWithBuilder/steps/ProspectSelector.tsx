@@ -1,21 +1,17 @@
 /**
  * Step 2: Prospect Selection
  * Allows user to select which prospects to include in the flow
- * Auto-categorizes by debt amount: Deuda Baja (13), Deuda Media (14), Deuda Alta (15)
+ * Dynamically fetches debt categories from backend
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+
+import type { TipoProspecto } from '@/api/tiposProspecto.service'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Check, X, AlertCircle, Users } from 'lucide-react'
+import { findTipoByMonto, useTiposProspecto } from '@/hooks/useTiposProspecto'
 import type { Prospecto } from '@/types/prospecto'
-
-// Tipos de deuda y sus rangos
-const TIPOS_DEUDA = {
-  BAJA: { id: 13, nombre: 'Deuda Baja', min: 0, max: 699000 },
-  MEDIA: { id: 14, nombre: 'Deuda Media', min: 700000, max: 1500000 },
-  ALTA: { id: 15, nombre: 'Deuda Alta', min: 1500001, max: Infinity },
-}
+import { AlertCircle, Check, Loader2, Users, X } from 'lucide-react'
 
 interface ProspectSelectorProps {
   prospectos: Prospecto[]
@@ -39,39 +35,102 @@ export function ProspectSelector({
   onClose,
 }: ProspectSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedTipo, setSelectedTipo] = useState<number | null>(null)
+  const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
+
+  // Fetch tipos de prospecto from backend
+  const { data: tiposProspecto, isLoading: loadingTipos } = useTiposProspecto()
 
   /**
-   * Categorizar prospectos por monto de deuda
+   * Categorize prospectos by tipo using backend ranges
    */
   const categorizedProspectos = useMemo(() => {
-    return {
-      baja: prospectos.filter(
-        p => p.monto_deuda >= TIPOS_DEUDA.BAJA.min && p.monto_deuda <= TIPOS_DEUDA.BAJA.max
-      ),
-      media: prospectos.filter(
-        p => p.monto_deuda >= TIPOS_DEUDA.MEDIA.min && p.monto_deuda <= TIPOS_DEUDA.MEDIA.max
-      ),
-      alta: prospectos.filter(
-        p => p.monto_deuda >= TIPOS_DEUDA.ALTA.min
-      ),
-    }
-  }, [prospectos])
+    if (!tiposProspecto) return {}
+
+    const result: Record<number, Prospecto[]> = {}
+
+    // Initialize empty arrays for each tipo
+    tiposProspecto.forEach((tipo) => {
+      result[tipo.id] = []
+    })
+
+    // Categorize each prospecto
+    prospectos.forEach((prospecto) => {
+      const tipo = findTipoByMonto(tiposProspecto, prospecto.monto_deuda)
+      if (tipo) {
+        result[tipo.id].push(prospecto)
+      }
+    })
+
+    return result
+  }, [prospectos, tiposProspecto])
 
   /**
-   * Seleccionar todos los prospectos de un tipo
+   * Infer tipo from selected prospectos based on majority
+   * Returns the tipo that contains most of the selected prospectos
    */
-  const handleSelectTipo = useCallback((tipo: keyof typeof categorizedProspectos) => {
-    const tipoData = tipo === 'baja' ? TIPOS_DEUDA.BAJA : tipo === 'media' ? TIPOS_DEUDA.MEDIA : TIPOS_DEUDA.ALTA
-    const idsDelTipo = new Set(categorizedProspectos[tipo].map(p => p.id))
+  const inferTipoFromSelection = useCallback(
+    (selectedProspectoIds: Set<number>): number | null => {
+      if (!tiposProspecto || selectedProspectoIds.size === 0) return null
 
-    setSelectedTipo(tipoData.id)
-    onSelectionChange(idsDelTipo)
-    onTipoChange?.(tipoData.id)
-  }, [categorizedProspectos, onSelectionChange, onTipoChange])
+      // Count how many selected prospectos belong to each tipo
+      const countByTipo: Record<number, number> = {}
+
+      selectedProspectoIds.forEach((id) => {
+        const prospecto = prospectos.find((p) => p.id === id)
+        if (prospecto) {
+          const tipo = findTipoByMonto(tiposProspecto, prospecto.monto_deuda)
+          if (tipo) {
+            countByTipo[tipo.id] = (countByTipo[tipo.id] || 0) + 1
+          }
+        }
+      })
+
+      // Find the tipo with the most prospectos
+      let maxCount = 0
+      let dominantTipoId: number | null = null
+
+      Object.entries(countByTipo).forEach(([tipoId, count]) => {
+        if (count > maxCount) {
+          maxCount = count
+          dominantTipoId = Number(tipoId)
+        }
+      })
+
+      return dominantTipoId
+    },
+    [prospectos, tiposProspecto]
+  )
 
   /**
-   * Toggle prospect selection
+   * Filter prospects by search term
+   */
+  const filteredProspectos = useMemo(
+    () =>
+      prospectos.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.telefono?.includes(searchTerm)
+      ),
+    [prospectos, searchTerm]
+  )
+
+  /**
+   * Select all prospectos of a specific tipo
+   */
+  const handleSelectTipo = useCallback(
+    (tipo: TipoProspecto) => {
+      const idsDelTipo = new Set(categorizedProspectos[tipo.id]?.map((p) => p.id) || [])
+
+      setSelectedTipoId(tipo.id)
+      onSelectionChange(idsDelTipo)
+      onTipoChange?.(tipo.id)
+    },
+    [categorizedProspectos, onSelectionChange, onTipoChange]
+  )
+
+  /**
+   * Toggle prospect selection - also infers tipo from selection
    */
   const handleToggle = useCallback(
     (prospecto: Prospecto) => {
@@ -81,37 +140,46 @@ export function ProspectSelector({
       } else {
         newSelected.add(prospecto.id)
       }
+
       onSelectionChange(newSelected)
+
+      // Infer tipo from the new selection
+      const inferredTipo = inferTipoFromSelection(newSelected)
+      setSelectedTipoId(inferredTipo)
+      onTipoChange?.(inferredTipo)
     },
-    [selectedIds, onSelectionChange]
+    [selectedIds, onSelectionChange, inferTipoFromSelection, onTipoChange]
   )
 
   /**
    * Select all visible prospects
    */
   const handleSelectAll = useCallback(() => {
-    const filteredIds = new Set(
-      filteredProspectos.map((p) => p.id)
-    )
-    onSelectionChange(filteredIds)
-  }, [onSelectionChange])
+    const ids = new Set(filteredProspectos.map((p) => p.id))
+    onSelectionChange(ids)
+
+    // Infer tipo from the selection
+    const inferredTipo = inferTipoFromSelection(ids)
+    setSelectedTipoId(inferredTipo)
+    onTipoChange?.(inferredTipo)
+  }, [filteredProspectos, onSelectionChange, inferTipoFromSelection, onTipoChange])
 
   /**
    * Deselect all
    */
   const handleDeselectAll = useCallback(() => {
     onSelectionChange(new Set())
-  }, [onSelectionChange])
+    setSelectedTipoId(null)
+    onTipoChange?.(null)
+  }, [onSelectionChange, onTipoChange])
 
   /**
-   * Filter prospects by search term
+   * Get the selected tipo name for display
    */
-  const filteredProspectos = prospectos.filter(
-    (p) =>
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.telefono?.includes(searchTerm)
-  )
+  const selectedTipoNombre = useMemo(() => {
+    if (!selectedTipoId || !tiposProspecto) return null
+    return tiposProspecto.find((t) => t.id === selectedTipoId)?.nombre || null
+  }, [selectedTipoId, tiposProspecto])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -140,43 +208,38 @@ export function ProspectSelector({
         {/* Tipos de Deuda - Quick Select */}
         <div className="space-y-2">
           <p className="text-xs font-semibold text-segal-dark">Seleccionar por Tipo de Deuda:</p>
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              size="sm"
-              onClick={() => handleSelectTipo('baja')}
-              variant={selectedTipo === 13 ? 'default' : 'outline'}
-              className={selectedTipo === 13
-                ? 'bg-segal-blue text-white'
-                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
-            >
-              <span className="text-xs">Deuda Baja</span>
-              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.baja.length}</span>
-            </Button>
 
-            <Button
-              size="sm"
-              onClick={() => handleSelectTipo('media')}
-              variant={selectedTipo === 14 ? 'default' : 'outline'}
-              className={selectedTipo === 14
-                ? 'bg-segal-blue text-white'
-                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
-            >
-              <span className="text-xs">Deuda Media</span>
-              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.media.length}</span>
-            </Button>
-
-            <Button
-              size="sm"
-              onClick={() => handleSelectTipo('alta')}
-              variant={selectedTipo === 15 ? 'default' : 'outline'}
-              className={selectedTipo === 15
-                ? 'bg-segal-blue text-white'
-                : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'}
-            >
-              <span className="text-xs">Deuda Alta</span>
-              <span className="text-xs block mt-1 font-bold">{categorizedProspectos.alta.length}</span>
-            </Button>
-          </div>
+          {loadingTipos ? (
+            <div className="flex items-center gap-2 text-sm text-segal-dark/60">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando tipos...
+            </div>
+          ) : tiposProspecto && tiposProspecto.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {tiposProspecto.map((tipo) => (
+                <Button
+                  key={tipo.id}
+                  size="sm"
+                  onClick={() => handleSelectTipo(tipo)}
+                  variant={selectedTipoId === tipo.id ? 'default' : 'outline'}
+                  className={
+                    selectedTipoId === tipo.id
+                      ? 'bg-segal-blue text-white'
+                      : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'
+                  }
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs">{tipo.nombre}</span>
+                    <span className="text-xs font-bold">
+                      {categorizedProspectos[tipo.id]?.length || 0}
+                    </span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-segal-dark/60">No hay tipos de prospecto disponibles</p>
+          )}
         </div>
 
         {/* Actions */}
@@ -205,29 +268,32 @@ export function ProspectSelector({
         <div className="flex-1 overflow-y-auto border border-segal-blue/10 rounded-lg">
           {filteredProspectos.length > 0 ? (
             <div className="divide-y divide-segal-blue/10">
-              {filteredProspectos.map((prospecto) => (
-                <div
-                  key={prospecto.id}
-                  onClick={() => handleToggle(prospecto)}
-                  className="p-3 hover:bg-segal-blue/5 transition-colors cursor-pointer flex items-start gap-3"
-                >
-                  <Checkbox
-                    checked={selectedIds.has(prospecto.id)}
-                    onCheckedChange={() => handleToggle(prospecto)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-segal-dark text-sm">{prospecto.nombre}</p>
-                    <div className="flex gap-4 mt-1 text-xs text-segal-dark/60 flex-wrap">
-                      {prospecto.email && <span>📧 {prospecto.email}</span>}
-                      {prospecto.telefono && <span>📱 {prospecto.telefono}</span>}
-                      {prospecto.monto_deuda && (
-                        <span>💰 ${prospecto.monto_deuda.toLocaleString('es-CL')}</span>
-                      )}
-                    </div>
+              {filteredProspectos.map((prospecto) => {
+                const checkboxId = `prospecto-${prospecto.id}`
+                return (
+                  <div
+                    key={prospecto.id}
+                    className="p-3 hover:bg-segal-blue/5 transition-colors flex items-start gap-3"
+                  >
+                    <Checkbox
+                      id={checkboxId}
+                      checked={selectedIds.has(prospecto.id)}
+                      onCheckedChange={() => handleToggle(prospecto)}
+                      className="mt-1"
+                    />
+                    <label htmlFor={checkboxId} className="flex-1 min-w-0 cursor-pointer">
+                      <p className="font-medium text-segal-dark text-sm">{prospecto.nombre}</p>
+                      <div className="flex gap-4 mt-1 text-xs text-segal-dark/60 flex-wrap">
+                        {prospecto.email && <span>📧 {prospecto.email}</span>}
+                        {prospecto.telefono && <span>📱 {prospecto.telefono}</span>}
+                        {prospecto.monto_deuda && (
+                          <span>💰 ${prospecto.monto_deuda.toLocaleString('es-CL')}</span>
+                        )}
+                      </div>
+                    </label>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-segal-dark/60">
@@ -243,12 +309,23 @@ export function ProspectSelector({
             <p className="text-sm font-semibold text-segal-dark">
               <span className="text-segal-blue font-bold">{selectedIds.size}</span> de{' '}
               {prospectos.length} prospectos seleccionados
+              {selectedTipoNombre && (
+                <span className="ml-2 text-xs text-segal-dark/60">
+                  (Tipo: <span className="font-medium">{selectedTipoNombre}</span>)
+                </span>
+              )}
             </p>
           </div>
           {selectedIds.size === 0 && (
             <p className="text-xs text-segal-dark/60 flex items-center gap-2">
               <AlertCircle className="h-3 w-3" />
               Debes seleccionar al menos un prospecto para continuar
+            </p>
+          )}
+          {selectedIds.size > 0 && !selectedTipoId && (
+            <p className="text-xs text-amber-600 flex items-center gap-2">
+              <AlertCircle className="h-3 w-3" />
+              No se pudo determinar el tipo de prospecto. Selecciona un tipo manualmente.
             </p>
           )}
         </div>
@@ -274,7 +351,7 @@ export function ProspectSelector({
         </div>
         <Button
           onClick={onContinue}
-          disabled={selectedIds.size === 0}
+          disabled={selectedIds.size === 0 || !selectedTipoId}
           className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
         >
           Continuar al Constructor

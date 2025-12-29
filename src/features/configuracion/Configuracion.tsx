@@ -105,8 +105,8 @@ export function ConfiguracionPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
-          <p className="text-segal-dark/60">Cargando configuración...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-segal-blue dark:text-segal-turquoise" />
+          <p className="text-segal-dark/60 dark:text-gray-400">Cargando configuración...</p>
         </div>
       </div>
     )
@@ -116,11 +116,11 @@ export function ConfiguracionPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2">
-          <Settings className="h-8 w-8 text-segal-blue" />
+        <h1 className="text-3xl font-bold tracking-tight text-segal-dark dark:text-white flex items-center gap-2">
+          <Settings className="h-8 w-8 text-segal-blue dark:text-segal-turquoise" />
           Configuraciones
         </h1>
-        <p className="text-segal-dark/60 mt-2">
+        <p className="text-segal-dark/60 dark:text-gray-400 mt-2">
           Gestiona los precios, límites y notificaciones del sistema
         </p>
       </div>
@@ -130,21 +130,21 @@ export function ConfiguracionPage() {
         <div
           className={`flex items-center justify-between gap-3 rounded-lg border p-4 ${
             notification.type === 'success'
-              ? 'border-segal-green/30 bg-segal-green/10'
-              : 'border-segal-red/30 bg-segal-red/10'
+              ? 'border-segal-green/30 dark:border-green-800 bg-segal-green/10 dark:bg-green-950/30'
+              : 'border-segal-red/30 dark:border-red-800 bg-segal-red/10 dark:bg-red-950/30'
           }`}
         >
           <div className="flex items-center gap-3">
             {notification.type === 'success' ? (
-              <CheckCircle className="h-5 w-5 text-segal-green shrink-0" />
+              <CheckCircle className="h-5 w-5 text-segal-green dark:text-green-400 shrink-0" />
             ) : (
-              <AlertCircle className="h-5 w-5 text-segal-red shrink-0" />
+              <AlertCircle className="h-5 w-5 text-segal-red dark:text-red-400 shrink-0" />
             )}
             <p
               className={
                 notification.type === 'success'
-                  ? 'text-segal-green font-medium'
-                  : 'text-segal-red font-medium'
+                  ? 'text-segal-green dark:text-green-400 font-medium'
+                  : 'text-segal-red dark:text-red-400 font-medium'
               }
             >
               {notification.message}
@@ -152,10 +152,10 @@ export function ConfiguracionPage() {
           </div>
           <button
             onClick={() => setNotification(null)}
-            className={`shrink-0 p-1 rounded hover:bg-black/10 transition-colors ${
+            className={`shrink-0 p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors ${
               notification.type === 'success'
-                ? 'text-segal-green hover:bg-segal-green/20'
-                : 'text-segal-red hover:bg-segal-red/20'
+                ? 'text-segal-green dark:text-green-400 hover:bg-segal-green/20 dark:hover:bg-green-900/50'
+                : 'text-segal-red dark:text-red-400 hover:bg-segal-red/20 dark:hover:bg-red-900/50'
             }`}
             aria-label="Cerrar notificación"
           >
@@ -165,10 +165,10 @@ export function ConfiguracionPage() {
       )}
 
       {/* Sección de Precios */}
-      <div className="rounded-lg border border-segal-blue/10 bg-white p-6">
+      <div className="rounded-lg border border-segal-blue/10 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-segal-dark">Precios de Envío</h2>
-          <p className="text-sm text-segal-dark/60 mt-1">
+          <h2 className="text-2xl font-bold text-segal-dark dark:text-white">Precios de Envío</h2>
+          <p className="text-sm text-segal-dark/60 dark:text-gray-400 mt-1">
             Define el costo unitario para cada tipo de mensaje
           </p>
         </div>
@@ -176,11 +176,11 @@ export function ConfiguracionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Costo Email */}
           <div className="space-y-2">
-            <Label htmlFor="email-costo" className="text-sm font-semibold text-segal-dark">
-              Costo por Email <span className="text-segal-red">*</span>
+            <Label htmlFor="email-costo" className="text-sm font-semibold text-segal-dark dark:text-white">
+              Costo por Email <span className="text-segal-red dark:text-red-400">*</span>
             </Label>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-segal-dark">$</span>
+              <span className="text-lg font-semibold text-segal-dark dark:text-white">$</span>
               <Input
                 id="email-costo"
                 type="number"
@@ -188,20 +188,20 @@ export function ConfiguracionPage() {
                 step="0.01"
                 value={emailCosto}
                 onChange={(e) => setEmailCosto(e.target.value)}
-                className="border-segal-blue/30 focus:border-segal-blue"
+                className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
                 placeholder="0.00"
               />
             </div>
-            <p className="text-xs text-segal-dark/60">Precio unitario por email enviado</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Precio unitario por email enviado</p>
           </div>
 
           {/* Costo SMS */}
           <div className="space-y-2">
-            <Label htmlFor="sms-costo" className="text-sm font-semibold text-segal-dark">
-              Costo por SMS <span className="text-segal-red">*</span>
+            <Label htmlFor="sms-costo" className="text-sm font-semibold text-segal-dark dark:text-white">
+              Costo por SMS <span className="text-segal-red dark:text-red-400">*</span>
             </Label>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-segal-dark">$</span>
+              <span className="text-lg font-semibold text-segal-dark dark:text-white">$</span>
               <Input
                 id="sms-costo"
                 type="number"
@@ -209,27 +209,27 @@ export function ConfiguracionPage() {
                 step="0.01"
                 value={smsCosto}
                 onChange={(e) => setSmsCosto(e.target.value)}
-                className="border-segal-blue/30 focus:border-segal-blue"
+                className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
                 placeholder="0.00"
               />
             </div>
-            <p className="text-xs text-segal-dark/60">Precio unitario por SMS enviado</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Precio unitario por SMS enviado</p>
           </div>
         </div>
 
         {/* Resumen de Precios */}
-        <div className="mt-6 rounded-lg bg-segal-blue/5 border border-segal-blue/10 p-4">
-          <p className="text-sm text-segal-dark/70">
+        <div className="mt-6 rounded-lg bg-segal-blue/5 dark:bg-gray-800 border border-segal-blue/10 dark:border-gray-700 p-4">
+          <p className="text-sm text-segal-dark/70 dark:text-gray-300">
             <span className="font-semibold">Resumen:</span> Email: ${emailCosto} | SMS: ${smsCosto}
           </p>
         </div>
       </div>
 
       {/* Sección de Límites */}
-      <div className="rounded-lg border border-segal-blue/10 bg-white p-6">
+      <div className="rounded-lg border border-segal-blue/10 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-segal-dark">Límites y Restricciones</h2>
-          <p className="text-sm text-segal-dark/60 mt-1">
+          <h2 className="text-2xl font-bold text-segal-dark dark:text-white">Límites y Restricciones</h2>
+          <p className="text-sm text-segal-dark/60 dark:text-gray-400 mt-1">
             Configura límites para proteger los recursos del sistema
           </p>
         </div>
@@ -237,7 +237,7 @@ export function ConfiguracionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Max Prospectos */}
           <div className="space-y-2">
-            <Label htmlFor="max-prospectos" className="text-sm font-semibold text-segal-dark">
+            <Label htmlFor="max-prospectos" className="text-sm font-semibold text-segal-dark dark:text-white">
               Máx. Prospectos por Flujo
             </Label>
             <Input
@@ -246,15 +246,15 @@ export function ConfiguracionPage() {
               min="1"
               value={maxProspectos}
               onChange={(e) => setMaxProspectos(e.target.value)}
-              className="border-segal-blue/30 focus:border-segal-blue"
+              className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
               placeholder="Sin límite"
             />
-            <p className="text-xs text-segal-dark/60">Dejar vacío para sin límite</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Dejar vacío para sin límite</p>
           </div>
 
           {/* Max Emails por día */}
           <div className="space-y-2">
-            <Label htmlFor="max-emails-dia" className="text-sm font-semibold text-segal-dark">
+            <Label htmlFor="max-emails-dia" className="text-sm font-semibold text-segal-dark dark:text-white">
               Máx. Emails por Día
             </Label>
             <Input
@@ -263,15 +263,15 @@ export function ConfiguracionPage() {
               min="1"
               value={maxEmailsPorDia}
               onChange={(e) => setMaxEmailsPorDia(e.target.value)}
-              className="border-segal-blue/30 focus:border-segal-blue"
+              className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
               placeholder="Sin límite"
             />
-            <p className="text-xs text-segal-dark/60">Dejar vacío para sin límite</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Dejar vacío para sin límite</p>
           </div>
 
           {/* Max SMS por día */}
           <div className="space-y-2">
-            <Label htmlFor="max-sms-dia" className="text-sm font-semibold text-segal-dark">
+            <Label htmlFor="max-sms-dia" className="text-sm font-semibold text-segal-dark dark:text-white">
               Máx. SMS por Día
             </Label>
             <Input
@@ -280,15 +280,15 @@ export function ConfiguracionPage() {
               min="1"
               value={maxSmsPorDia}
               onChange={(e) => setMaxSmsPorDia(e.target.value)}
-              className="border-segal-blue/30 focus:border-segal-blue"
+              className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
               placeholder="Sin límite"
             />
-            <p className="text-xs text-segal-dark/60">Dejar vacío para sin límite</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Dejar vacío para sin límite</p>
           </div>
 
           {/* Reintentos */}
           <div className="space-y-2">
-            <Label htmlFor="reintentos" className="text-sm font-semibold text-segal-dark">
+            <Label htmlFor="reintentos" className="text-sm font-semibold text-segal-dark dark:text-white">
               Reintentos de Envío
             </Label>
             <Input
@@ -297,10 +297,10 @@ export function ConfiguracionPage() {
               min="0"
               value={reintentos}
               onChange={(e) => setReintentos(e.target.value)}
-              className="border-segal-blue/30 focus:border-segal-blue"
+              className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-segal-blue dark:focus:border-segal-turquoise"
               placeholder="0"
             />
-            <p className="text-xs text-segal-dark/60">Intentos adicionales en caso de fallo</p>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400">Intentos adicionales en caso de fallo</p>
           </div>
         </div>
       </div>
@@ -311,14 +311,14 @@ export function ConfiguracionPage() {
           variant="outline"
           onClick={cargarConfiguracion}
           disabled={saving}
-          className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+          className="border-segal-blue/20 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800"
         >
           Descartar cambios
         </Button>
         <Button
           onClick={handleGuardar}
           disabled={saving}
-          className="bg-segal-blue hover:bg-segal-blue/90 text-white"
+          className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900"
         >
           {saving ? (
             <>

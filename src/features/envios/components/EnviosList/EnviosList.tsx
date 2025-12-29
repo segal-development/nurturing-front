@@ -120,8 +120,8 @@ export function EnviosList({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-segal-dark">Historial de Envíos</h1>
-        <p className="text-sm text-segal-dark/60">
+        <h1 className="text-2xl font-bold text-segal-dark dark:text-white">Historial de Envíos</h1>
+        <p className="text-sm text-segal-dark/60 dark:text-gray-400">
           Seguimiento completo de todos los emails y SMS enviados
         </p>
       </div>
@@ -132,7 +132,7 @@ export function EnviosList({
       {/* Stats Summary */}
       {!isLoading && !isError && meta.total > 0 && (
         <div className="flex items-center gap-4 text-sm">
-          <Badge variant="outline" className="bg-white border-segal-blue/20 text-segal-dark font-medium px-3 py-1">
+          <Badge variant="outline" className="bg-white dark:bg-gray-800 border-segal-blue/20 dark:border-gray-600 text-segal-dark dark:text-white font-medium px-3 py-1">
             📊 {meta.total} envíos encontrados
           </Badge>
         </div>
@@ -180,10 +180,10 @@ export function EnviosList({
 
       {/* Table */}
       {!isLoading && !isError && envios.length > 0 && (
-        <Card className="border-segal-blue/10 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-segal-blue/5 to-transparent border-b border-segal-blue/10 py-4">
-            <CardTitle className="text-base font-semibold text-segal-dark flex items-center gap-2">
-              <Send className="h-4 w-4 text-segal-blue" />
+        <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-segal-blue/5 to-transparent dark:from-gray-800 dark:to-gray-900 border-b border-segal-blue/10 dark:border-gray-700 py-4">
+            <CardTitle className="text-base font-semibold text-segal-dark dark:text-white flex items-center gap-2">
+              <Send className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
               Lista de Envíos
             </CardTitle>
           </CardHeader>
@@ -191,23 +191,23 @@ export function EnviosList({
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                    <TableHead className="font-semibold text-segal-dark/80 w-[250px]">
+                  <TableRow className="bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[250px]">
                       Destinatario
                     </TableHead>
-                    <TableHead className="font-semibold text-segal-dark/80 w-[80px] text-center">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[80px] text-center">
                       Canal
                     </TableHead>
-                    <TableHead className="font-semibold text-segal-dark/80 w-[120px]">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[120px]">
                       Estado
                     </TableHead>
-                    <TableHead className="font-semibold text-segal-dark/80 w-[180px]">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[180px]">
                       Flujo
                     </TableHead>
-                    <TableHead className="font-semibold text-segal-dark/80 w-[160px]">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[160px]">
                       Fecha de Envío
                     </TableHead>
-                    <TableHead className="font-semibold text-segal-dark/80 w-[80px] text-center">
+                    <TableHead className="font-semibold text-segal-dark/80 dark:text-gray-300 w-[80px] text-center">
                       Acciones
                     </TableHead>
                   </TableRow>
@@ -219,17 +219,17 @@ export function EnviosList({
                     return (
                       <TableRow
                         key={envio.id}
-                        className="hover:bg-segal-blue/5 transition-colors border-b border-gray-100"
+                        className="hover:bg-segal-blue/5 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
                       >
                         {/* Destinatario */}
                         <TableCell className="py-3">
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-segal-blue/10 flex items-center justify-center shrink-0">
-                              <span className="text-xs font-semibold text-segal-blue uppercase">
+                            <div className="h-8 w-8 rounded-full bg-segal-blue/10 dark:bg-segal-blue/20 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-semibold text-segal-blue dark:text-segal-turquoise uppercase">
                                 {envio.metadata?.destinatario?.charAt(0) || '?'}
                               </span>
                             </div>
-                            <span className="text-sm font-medium text-segal-dark truncate max-w-[180px]">
+                            <span className="text-sm font-medium text-segal-dark dark:text-white truncate max-w-[180px]">
                               {envio.metadata?.destinatario || 'Sin destinatario'}
                             </span>
                           </div>
@@ -239,12 +239,12 @@ export function EnviosList({
                         <TableCell className="text-center py-3">
                           <div className="flex justify-center">
                             {envio.canal === 'email' ? (
-                              <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center" title="Email">
-                                <Mail className="h-4 w-4 text-blue-600" />
+                              <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center" title="Email">
+                                <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               </div>
                             ) : (
-                              <div className="h-8 w-8 rounded-lg bg-green-50 flex items-center justify-center" title="SMS">
-                                <Smartphone className="h-4 w-4 text-green-600" />
+                              <div className="h-8 w-8 rounded-lg bg-green-50 dark:bg-green-900/30 flex items-center justify-center" title="SMS">
+                                <Smartphone className="h-4 w-4 text-green-600 dark:text-green-400" />
                               </div>
                             )}
                           </div>
@@ -263,14 +263,14 @@ export function EnviosList({
 
                         {/* Flujo */}
                         <TableCell className="py-3">
-                          <span className="text-sm text-segal-dark/70">
+                          <span className="text-sm text-segal-dark/70 dark:text-gray-300">
                             {envio.flujo?.nombre || `Flujo #${envio.flujo_id}`}
                           </span>
                         </TableCell>
 
                         {/* Fecha */}
                         <TableCell className="py-3">
-                          <span className="text-sm text-segal-dark/60">
+                          <span className="text-sm text-segal-dark/60 dark:text-gray-400">
                             {formatDate(envio.fecha_creacion)}
                           </span>
                         </TableCell>
@@ -281,10 +281,10 @@ export function EnviosList({
                             variant="ghost"
                             size="sm"
                             onClick={() => onViewDetail?.(envio.id)}
-                            className="h-8 w-8 p-0 hover:bg-segal-blue/10"
+                            className="h-8 w-8 p-0 hover:bg-segal-blue/10 dark:hover:bg-gray-700"
                             title="Ver detalles"
                           >
-                            <Eye className="h-4 w-4 text-segal-blue" />
+                            <Eye className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -296,10 +296,10 @@ export function EnviosList({
           </CardContent>
 
           {/* Pagination Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/30">
-            <p className="text-sm text-segal-dark/60">
-              Mostrando <span className="font-medium text-segal-dark">{envios.length}</span> de{' '}
-              <span className="font-medium text-segal-dark">{meta.total}</span> envíos
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30">
+            <p className="text-sm text-segal-dark/60 dark:text-gray-400">
+              Mostrando <span className="font-medium text-segal-dark dark:text-white">{envios.length}</span> de{' '}
+              <span className="font-medium text-segal-dark dark:text-white">{meta.total}</span> envíos
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -307,22 +307,22 @@ export function EnviosList({
                 size="sm"
                 disabled={meta.pagina <= 1}
                 onClick={() => setPage(meta.pagina - 1)}
-                className="h-8 px-3 border-segal-blue/20 hover:bg-segal-blue/5"
+                className="h-8 px-3 border-segal-blue/20 dark:border-gray-600 hover:bg-segal-blue/5 dark:hover:bg-gray-700 dark:text-white"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Anterior
               </Button>
               <div className="flex items-center gap-1 px-3">
-                <span className="text-sm font-medium text-segal-dark">{meta.pagina}</span>
-                <span className="text-sm text-segal-dark/40">/</span>
-                <span className="text-sm text-segal-dark/60">{meta.total_paginas || 1}</span>
+                <span className="text-sm font-medium text-segal-dark dark:text-white">{meta.pagina}</span>
+                <span className="text-sm text-segal-dark/40 dark:text-gray-500">/</span>
+                <span className="text-sm text-segal-dark/60 dark:text-gray-400">{meta.total_paginas || 1}</span>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 disabled={meta.pagina >= meta.total_paginas}
                 onClick={() => setPage(meta.pagina + 1)}
-                className="h-8 px-3 border-segal-blue/20 hover:bg-segal-blue/5"
+                className="h-8 px-3 border-segal-blue/20 dark:border-gray-600 hover:bg-segal-blue/5 dark:hover:bg-gray-700 dark:text-white"
               >
                 Siguiente
                 <ChevronRight className="h-4 w-4 ml-1" />

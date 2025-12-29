@@ -90,11 +90,11 @@ export function PlantillasPage() {
       {/* Header */}
       <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-segal-dark flex items-center gap-2">
-            <Mail className="h-8 w-8 text-segal-blue" />
+          <h1 className="text-3xl font-bold tracking-tight text-segal-dark dark:text-white flex items-center gap-2">
+            <Mail className="h-8 w-8 text-segal-blue dark:text-segal-turquoise" />
             Plantillas
           </h1>
-          <p className="text-sm text-segal-dark/60 mt-1">
+          <p className="text-sm text-segal-dark/60 dark:text-gray-400 mt-1">
             Gestiona plantillas de SMS y Email para tus flujos de nurturing
           </p>
         </div>
@@ -103,7 +103,7 @@ export function PlantillasPage() {
         <div className="flex gap-3">
           <Button
             onClick={() => handleAbrirCrear('sms')}
-            className="bg-segal-blue hover:bg-segal-blue/90 text-white font-semibold flex items-center gap-2"
+            className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900 font-semibold flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Nueva Plantilla SMS
@@ -111,7 +111,7 @@ export function PlantillasPage() {
           <Button
             onClick={() => handleAbrirCrear('email')}
             variant="outline"
-            className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 font-semibold flex items-center gap-2"
+            className="border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise hover:bg-segal-blue/5 dark:hover:bg-gray-800 font-semibold flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Nueva Plantilla Email
@@ -120,14 +120,14 @@ export function PlantillasPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-segal-blue/10">
+      <div className="border-b border-segal-blue/10 dark:border-gray-700">
         <div className="flex gap-4">
           <button
             onClick={() => setTabActivo('todas')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               tabActivo === 'todas'
-                ? 'border-segal-blue text-segal-blue'
-                : 'border-transparent text-segal-dark/60 hover:text-segal-dark'
+                ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
+                : 'border-transparent text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
             }`}
           >
             Todas las Plantillas
@@ -136,8 +136,8 @@ export function PlantillasPage() {
             onClick={() => setTabActivo('sms')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               tabActivo === 'sms'
-                ? 'border-segal-blue text-segal-blue'
-                : 'border-transparent text-segal-dark/60 hover:text-segal-dark'
+                ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
+                : 'border-transparent text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
             }`}
           >
             <MessageSquare className="h-4 w-4" />
@@ -147,8 +147,8 @@ export function PlantillasPage() {
             onClick={() => setTabActivo('email')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               tabActivo === 'email'
-                ? 'border-segal-blue text-segal-blue'
-                : 'border-transparent text-segal-dark/60 hover:text-segal-dark'
+                ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
+                : 'border-transparent text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
             }`}
           >
             <Mail className="h-4 w-4" />

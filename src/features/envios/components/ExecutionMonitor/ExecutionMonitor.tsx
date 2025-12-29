@@ -31,7 +31,8 @@ import {
   X,
   Activity,
 } from 'lucide-react'
-import { useFlowExecution, useCancelFlowExecution } from '@/features/envios/hooks'
+import { useFlowExecution, useCancelFlowExecution, useBatchingStatus } from '@/features/envios/hooks'
+import { BatchingProgress } from '../BatchingProgress/BatchingProgress'
 
 interface ExecutionMonitorProps {
   flujoId: number
@@ -52,7 +53,10 @@ const formatDuration = (ms: number): string => {
 export function ExecutionMonitor({ flujoId, ejecucionId, onComplete }: ExecutionMonitorProps) {
   const { data, isLoading, isError, error } = useFlowExecution(flujoId, ejecucionId)
   const { mutate: cancelExecution, isPending: isCanceling } = useCancelFlowExecution()
+  const { data: batchingData } = useBatchingStatus(flujoId, ejecucionId)
   const [expandTimeline, setExpandTimeline] = useState(false)
+  
+  const hasBatching = batchingData?.data?.has_batching ?? false
 
   if (isLoading) {
     return (
@@ -240,6 +244,11 @@ export function ExecutionMonitor({ flujoId, ejecucionId, onComplete }: Execution
           )}
         </CardContent>
       </Card>
+
+      {/* Batching Progress - Only shown when batching is active */}
+      {hasBatching && (
+        <BatchingProgress flujoId={flujoId} ejecucionId={ejecucionId} />
+      )}
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
