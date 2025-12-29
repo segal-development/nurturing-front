@@ -37,7 +37,8 @@ export function getApiErrorMessage(error: unknown, fallback = 'Error desconocido
 }
 
 // URLs de configuración
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
+// Usar regex para reemplazar solo el /api del FINAL de la URL (no el "api" del subdominio)
+const BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') || 'http://localhost:8000';
 const API_URL = `${BASE_URL}/api`;
 
 /**
