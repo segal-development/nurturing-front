@@ -83,11 +83,11 @@ jobs:
         run: |
           if [ "${{ env.ENVIRONMENT }}" == "production" ]; then
             echo "BUCKET_NAME=nurturing-frontend-prod" >> $GITHUB_OUTPUT
-            echo "API_URL=https://api.nurturing.segal.cl/api" >> $GITHUB_OUTPUT
+            echo "API_URL=https://nurturing-api-prod-751446065129.us-central1.run.app/api" >> $GITHUB_OUTPUT
             echo "ENV_SUFFIX=prod" >> $GITHUB_OUTPUT
           else
             echo "BUCKET_NAME=nurturing-frontend-qa" >> $GITHUB_OUTPUT
-            echo "API_URL=https://api-qa.nurturing.segal.cl/api" >> $GITHUB_OUTPUT
+            echo "API_URL=https://nurturing-api-qa-751446065129.us-central1.run.app/api" >> $GITHUB_OUTPUT
             echo "ENV_SUFFIX=qa" >> $GITHUB_OUTPUT
           fi
 
