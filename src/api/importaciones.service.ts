@@ -3,7 +3,7 @@
  */
 
 import apiClient from './client'
-import type { Importacion, ImportarResponse, PaginatedResponse } from '@/types/importacion'
+import type { Importacion, ImportarResponse, ImportacionProgreso, PaginatedResponse } from '@/types/importacion'
 
 export const importacionesService = {
   /**
@@ -79,5 +79,55 @@ export const importacionesService = {
    */
   async delete(id: number): Promise<void> {
     await apiClient.delete(`/importaciones/${id}`)
+  },
+
+  /**
+   * Obtener progreso de una importación en background
+   */
+  async getProgreso(id: number): Promise<ImportacionProgreso> {
+    const { data } = await apiClient.get<{ data: ImportacionProgreso }>(`/importaciones/${id}/progreso`)
+    return data.data
+  },
+
+  /**
+   * Polling de progreso hasta que termine
+   * Retorna el estado final de la importación
+   */
+  async waitForCompletion(
+    id: number, 
+    onProgress?: (progreso: ImportacionProgreso) => void,
+    intervalMs: number = 3000,
+    maxAttempts: number = 200 // ~10 minutos con 3s de intervalo
+  ): Promise<ImportacionProgreso> {
+    let attempts = 0;
+    
+    return new Promise((resolve, reject) => {
+      const checkProgress = async () => {
+        try {
+          attempts++;
+          const progreso = await this.getProgreso(id);
+          
+          if (onProgress) {
+            onProgress(progreso);
+          }
+
+          if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
+            resolve(progreso);
+            return;
+          }
+
+          if (attempts >= maxAttempts) {
+            reject(new Error('Timeout esperando que la importación termine'));
+            return;
+          }
+
+          setTimeout(checkProgress, intervalMs);
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      checkProgress();
+    });
   },
 }

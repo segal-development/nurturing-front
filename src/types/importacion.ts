@@ -9,7 +9,7 @@ export interface Importacion {
   total_registros: number;
   registros_exitosos: number;
   registros_fallidos: number;
-  estado: 'procesando' | 'completado' | 'fallido';
+  estado: 'pendiente' | 'procesando' | 'completado' | 'fallido';
   fecha_importacion: string; // "20/11/2025 09:55:37"
   user_id: number;
   user?: {
@@ -18,10 +18,16 @@ export interface Importacion {
     email: string;
   };
   metadata: {
+    modo?: 'directo' | 'background';
     errores?: Array<{
       fila: number;
       errores: Record<string, string[]>;
     }>;
+    registros_sin_email?: number;
+    registros_sin_telefono?: number;
+    error?: string;
+    procesamiento_iniciado_en?: string;
+    encolado_en?: string;
   } | null;
   created_at: string;
   updated_at: string;
@@ -30,15 +36,32 @@ export interface Importacion {
 export interface ImportarResponse {
   mensaje: string;
   data: Importacion;
-  resumen: {
+  procesamiento: 'directo' | 'background';
+  instrucciones?: string;
+  resumen?: {
     total_registros: number;
     registros_exitosos: number;
     registros_fallidos: number;
+    registros_sin_email?: number;
+    registros_sin_telefono?: number;
     errores: Array<{
       fila: number;
       errores: Record<string, string[]>;
     }>;
   };
+}
+
+export interface ImportacionProgreso {
+  id: number;
+  estado: 'pendiente' | 'procesando' | 'completado' | 'fallido';
+  nombre_archivo: string;
+  total_registros: number | null;
+  registros_exitosos: number | null;
+  registros_fallidos: number | null;
+  progreso_porcentaje: number;
+  metadata: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PaginatedResponse<T> {
