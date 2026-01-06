@@ -59,7 +59,17 @@ export interface ImportacionProgreso {
   registros_exitosos: number | null;
   registros_fallidos: number | null;
   progreso_porcentaje: number;
-  metadata: Record<string, any> | null;
+  metadata: {
+    total_estimado?: number;
+    file_size_mb?: number;
+    error?: string;
+    errores?: Array<{ fila: number; errores: Record<string, string[]> }>;
+    registros_sin_email?: number;
+    registros_sin_telefono?: number;
+    procesado_con?: string;
+    completado_en?: string;
+    [key: string]: any;
+  } | null;
   created_at: string;
   updated_at: string;
 }

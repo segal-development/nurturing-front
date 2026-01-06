@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { importacionesService } from '@/api/importaciones.service';
+import { useImportacionStore } from '@/stores/importacionStore';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -50,11 +52,13 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [fileSelected, setFileSelected] = useState(false);
   const [selectedOriginName, setSelectedOriginName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Store global de importaciones
+  const { iniciarImportacion, importacionActiva } = useImportacionStore();
 
   // ============================================================
   // REACT HOOK FORM
@@ -217,9 +221,6 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   // ============================================================
   // MANEJAR UPLOAD A BACKEND
   // ============================================================
-  const [backgroundStatus, setBackgroundStatus] = useState<string>('');
-  const [importacionId, setImportacionId] = useState<number | null>(null);
-
   const handleUpload = async () => {
     if (preview.length === 0 || !selectedFile) {
       console.error('No file selected or preview empty');
@@ -227,15 +228,9 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
-    setBackgroundStatus('');
 
     try {
       const file = selectedFile;
-
-      // Progreso inicial - subiendo archivo
-      setUploadProgress(10);
-      setBackgroundStatus('Subiendo archivo...');
 
       // Enviar el archivo al backend
       const response = await importacionesService.importar(file, selectedOriginName);
@@ -244,71 +239,59 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
 
       // Verificar si es procesamiento en background
       if (response.procesamiento === 'background') {
-        setImportacionId(response.data.id);
-        setUploadProgress(20);
-        setBackgroundStatus('Archivo recibido. Procesando en segundo plano...');
-
-        // Hacer polling del progreso
-        const finalStatus = await importacionesService.waitForCompletion(
+        // Iniciar tracking global con el store
+        const estimatedTotal = response.data.metadata?.total_estimado || 0;
+        iniciarImportacion(
           response.data.id,
-          (progreso) => {
-            // Actualizar UI con el progreso
-            const baseProgress = 20;
-            const maxProgress = 95;
-            const progressRange = maxProgress - baseProgress;
-            const calculatedProgress = baseProgress + (progreso.progreso_porcentaje / 100 * progressRange);
-            setUploadProgress(Math.round(calculatedProgress));
-            
-            if (progreso.estado === 'procesando') {
-              setBackgroundStatus(`Procesando registros... ${progreso.progreso_porcentaje}%`);
-            }
-          }
+          response.data.nombre_archivo,
+          estimatedTotal
         );
 
-        // Proceso terminado
-        if (finalStatus.estado === 'completado') {
-          setUploadProgress(100);
-          setBackgroundStatus('');
-          setIsUploading(false);
-          setUploadSuccess(true);
+        // Mostrar toast informativo
+        toast.info('Importación iniciada', {
+          description: 'El archivo se está procesando en segundo plano. Puedes cerrar este diálogo y seguir trabajando.',
+          duration: 5000,
+        });
 
-          console.log('✅ Importación en background completada:', finalStatus);
-
-          setTimeout(() => {
-            onSuccess?.();
-          }, 2000);
-        } else if (finalStatus.estado === 'fallido') {
-          throw new Error(finalStatus.metadata?.error || 'Error en el procesamiento');
-        }
+        // Cerrar el modal y notificar éxito
+        setIsUploading(false);
+        setUploadSuccess(true);
+        
+        setTimeout(() => {
+          onSuccess?.();
+        }, 1500);
 
       } else {
         // Procesamiento directo (archivos pequeños)
-        setUploadProgress(80);
-        setBackgroundStatus('Finalizando...');
-
         console.log('✅ Importación directa exitosa:');
         console.log('   ID Importación:', response.data?.id);
         console.log('   Nombre de origen:', selectedOriginName);
         console.log('   Resumen:', response.resumen);
 
-        setUploadProgress(100);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        toast.success('Importación completada', {
+          description: `Se importaron ${response.resumen?.registros_exitosos || 0} registros exitosamente.`,
+          duration: 5000,
+        });
 
-        setBackgroundStatus('');
         setIsUploading(false);
         setUploadSuccess(true);
 
         setTimeout(() => {
           onSuccess?.();
-        }, 2000);
+        }, 1500);
       }
 
     } catch (error) {
       console.error('Error al importar:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      toast.error('Error al importar', {
+        description: errorMessage,
+        duration: 8000,
+      });
+      
       setErrors([`Error al importar los prospectos: ${errorMessage}`]);
       setIsUploading(false);
-      setBackgroundStatus('');
     }
   };
 
@@ -560,35 +543,22 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
         </div>
       )}
 
-      {/* Barra de progreso de upload */}
+      {/* Estado de subida */}
       {isUploading && (
-        <div className="space-y-3 bg-segal-blue/5 rounded-lg border border-segal-blue/20 p-4">
-          <div className="flex items-center gap-3">
-            <Loader className="h-5 w-5 text-segal-blue animate-spin" />
+        <div className="space-y-4 bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 rounded-xl border border-segal-blue/20 p-6 shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-segal-blue/10 flex items-center justify-center">
+              <Loader className="h-6 w-6 text-segal-blue animate-spin" />
+            </div>
             <div className="flex-1">
-              <p className="font-semibold text-segal-dark">
-                {backgroundStatus || 'Cargando prospectos...'}
+              <p className="font-bold text-lg text-segal-dark">
+                Subiendo archivo...
               </p>
-              <p className="text-sm text-segal-dark/60">{uploadProgress}% completado</p>
-              {importacionId && (
-                <p className="text-xs text-segal-dark/40 mt-1">
-                  ID de importación: {importacionId}
-                </p>
-              )}
+              <p className="text-sm text-segal-dark/60">
+                Esto puede tomar unos segundos
+              </p>
             </div>
           </div>
-          <div className="w-full h-2 bg-segal-blue/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-segal-blue to-segal-turquoise rounded-full transition-all duration-300"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
-          {backgroundStatus && backgroundStatus.includes('segundo plano') && (
-            <p className="text-xs text-segal-dark/50 italic">
-              Este archivo es grande y se está procesando en segundo plano. 
-              Puedes esperar aquí o cerrar y verificar el estado más tarde.
-            </p>
-          )}
         </div>
       )}
 

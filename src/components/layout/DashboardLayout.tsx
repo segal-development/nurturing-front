@@ -25,6 +25,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useSidebar } from '@/hooks/useSidebar'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { SidebarToggle } from '@/components/sidebar/SidebarToggle'
+import { ImportacionIndicator } from '@/components/shared/ImportacionIndicator'
 
 const NAVIGATION_ITEMS = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -156,8 +157,9 @@ export function DashboardLayout() {
               </h2>
             </div>
 
-            {/* Right: Theme toggle y Settings */}
-            <div className="flex items-center gap-2">
+            {/* Right: Indicador de importación, Theme toggle y Settings */}
+            <div className="flex items-center gap-3">
+              <ImportacionIndicator />
               <ThemeToggle variant="ghost" size="sm" />
               <Button
                 variant="outline"
