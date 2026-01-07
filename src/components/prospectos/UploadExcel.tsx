@@ -353,9 +353,12 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
                   {...field}
                   id="originName"
                   placeholder="Ej: Importación Enero 2025"
-                  className={`border-none ${
-                    formErrors.originName ? 'border-segal-red' : ''
-                  }`}
+                  className={`
+                    bg-white border border-segal-blue/30 text-segal-dark
+                    placeholder:text-segal-dark/40
+                    focus:border-segal-blue focus:ring-2 focus:ring-segal-blue/20
+                    ${formErrors.originName ? 'border-segal-red focus:border-segal-red focus:ring-segal-red/20' : ''}
+                  `}
                 />
               )}
             />
