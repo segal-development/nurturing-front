@@ -24,6 +24,14 @@ export interface ImportacionEnProgreso {
   error?: string
 }
 
+// Callback global que se ejecuta cuando una importación termina
+// Se registra desde el componente que necesita invalidar queries
+let onImportacionCompleteCallback: ((importacionId: number) => void) | null = null
+
+export const setOnImportacionComplete = (callback: ((importacionId: number) => void) | null) => {
+  onImportacionCompleteCallback = callback
+}
+
 interface ImportacionStore {
   // Estado
   importacionActiva: ImportacionEnProgreso | null
@@ -85,12 +93,19 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
     
     if (!importacionActiva) return
 
+    const importacionId = importacionActiva.id
+
     // Mostrar toast según resultado
     if (estado === 'completado') {
       toast.success('Importación completada', {
         description: `Se importaron ${importacionActiva.registrosExitosos.toLocaleString('es-CL')} registros exitosamente${importacionActiva.registrosFallidos > 0 ? ` (${importacionActiva.registrosFallidos} fallidos)` : ''}.`,
         duration: 8000,
       })
+      
+      // Ejecutar callback para invalidar queries (si está registrado)
+      if (onImportacionCompleteCallback) {
+        onImportacionCompleteCallback(importacionId)
+      }
     } else {
       toast.error('Importación fallida', {
         description: error || 'Ocurrió un error durante la importación.',

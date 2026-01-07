@@ -8,7 +8,7 @@
  * - Separation of Concerns: Business logic in hooks, UI in components
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CompactFiltersBar } from './components/ProspectosFilters/CompactFiltersBar'
@@ -21,6 +21,7 @@ import { useProspectosFilters } from './hooks/useProspectosFilters'
 import { usePagination } from '@/hooks/usePagination'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
+import { setOnImportacionComplete } from '@/stores/importacionStore'
 
 const ITEMS_PER_PAGE = 15
 
@@ -45,6 +46,23 @@ export function Prospectos() {
   const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useProspectosOpciones()
   const { filtros, setImportacionId, setEstado, setTipo } = useProspectosFilters()
   const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
+
+  // ============================================================
+  // REGISTRO DE CALLBACK PARA IMPORTACIONES COMPLETADAS
+  // Cuando una importación background termina, invalida las queries
+  // ============================================================
+  useEffect(() => {
+    setOnImportacionComplete((importacionId) => {
+      console.log('✅ Importación completada, invalidando queries...', importacionId)
+      queryClient.invalidateQueries({ queryKey: ['prospectos-opciones-filtrado'] })
+      queryClient.invalidateQueries({ queryKey: ['prospectos'] })
+    })
+
+    // Cleanup al desmontar
+    return () => {
+      setOnImportacionComplete(null)
+    }
+  }, [queryClient])
 
   // ============================================================
   // DATOS DE PROSPECTOS
