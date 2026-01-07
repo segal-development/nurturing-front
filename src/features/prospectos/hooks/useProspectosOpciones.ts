@@ -43,8 +43,14 @@ export function useProspectosOpciones(): UseProspectosOpcionesReturn {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: prospectosOpcionesQueryKey,
     queryFn: () => prospectosService.getOpciones(),
-    staleTime: 10 * 60 * 1000, // 10 minutos - opciones cambian poco
-    gcTime: 30 * 60 * 1000,    // 30 minutos
+    staleTime: 30 * 1000, // 30 segundos - refrescar más seguido para ver cambios de estado
+    gcTime: 30 * 60 * 1000, // 30 minutos
+    // Si hay lotes procesando, refrescar cada 5 segundos
+    refetchInterval: (query) => {
+      const opciones = query.state.data as OpcionesFiltrado | undefined
+      const hayLotesProcesando = opciones?.lotes?.some(l => l.estado === 'procesando' || l.estado === 'abierto')
+      return hayLotesProcesando ? 5000 : false
+    },
   })
 
   return {

@@ -214,14 +214,30 @@ export function CompactFiltersBar({
           <div>
             <span className="font-medium text-segal-blue">{formatNumber(loteSeleccionado.total_prospectos)}</span> prospectos cargados
           </div>
+          <div className="h-3 w-px bg-segal-dark/20"></div>
           {loteSeleccionado.estado === 'procesando' && (
-            <>
-              <div className="h-3 w-px bg-segal-dark/20"></div>
-              <div className="flex items-center gap-1.5 text-blue-600">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Procesando...</span>
-              </div>
-            </>
+            <div className="flex items-center gap-1.5 text-blue-600">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Procesando...</span>
+            </div>
+          )}
+          {loteSeleccionado.estado === 'abierto' && (
+            <div className="flex items-center gap-1.5 text-amber-600">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Importando...</span>
+            </div>
+          )}
+          {loteSeleccionado.estado === 'completado' && (
+            <div className="flex items-center gap-1.5 text-green-600">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Completado</span>
+            </div>
+          )}
+          {loteSeleccionado.estado === 'fallido' && (
+            <div className="flex items-center gap-1.5 text-red-600">
+              <AlertCircle className="h-3 w-3" />
+              <span>Error</span>
+            </div>
           )}
         </div>
       )}
