@@ -141,7 +141,7 @@ export function EditFlujoBuilder({
       console.log('✅ Usando configuración visual existente del flujo')
       setFlowName(flujo.nombre)
       setFlowDescription(flujo.descripcion || '')
-      loadFlowConfiguration(flujo.config_visual.nodes, flujo.config_visual.edges)
+      loadFlowConfiguration(flujo.config_visual.nodes as CustomNode[], flujo.config_visual.edges as CustomEdge[])
       toast.info(`Flujo "${flujo.nombre}" cargado para edición`)
       return
     }

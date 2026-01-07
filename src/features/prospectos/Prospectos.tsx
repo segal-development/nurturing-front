@@ -44,7 +44,7 @@ export function Prospectos() {
   // ============================================================
   const queryClient = useQueryClient()
   const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useProspectosOpciones()
-  const { filtros, setImportacionId, setEstado, setTipo } = useProspectosFilters()
+  const { filtros, setLoteId, setImportacionId, setEstado, setTipo } = useProspectosFilters()
   const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
 
   // ============================================================
@@ -74,6 +74,7 @@ export function Prospectos() {
     isError: isErrorProspectos,
     error: errorProspectos,
   } = useProspectos({
+    loteId: filtros.loteId,
     importacionId: filtros.importacionId,
     estado: filtros.estado,
     tipoProspectoId: filtros.tipoProspectoId,
@@ -95,12 +96,13 @@ export function Prospectos() {
   // MANEJADORES DE EVENTOS
   // ============================================================
   const handleFiltrosChange = useCallback((newFiltros: typeof filtros) => {
+    setLoteId(newFiltros.loteId)
     setImportacionId(newFiltros.importacionId)
     setEstado(newFiltros.estado)
     setTipo(newFiltros.tipoProspectoId)
     resetPage()
     setSearchTerm('')
-  }, [setImportacionId, setEstado, setTipo, resetPage])
+  }, [setLoteId, setImportacionId, setEstado, setTipo, resetPage])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value)
@@ -160,16 +162,16 @@ export function Prospectos() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-segal-dark dark:text-gray-300">Prospectos</h1>
           <p className="text-segal-dark/60 dark:text-gray-300">
-            {filtros.importacionId
-              ? `Prospectos filtrados por fuente de importación`
-              : 'Selecciona una fuente de importación para comenzar'}
+            {(filtros.loteId || filtros.importacionId)
+              ? `Prospectos filtrados por carga seleccionada`
+              : 'Selecciona una carga para comenzar'}
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={handleExport}
-            disabled={!filtros.importacionId}
+            disabled={!filtros.loteId && !filtros.importacionId}
             className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5 disabled:opacity-50"
           >
             <Download className="mr-2 h-4 w-4" />
@@ -190,7 +192,7 @@ export function Prospectos() {
       />
 
       {/* Loading prospectos */}
-      {filtros.importacionId && isLoadingProspectos && (
+      {(filtros.loteId || filtros.importacionId) && isLoadingProspectos && (
         <div className="flex items-center justify-center py-12">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
@@ -200,7 +202,7 @@ export function Prospectos() {
       )}
 
       {/* Error prospectos */}
-      {filtros.importacionId && isErrorProspectos && (
+      {(filtros.loteId || filtros.importacionId) && isErrorProspectos && (
         <div className="rounded-lg border border-segal-red/30 bg-segal-red/10 p-4 flex gap-3">
           <AlertCircle className="h-5 w-5 text-segal-red shrink-0 mt-0.5" />
           <div>
@@ -213,18 +215,18 @@ export function Prospectos() {
       )}
 
       {/* Empty state */}
-      {!filtros.importacionId && (
+      {!filtros.loteId && !filtros.importacionId && (
         <div className="rounded-lg border border-segal-blue/20 dark:border-gray-700 bg-segal-blue/5 dark:bg-gray-800 p-12 text-center">
           <AlertCircle className="h-12 w-12 text-segal-blue/50 dark:text-segal-turquoise/50 mx-auto mb-4" />
-          <p className="text-lg font-semibold text-segal-dark dark:text-white mb-2">Selecciona una fuente de importación</p>
+          <p className="text-lg font-semibold text-segal-dark dark:text-white mb-2">Selecciona una carga</p>
           <p className="text-segal-dark/60 dark:text-gray-400">
-            Elige una fuente de importación del selector anterior para ver los prospectos disponibles
+            Elige una carga del selector anterior para ver los prospectos disponibles
           </p>
         </div>
       )}
 
       {/* Tabla y Paginación */}
-      {filtros.importacionId && !isLoadingProspectos && (
+      {(filtros.loteId || filtros.importacionId) && !isLoadingProspectos && (
         <>
           {/* Resumen de registros */}
           {prospectos.length > 0 && (

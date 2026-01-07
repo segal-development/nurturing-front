@@ -216,7 +216,7 @@ export function ConditionalNode({
                         id: localData.condition?.id || `cond-${Date.now()}`,
                         type: localData.condition?.type || 'email_opened',
                         label: localData.condition?.label || 'Sin condición',
-                        check_operator: e.target.value,
+                        check_operator: e.target.value as '>' | '>=' | '==' | '!=' | '<' | '<=' | 'in' | 'not_in',
                       },
                     })
                   }

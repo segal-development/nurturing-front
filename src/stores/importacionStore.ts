@@ -6,7 +6,6 @@
 
 import { create } from 'zustand'
 import { importacionesService } from '@/api/importaciones.service'
-import type { ImportacionProgreso } from '@/types/importacion'
 import { toast } from 'sonner'
 
 export interface ImportacionEnProgreso {
@@ -49,7 +48,7 @@ interface ImportacionStore {
 }
 
 // Variables para el polling (fuera del store para evitar re-renders)
-let pollingInterval: NodeJS.Timeout | null = null
+let pollingInterval: ReturnType<typeof setInterval> | null = null
 let lastProcessed = 0
 let lastTime = Date.now()
 

@@ -5,13 +5,23 @@
  * SIEMPRE sanitizar HTML antes de usar dangerouslySetInnerHTML.
  */
 
-import * as DOMPurify from 'dompurify'
+import DOMPurify from 'dompurify'
+
+// Configuración para DOMPurify
+interface SanitizeConfig {
+  ALLOWED_TAGS?: string[]
+  ALLOWED_ATTR?: string[]
+  ALLOW_DATA_ATTR?: boolean
+  ALLOW_UNKNOWN_PROTOCOLS?: boolean
+  ADD_TAGS?: string[]
+  ADD_ATTR?: string[]
+}
 
 /**
  * Configuración por defecto para DOMPurify
  * Permite tags HTML seguros para mostrar contenido de emails
  */
-const DEFAULT_CONFIG: DOMPurify.Config = {
+const DEFAULT_CONFIG: SanitizeConfig = {
   // Tags permitidos (HTML semántico + formato de emails)
   ALLOWED_TAGS: [
     // Estructura
@@ -32,24 +42,28 @@ const DEFAULT_CONFIG: DOMPurify.Config = {
     'h6',
     // Formato de texto
     'b',
-    'i',
-    'u',
     'strong',
+    'i',
     'em',
-    'small',
-    'mark',
+    'u',
+    's',
+    'strike',
     'del',
     'ins',
     'sub',
     'sup',
-    // Links e imágenes
+    'small',
+    'big',
+    'font',
+    'center',
+    // Enlaces e imágenes
     'a',
     'img',
     // Listas
     'ul',
     'ol',
     'li',
-    // Tablas (común en emails HTML)
+    // Tablas
     'table',
     'thead',
     'tbody',
@@ -57,27 +71,30 @@ const DEFAULT_CONFIG: DOMPurify.Config = {
     'tr',
     'th',
     'td',
+    'caption',
+    'colgroup',
+    'col',
     // Otros
     'blockquote',
     'pre',
     'code',
-    'center',
-    'font',
-    // Meta (para emails)
-    'meta',
+    'address',
+    // Meta tags para emails
     'title',
     'style',
+    'meta',
+    'link',
   ],
   // Atributos permitidos
   ALLOWED_ATTR: [
     // Globales
-    'class',
     'id',
+    'class',
     'style',
     'title',
-    'lang',
     'dir',
-    // Links
+    'lang',
+    // Enlaces
     'href',
     'target',
     'rel',
@@ -87,56 +104,62 @@ const DEFAULT_CONFIG: DOMPurify.Config = {
     'width',
     'height',
     // Tablas
-    'border',
+    'colspan',
+    'rowspan',
     'cellpadding',
     'cellspacing',
+    'border',
     'align',
     'valign',
     'bgcolor',
-    'colspan',
-    'rowspan',
-    'role',
     // Meta
-    'http-equiv',
+    'name',
     'content',
     'charset',
-    'name',
-    'viewport',
-    // Font (legacy pero común en emails)
+    'http-equiv',
+    // Font
     'color',
-    'face',
     'size',
+    'face',
+    // Otros
+    'data-*',
+    'role',
+    'aria-*',
   ],
-  // No permitir data URIs en src (previene ataques)
-  ALLOW_DATA_ATTR: false,
-  // Forzar target="_blank" en links externos
-  ADD_ATTR: ['target'],
+  // Permitir data attributes
+  ALLOW_DATA_ATTR: true,
 }
 
 /**
  * Sanitiza HTML para prevenir XSS
  *
  * @param dirtyHtml - HTML potencialmente peligroso
- * @param config - Configuración opcional de DOMPurify
- * @returns HTML sanitizado seguro para renderizar
+ * @param config - Configuración adicional para DOMPurify
+ * @returns HTML sanitizado
  *
  * @example
  * ```tsx
- * <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(contenido) }} />
+ * // En un componente React
+ * const SafeHTML = ({ html }: { html: string }) => (
+ *   <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />
+ * )
  * ```
  */
 export function sanitizeHtml(
   dirtyHtml: string | null | undefined,
-  config?: DOMPurify.Config
+  config?: SanitizeConfig
 ): string {
   if (!dirtyHtml) {
     return ''
   }
 
-  return DOMPurify.sanitize(dirtyHtml, {
+  const result = DOMPurify.sanitize(dirtyHtml, {
     ...DEFAULT_CONFIG,
     ...config,
   })
+  
+  // DOMPurify puede retornar TrustedHTML en algunos entornos, aseguramos string
+  return String(result)
 }
 
 /**
@@ -159,6 +182,6 @@ export function containsDangerousHtml(html: string | null | undefined): boolean 
     return false
   }
 
-  const sanitized = DOMPurify.sanitize(html, DEFAULT_CONFIG)
+  const sanitized = sanitizeHtml(html)
   return sanitized !== html
 }

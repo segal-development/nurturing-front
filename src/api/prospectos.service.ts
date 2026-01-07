@@ -18,8 +18,26 @@ interface Importacion {
   fecha_importacion: string
 }
 
+interface LoteOpcion {
+  id: number
+  nombre: string
+  estado: 'abierto' | 'procesando' | 'completado' | 'fallido'
+  total_archivos: number
+  total_prospectos: number
+  total_registros: number
+  registros_exitosos: number
+  created_at: string
+  importaciones: Array<{
+    id: number
+    nombre_archivo: string
+    estado: string
+    total_prospectos: number
+  }>
+}
+
 interface OpcionesFiltrado {
-  importaciones: Importacion[]
+  lotes: LoteOpcion[]
+  importaciones?: Importacion[]
   estados: Array<{ value: string; label: string }>
   tipos_prospecto: Array<{ id: number; nombre: string }>
 }
@@ -45,6 +63,7 @@ export const prospectosService = {
       console.log('📥 prospectosService.getOpciones() - backendData.estados:', backendData.estados)
 
       const opciones: OpcionesFiltrado = {
+        lotes: backendData.lotes || [],
         importaciones: backendData.importaciones || [],
         estados: backendData.estados?.map((estado: string) => ({
           value: estado,
@@ -54,7 +73,8 @@ export const prospectosService = {
       }
 
       console.log('✅ prospectosService.getOpciones() - Opciones finales transformadas:', JSON.stringify(opciones, null, 2))
-      console.log('✅ prospectosService.getOpciones() - importaciones count:', opciones.importaciones.length)
+      console.log('✅ prospectosService.getOpciones() - lotes count:', opciones.lotes?.length || 0)
+      console.log('✅ prospectosService.getOpciones() - importaciones count:', opciones.importaciones?.length || 0)
       return opciones
     } catch (error: any) {
       console.error('🔴 prospectosService.getOpciones() - Error:', {
@@ -71,6 +91,7 @@ export const prospectosService = {
    * Obtener lista paginada de prospectos
    */
   async getAll(params?: {
+    lote_id?: number
     importacion_id?: number
     estado?: string
     tipo_prospecto_id?: number

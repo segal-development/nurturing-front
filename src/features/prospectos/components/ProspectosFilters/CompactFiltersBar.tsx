@@ -5,9 +5,12 @@
  * - Single Responsibility: Only handles filter UI and state binding
  * - Composition: Uses small, focused sub-components
  * - Dependency Injection: Receives all data and callbacks via props
+ * 
+ * CAMBIO IMPORTANTE: Ahora usa LOTES en lugar de importaciones individuales
+ * Un lote agrupa múltiples archivos de una misma carga
  */
 
-import { Search } from 'lucide-react'
+import { Search, FileStack, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 import { useCallback } from 'react'
 import {
   Select,
@@ -17,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import type { OpcionesFiltrado, FiltrosState } from '../../types/prospectos'
+import type { OpcionesFiltrado, FiltrosState, LoteOpcion } from '../../types/prospectos'
 
 /**
  * Props para CompactFiltersBar
@@ -58,6 +61,29 @@ const getSelectDisplayValue = (value: number | null | undefined): string | undef
   return value ? value.toString() : undefined
 }
 
+/**
+ * Obtiene el ícono de estado del lote
+ */
+const getLoteStatusIcon = (estado: LoteOpcion['estado']) => {
+  switch (estado) {
+    case 'completado':
+      return <CheckCircle2 className="h-3 w-3 text-green-500" />
+    case 'procesando':
+      return <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
+    case 'fallido':
+      return <AlertCircle className="h-3 w-3 text-red-500" />
+    default:
+      return <FileStack className="h-3 w-3 text-gray-400" />
+  }
+}
+
+/**
+ * Formatea el número con separador de miles
+ */
+const formatNumber = (num: number): string => {
+  return num.toLocaleString('es-AR')
+}
+
 export function CompactFiltersBar({
   filtros,
   opciones,
@@ -69,12 +95,15 @@ export function CompactFiltersBar({
   // ============================================================
   // MANEJADORES DE FILTROS CON EARLY RETURNS
   // ============================================================
-  const handleImportacionChange = useCallback(
+  const handleLoteChange = useCallback(
     (value: string) => {
       const parsedId = parseInt(value, 10)
       if (isNaN(parsedId)) return
 
-      const updatedFilters = createUpdatedFilters(filtros, { importacionId: parsedId })
+      const updatedFilters = createUpdatedFilters(filtros, { 
+        loteId: parsedId,
+        importacionId: null // Limpiar importacionId cuando cambia el lote
+      })
       onFiltrosChange(updatedFilters)
     },
     [filtros, onFiltrosChange]
@@ -105,42 +134,54 @@ export function CompactFiltersBar({
   // ============================================================
   // VALORES MOSTRADOS EN SELECTS
   // ============================================================
-  const selectValueImportacion = getSelectDisplayValue(filtros.importacionId)
+  const selectValueLote = getSelectDisplayValue(filtros.loteId)
   const selectValueEstado = filtros.estado || 'todos-estados'
   const selectValueTipo = getSelectDisplayValue(filtros.tipoProspectoId) || 'todos-tipos'
 
+  // Obtener el lote seleccionado para mostrar info
+  const loteSeleccionado = opciones?.lotes?.find(l => l.id === filtros.loteId)
+
+  // Determinar si hay filtro activo (lote o importación para compatibilidad)
+  const hasActiveFilter = !!filtros.loteId || !!filtros.importacionId
+
   return (
     <div className="flex flex-col gap-3 p-4 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-      {/* Primera fila: Importación + Estado */}
+      {/* Primera fila: Lote/Carga + Estado */}
       <div className="flex gap-3">
         <div className="flex-1 flex flex-col">
           <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
-            Importación <span className="text-segal-red">*</span>
+            Carga <span className="text-segal-red">*</span>
           </label>
-          {opciones?.importaciones && opciones.importaciones.length > 0 ? (
-            <Select value={selectValueImportacion} onValueChange={handleImportacionChange}>
+          {opciones?.lotes && opciones.lotes.length > 0 ? (
+            <Select value={selectValueLote} onValueChange={handleLoteChange}>
               <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 truncate dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
-                <SelectValue placeholder="Selecciona una fuente..." className="truncate" />
+                <SelectValue placeholder="Selecciona una carga..." className="truncate" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
-                {opciones?.importaciones?.map((imp) => (
-                  <SelectItem key={imp.id} value={imp.id.toString()}>
-                    <span className="text-xs truncate">
-                      {imp.nombre_archivo} - {imp.origen} ({imp.total_prospectos})
-                    </span>
+              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20 max-h-80">
+                {opciones?.lotes?.map((lote) => (
+                  <SelectItem key={lote.id} value={lote.id.toString()}>
+                    <div className="flex items-center gap-2">
+                      {getLoteStatusIcon(lote.estado)}
+                      <span className="text-xs truncate max-w-[200px]">
+                        {lote.nombre}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({lote.total_archivos} {lote.total_archivos === 1 ? 'archivo' : 'archivos'} - {formatNumber(lote.total_prospectos)} registros)
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
             <div className="h-9 px-3 rounded-lg border border-segal-blue/30 bg-white text-xs text-segal-dark/60 flex items-center dark:text-gray-300">
-              Cargando...
+              {opciones?.lotes?.length === 0 ? 'Sin cargas disponibles' : 'Cargando...'}
             </div>
           )}
         </div>
 
-        {/* Filtro Estado */}
-        {filtros.importacionId && (
+        {/* Filtro Estado - solo si hay lote seleccionado */}
+        {hasActiveFilter && (
           <div className="flex-1 flex flex-col">
             <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
               Estado
@@ -162,8 +203,31 @@ export function CompactFiltersBar({
         )}
       </div>
 
-      {/* Segunda fila: Tipo + Búsqueda (solo si hay importación seleccionada) */}
-      {filtros.importacionId && (
+      {/* Info del lote seleccionado */}
+      {loteSeleccionado && (
+        <div className="flex items-center gap-4 text-xs text-segal-dark/70 dark:text-gray-400 bg-segal-blue/5 px-3 py-2 rounded-md">
+          <div className="flex items-center gap-1.5">
+            <FileStack className="h-3.5 w-3.5" />
+            <span>{loteSeleccionado.total_archivos} {loteSeleccionado.total_archivos === 1 ? 'archivo' : 'archivos'}</span>
+          </div>
+          <div className="h-3 w-px bg-segal-dark/20"></div>
+          <div>
+            <span className="font-medium text-segal-blue">{formatNumber(loteSeleccionado.total_prospectos)}</span> prospectos cargados
+          </div>
+          {loteSeleccionado.estado === 'procesando' && (
+            <>
+              <div className="h-3 w-px bg-segal-dark/20"></div>
+              <div className="flex items-center gap-1.5 text-blue-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Procesando...</span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Segunda fila: Tipo + Búsqueda (solo si hay filtro activo) */}
+      {hasActiveFilter && (
         <div className="flex gap-3">
           {/* Filtro Tipo de Deuda */}
           <div className="flex-1 flex flex-col">

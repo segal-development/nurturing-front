@@ -4,7 +4,8 @@
  */
 
 export interface FiltrosState {
-  importacionId: number | null
+  loteId: number | null  // Cambiado de importacionId a loteId
+  importacionId: number | null  // Mantener para compatibilidad
   estado: string | null
   tipoProspectoId: number | null
 }
@@ -17,8 +18,27 @@ export interface Importacion {
   fecha_importacion: string
 }
 
+// Nuevo tipo para lotes
+export interface LoteOpcion {
+  id: number
+  nombre: string
+  estado: 'abierto' | 'procesando' | 'completado' | 'fallido'
+  total_archivos: number
+  total_prospectos: number
+  total_registros: number
+  registros_exitosos: number
+  created_at: string
+  importaciones: Array<{
+    id: number
+    nombre_archivo: string
+    estado: string
+    total_prospectos: number
+  }>
+}
+
 export interface OpcionesFiltrado {
-  importaciones: Importacion[]
+  lotes: LoteOpcion[]  // Nuevo: lista de lotes
+  importaciones?: Importacion[]  // Opcional: mantener compatibilidad
   estados: Array<{ value: string; label: string }>
   tipos_prospecto: Array<{ id: number; nombre: string }>
 }

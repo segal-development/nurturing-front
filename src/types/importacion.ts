@@ -28,6 +28,7 @@ export interface Importacion {
     error?: string;
     procesamiento_iniciado_en?: string;
     encolado_en?: string;
+    total_estimado?: number;
   } | null;
   created_at: string;
   updated_at: string;
@@ -36,6 +37,20 @@ export interface Importacion {
 export interface ImportarResponse {
   mensaje: string;
   data: Importacion;
+  lote?: {
+    id: number;
+    nombre: string;
+    estado: 'abierto' | 'procesando' | 'completado' | 'fallido';
+    total_archivos: number;
+    total_registros: number;
+    registros_exitosos: number;
+    registros_fallidos: number;
+    importaciones?: Array<{
+      id: number;
+      nombre_archivo: string;
+      estado: string;
+    }>;
+  };
   procesamiento: 'directo' | 'background';
   instrucciones?: string;
   resumen?: {

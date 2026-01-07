@@ -32,11 +32,19 @@ export const importacionesService = {
 
   /**
    * Importar archivo Excel
+   * @param archivo - Archivo Excel a importar
+   * @param origen - Nombre del origen/lote
+   * @param loteId - ID del lote existente (opcional). Si no se envía, crea un nuevo lote.
    */
-  async importar(archivo: File, origen: string): Promise<ImportarResponse> {
+  async importar(archivo: File, origen: string, loteId?: number): Promise<ImportarResponse> {
     const formData = new FormData()
     formData.append('archivo', archivo)
     formData.append('origen', origen)
+    
+    // Si viene lote_id, agregarlo al lote existente
+    if (loteId) {
+      formData.append('lote_id', loteId.toString())
+    }
 
     try {
       const response = await apiClient.post<any>('/importaciones', formData, {
@@ -59,6 +67,12 @@ export const importacionesService = {
       // Case 2: { mensaje, data: Importacion, resumen }
       if (data && 'resumen' in data && 'mensaje' in data) {
         console.log('✅ Estructura Type 2 detectada (directo ImportarResponse)')
+        return data as ImportarResponse
+      }
+
+      // Case 3: Respuesta con lote (nuevo formato)
+      if (data && 'lote' in data) {
+        console.log('✅ Estructura Type 3 detectada (con lote)')
         return data as ImportarResponse
       }
 

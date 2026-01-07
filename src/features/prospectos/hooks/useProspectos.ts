@@ -1,6 +1,6 @@
 /**
- * Hook para cargar prospectos filtrados por importación, estado y tipo
- * Solo carga si hay una importación seleccionada
+ * Hook para cargar prospectos filtrados por lote, importación, estado y tipo
+ * Solo carga si hay un lote o importación seleccionada
  */
 
 import { useQuery } from '@tanstack/react-query'
@@ -9,7 +9,8 @@ import type { Prospecto } from '../types/prospectos'
 import type { PaginatedResponse } from '@/types/prospecto'
 
 interface UseProspectosParams {
-  importacionId: number | null
+  loteId?: number | null
+  importacionId?: number | null
   estado: string | null
   tipoProspectoId: number | null
   page: number
@@ -17,22 +18,26 @@ interface UseProspectosParams {
 }
 
 export function useProspectos({
+  loteId,
   importacionId,
   estado,
   tipoProspectoId,
   page,
   perPage,
 }: UseProspectosParams) {
+  const hasFilter = !!loteId || !!importacionId
+  
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['prospectos', importacionId, estado, tipoProspectoId, page],
+    queryKey: ['prospectos', loteId, importacionId, estado, tipoProspectoId, page],
     queryFn: async () => {
-      if (!importacionId) {
-        console.log('⚠️ useProspectos: No hay importación seleccionada, no cargando prospectos')
+      if (!hasFilter) {
+        console.log('⚠️ useProspectos: No hay lote/importación seleccionada, no cargando prospectos')
         return null
       }
 
       try {
         console.log('📡 useProspectos: Cargando prospectos con filtros:', {
+          loteId,
           importacionId,
           estado,
           tipoProspectoId,
@@ -41,7 +46,8 @@ export function useProspectos({
         })
 
         const result = await prospectosService.getAll({
-          importacion_id: importacionId,
+          lote_id: loteId || undefined,
+          importacion_id: importacionId || undefined,
           estado: estado || undefined,
           tipo_prospecto_id: tipoProspectoId || undefined,
           page,
@@ -58,7 +64,7 @@ export function useProspectos({
         throw err
       }
     },
-    enabled: !!importacionId, // Solo cargar si hay importación seleccionada
+    enabled: hasFilter, // Solo cargar si hay filtro
   })
 
   const prospectos = (data as PaginatedResponse<Prospecto> | null)?.data || []

@@ -30,9 +30,9 @@ function deserializeEmailComponents(componentes: AnyEmailComponent[]): AnyEmailC
   return componentes.map((comp) => ({
     ...comp,
     contenido: typeof comp.contenido === 'string'
-      ? safeJsonParse(comp.contenido, {})
+      ? safeJsonParse(comp.contenido, comp.contenido as unknown)
       : comp.contenido,
-  }))
+  })) as AnyEmailComponent[]
 }
 
 /**

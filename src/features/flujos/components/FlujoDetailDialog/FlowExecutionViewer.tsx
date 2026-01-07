@@ -14,7 +14,7 @@ import ReactFlow, {
   useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock, DollarSign, Loader2, Pause, Play, Trash2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, Play, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -184,7 +184,7 @@ function FlowExecutionContent({
   const { mutate: cancelExecution, isPending: isCanceling } = useCancelExecution()
 
   // Get execution cost
-  const { data: costoEjecucion, isLoading: isLoadingCosto } = useCostoEjecucion(ejecucionId)
+  const { data: costoEjecucion } = useCostoEjecucion(ejecucionId)
 
   // Get pricing for cost badge display
   const { data: precios } = usePrecios()

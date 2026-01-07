@@ -7,7 +7,8 @@ import { useState, useCallback } from 'react'
 import type { FiltrosState } from '../types/prospectos'
 
 const INITIAL_FILTERS: FiltrosState = {
-  importacionId: null,
+  loteId: null,
+  importacionId: null, // Mantener para compatibilidad
   estado: null,
   tipoProspectoId: null,
 }
@@ -15,6 +16,15 @@ const INITIAL_FILTERS: FiltrosState = {
 export function useProspectosFilters() {
   const [filtros, setFiltros] = useState<FiltrosState>(INITIAL_FILTERS)
 
+  const setLoteId = useCallback((id: number | null) => {
+    setFiltros((prev) => ({
+      ...prev,
+      loteId: id,
+      importacionId: null, // Limpiar importacionId cuando cambia el lote
+    }))
+  }, [])
+
+  // Mantener para compatibilidad
   const setImportacionId = useCallback((id: number | null) => {
     setFiltros((prev) => ({
       ...prev,
@@ -42,6 +52,7 @@ export function useProspectosFilters() {
 
   return {
     filtros,
+    setLoteId,
     setImportacionId,
     setEstado,
     setTipo,
