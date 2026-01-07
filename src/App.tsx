@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { SidebarProvider } from '@/context/SidebarContext';
+import { LoteProgressTracker } from '@/components/prospectos/LoteProgressTracker';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -25,6 +26,7 @@ function App() {
           <AuthProvider>
             <RouterProvider router={router} />
             <Toaster />
+            <LoteProgressTracker />
           </AuthProvider>
         </SidebarProvider>
       </ThemeProvider>

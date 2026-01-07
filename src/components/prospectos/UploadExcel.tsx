@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { importacionesService } from '@/api/importaciones.service';
-import { useImportacionStore } from '@/stores/importacionStore';
+import { useLoteStore } from '@/stores/loteStore';
 import { toast } from 'sonner';
 import {
   Table,
@@ -71,8 +71,8 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   const [loteActivo, setLoteActivo] = useState<LoteActivo | null>(null);
   const [modoAgregarArchivo, setModoAgregarArchivo] = useState(false);
 
-  // Store global de importaciones
-  const { iniciarImportacion } = useImportacionStore();
+  // Store global de lotes
+  const { iniciarTrackingLote, loteActivo: loteEnStore } = useLoteStore();
 
   // ============================================================
   // REACT HOOK FORM
@@ -282,17 +282,14 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
 
       // Verificar si es procesamiento en background
       if (response.procesamiento === 'background') {
-        // Iniciar tracking global con el store
-        const estimatedTotal = response.data.metadata?.total_estimado || 0;
-        iniciarImportacion(
-          response.data.id,
-          response.data.nombre_archivo,
-          estimatedTotal
-        );
+        // Iniciar tracking del lote (solo si no hay uno activo con el mismo ID)
+        if (response.lote && (!loteEnStore || loteEnStore.id !== response.lote.id)) {
+          iniciarTrackingLote(response.lote.id, response.lote.nombre);
+        }
 
         // Mostrar toast informativo
-        toast.info('Archivo agregado al lote', {
-          description: `"${file.name}" se está procesando. Puedes agregar más archivos o cerrar.`,
+        toast.info('Archivo agregado a la carga', {
+          description: `"${file.name}" se está procesando en background. Puedes agregar más archivos.`,
           duration: 5000,
         });
 

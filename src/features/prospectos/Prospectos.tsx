@@ -21,7 +21,7 @@ import { useProspectosFilters } from './hooks/useProspectosFilters'
 import { usePagination } from '@/hooks/usePagination'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
-import { setOnImportacionComplete } from '@/stores/importacionStore'
+import { setOnLoteComplete } from '@/stores/loteStore'
 
 const ITEMS_PER_PAGE = 15
 
@@ -48,19 +48,19 @@ export function Prospectos() {
   const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
 
   // ============================================================
-  // REGISTRO DE CALLBACK PARA IMPORTACIONES COMPLETADAS
-  // Cuando una importación background termina, invalida las queries
+  // REGISTRO DE CALLBACK PARA LOTES COMPLETADOS
+  // Cuando un lote termina completamente, invalida las queries
   // ============================================================
   useEffect(() => {
-    setOnImportacionComplete((importacionId) => {
-      console.log('✅ Importación completada, invalidando queries...', importacionId)
+    setOnLoteComplete((loteId) => {
+      console.log('✅ Lote completado, invalidando queries...', loteId)
       queryClient.invalidateQueries({ queryKey: ['prospectos-opciones-filtrado'] })
       queryClient.invalidateQueries({ queryKey: ['prospectos'] })
     })
 
     // Cleanup al desmontar
     return () => {
-      setOnImportacionComplete(null)
+      setOnLoteComplete(null)
     }
   }, [queryClient])
 

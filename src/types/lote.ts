@@ -32,22 +32,40 @@ export interface Lote {
   }
 }
 
+export interface LoteProgresoImportacion {
+  id: number
+  nombre_archivo: string
+  estado: 'pendiente' | 'procesando' | 'completado' | 'fallido'
+  total_registros: number
+  registros_exitosos: number
+  registros_fallidos: number
+  total_estimado: number
+  progreso_porcentaje: number
+  error: string | null
+}
+
 export interface LoteProgreso {
   id: number
   nombre: string
   estado: 'abierto' | 'procesando' | 'completado' | 'fallido'
+  created_at: string
+  
+  // Contadores de archivos
   total_archivos: number
+  archivos_completados: number
+  archivos_procesando: number
+  archivos_pendientes: number
+  archivos_fallidos: number
+  
+  // Contadores de registros
   total_registros: number
   registros_exitosos: number
   registros_fallidos: number
-  importaciones: Array<{
-    id: number
-    nombre_archivo: string
-    estado: string
-    total_registros: number
-    registros_exitosos: number
-    progreso: number
-  }>
+  total_estimado: number
+  progreso_porcentaje: number
+  
+  // Detalle por importación
+  importaciones: LoteProgresoImportacion[]
 }
 
 export interface CrearLoteResponse {
