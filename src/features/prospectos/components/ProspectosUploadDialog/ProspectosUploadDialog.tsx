@@ -6,7 +6,7 @@
  * - Muestra confirmacion si el lote esta en estado "procesando" pero no hay archivo activo
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,27 +29,16 @@ import {
 } from '@/components/ui/alert-dialog'
 import { UploadExcel } from '@/components/prospectos/UploadExcel'
 import { useLoteStore, selectHayLoteActivo } from '@/stores/loteStore'
-import { useImportacionStore } from '@/stores/importacionStore'
+import { useUploadProgressStore, selectIsProcessing } from '@/stores/uploadProgressStore'
 import type { ProspectosUploadDialogProps } from '../../types/prospectos'
 
 export function ProspectosUploadDialog({ open, onOpenChange, onSuccess }: ProspectosUploadDialogProps) {
   const [showConfirmClose, setShowConfirmClose] = useState(false)
   const hayLoteActivo = useLoteStore(selectHayLoteActivo)
   const loteActivo = useLoteStore(state => state.loteActivo)
-  const importacionActiva = useImportacionStore(state => state.importacionActiva)
-
-  // Determinar si hay una importacion activamente procesando
-  const hayImportacionProcesando = useMemo(() => {
-    // Revisar si hay importacion individual procesando
-    if (importacionActiva && ['pendiente', 'procesando'].includes(importacionActiva.estado)) {
-      return true
-    }
-    // Revisar si hay archivos procesando en el lote
-    if (loteActivo?.archivos?.some(a => ['pendiente', 'procesando'].includes(a.estado))) {
-      return true
-    }
-    return false
-  }, [importacionActiva, loteActivo])
+  
+  // Estado de procesamiento desde el store (sincronizado con useUploadExcel)
+  const hayImportacionProcesando = useUploadProgressStore(selectIsProcessing)
 
   // Manejar intento de cierre del modal
   const handleOpenChange = useCallback((newOpen: boolean) => {

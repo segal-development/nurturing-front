@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { importacionesService } from '@/api/importaciones.service'
 import { lotesService } from '@/api/lotes.service'
 import { useLoteStore } from '@/stores/loteStore'
+import { useUploadProgressStore } from '@/stores/uploadProgressStore'
 import { validateRow } from './validation'
 import { uploadFormSchema, type UploadFormData, type LoteActivo, type ProgresoImportacion } from './types'
 import type { ProspectoExcelRow } from '@/types/prospecto'
@@ -51,8 +52,9 @@ export function useUploadExcel(onSuccess?: () => void) {
   const [importacionTerminada, setImportacionTerminada] = useState(false)
   const [progresoActual, setProgresoActual] = useState<ProgresoImportacion | null>(null)
 
-  // Store global
+  // Stores globales
   const { iniciarTrackingLote, loteActivo: loteEnStore } = useLoteStore()
+  const setIsProcessing = useUploadProgressStore((state) => state.setIsProcessing)
 
   // Form
   const form = useForm<UploadFormData>({
@@ -353,6 +355,20 @@ export function useUploadExcel(onSuccess?: () => void) {
   }, [loteActivo, handleReset, onSuccess])
 
   // =============================================================================
+  // ESTADO DERIVADO Y SINCRONIZACION
+  // =============================================================================
+
+  // Indica si hay una importacion activamente procesando (para bloquear cierre del modal)
+  const hayImportacionProcesando = Boolean(
+    importacionActualId && !importacionTerminada
+  )
+
+  // Sincronizar con el store global para que el dialog pueda saber si hay procesamiento
+  useEffect(() => {
+    setIsProcessing(hayImportacionProcesando || isUploading)
+  }, [hayImportacionProcesando, isUploading, setIsProcessing])
+
+  // =============================================================================
   // RETURN
   // =============================================================================
 
@@ -375,6 +391,7 @@ export function useUploadExcel(onSuccess?: () => void) {
     selectedOriginName,
     importacionTerminada,
     progresoActual,
+    hayImportacionProcesando,
 
     // Form
     form,

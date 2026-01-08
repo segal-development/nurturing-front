@@ -73,3 +73,57 @@
     color: hsl(var(--foreground));
   }
 }
+
+/* =============================================================================
+   SONNER TOAST - Estilos para que se vea sobre modales
+   ============================================================================= */
+@layer components {
+  /* Container del toast - debe estar sobre todo */
+  [data-sonner-toaster] {
+    z-index: 99999 !important;
+  }
+
+  /* Cada toast individual */
+  [data-sonner-toast] {
+    --normal-bg: white !important;
+    background-color: white !important;
+    opacity: 1 !important;
+    border-width: 2px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  /* Toast de success */
+  [data-sonner-toast][data-type="success"] {
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+  }
+
+  /* Toast de error */
+  [data-sonner-toast][data-type="error"] {
+    background-color: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+  }
+
+  /* Toast de info */
+  [data-sonner-toast][data-type="info"] {
+    background-color: #eff6ff !important;
+    border-color: #93c5fd !important;
+  }
+
+  /* Toast de warning */
+  [data-sonner-toast][data-type="warning"] {
+    background-color: #fffbeb !important;
+    border-color: #fcd34d !important;
+  }
+
+  /* Titulo del toast */
+  [data-sonner-toast] [data-title] {
+    color: #111827 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Descripcion del toast */
+  [data-sonner-toast] [data-description] {
+    color: #374151 !important;
+  }
+}
