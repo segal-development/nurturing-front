@@ -9,7 +9,7 @@ import type { ProspectoExcelRow } from '@/types/prospecto';
 // Estados del componente
 // ============================================================================
 
-export type UploadStep = 'form' | 'preview' | 'uploading' | 'success';
+export type UploadStep = 'form' | 'preview' | 'uploading' | 'processing' | 'success';
 
 export type ProcessingMode = 'direct' | 'background' | 'directo';
 

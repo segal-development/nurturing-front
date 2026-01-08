@@ -21,11 +21,13 @@ import {
   Loader, 
   Plus, 
   FolderOpen,
-  X 
+  X,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   Table,
@@ -370,6 +372,8 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     upload, 
     canUploadFile, 
     resetLote,
+    isProcessing,
+    processingStatus,
     error: uploadError 
   } = useFileUpload();
 
@@ -414,6 +418,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
 
     setStep('uploading');
 
+    // Este await ESPERA a que termine el procesamiento si es background
     const result = await upload(selectedFile, originName);
 
     if (result.success) {
@@ -423,13 +428,9 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       });
       setStep('success');
       
-      if (result.processingMode === 'background') {
-        toast.info('Procesando en segundo plano', {
-          description: 'Puedes agregar más archivos mientras se procesa.',
-        });
-      } else {
-        toast.success('Importación completada');
-      }
+      toast.success('Archivo procesado', {
+        description: `${(result.registrosExitosos || 0).toLocaleString('es-CL')} registros importados`,
+      });
     } else {
       setStep('preview');
       toast.error(result.error || 'Error al subir');
@@ -497,8 +498,8 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     );
   }
 
-  // Uploading step
-  if (step === 'uploading') {
+  // Uploading step (subiendo al servidor)
+  if (step === 'uploading' && !isProcessing) {
     return (
       <div className="space-y-4">
         <Instructions isAddingToLote={isAddingToLote} loteName={lote?.nombre} />
@@ -509,6 +510,47 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
               <p className="font-bold text-lg text-segal-dark">Subiendo archivo...</p>
               <p className="text-sm text-segal-dark/60 mt-1">{selectedFile?.name}</p>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Processing step (procesando en background - ESPERANDO)
+  if (step === 'uploading' && isProcessing && processingStatus) {
+    return (
+      <div className="space-y-4">
+        <Instructions isAddingToLote={isAddingToLote} loteName={lote?.nombre} />
+        <div className="bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 rounded-xl border border-segal-blue/20 p-6">
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-segal-blue/10 flex items-center justify-center">
+              <Loader className="h-6 w-6 text-segal-blue animate-spin" />
+            </div>
+            <div>
+              <p className="font-bold text-lg text-segal-dark">
+                {processingStatus.estado === 'pendiente' ? 'En cola...' : 'Procesando...'}
+              </p>
+              <p className="text-sm text-segal-dark/60">{processingStatus.fileName}</p>
+            </div>
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="space-y-2 mb-4">
+            <Progress value={processingStatus.progress} className="h-3" />
+            <div className="flex justify-between text-sm text-segal-dark/70">
+              <span>{processingStatus.registrosExitosos.toLocaleString('es-CL')} registros procesados</span>
+              <span className="font-medium text-segal-blue">{processingStatus.progress}%</span>
+            </div>
+          </div>
+
+          {/* Mensaje de espera */}
+          <div className="flex items-center gap-2 text-sm bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3">
+            <Clock className="h-4 w-4 text-yellow-600 shrink-0" />
+            <span className="text-yellow-700">
+              <strong>Esperando a que termine</strong> para evitar problemas de concurrencia.
+              Esto puede tomar varios minutos para archivos grandes.
+            </span>
           </div>
         </div>
       </div>
