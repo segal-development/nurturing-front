@@ -325,22 +325,30 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       );
       
       console.log('📥 Respuesta del servidor:', response);
+      console.log('📥 response.lote:', response.lote);
+      console.log('📥 response.procesamiento:', response.procesamiento);
+      console.log('📥 response.data:', response.data);
 
       // Actualizar el lote activo con la respuesta
       if (response.lote) {
+        console.log('✅ Lote encontrado, seteando loteActivo...');
         const archivosDelLote = response.lote.importaciones?.map(imp => ({
           nombre: imp.nombre_archivo,
           registros: 0, // Se actualizará cuando termine
           estado: imp.estado,
         })) || [];
 
-        setLoteActivo({
+        const nuevoLote = {
           id: response.lote.id,
           nombre: response.lote.nombre,
           totalArchivos: response.lote.total_archivos,
           totalRegistros: response.lote.total_registros,
           archivos: archivosDelLote,
-        });
+        };
+        console.log('✅ Nuevo loteActivo:', nuevoLote);
+        setLoteActivo(nuevoLote);
+      } else {
+        console.log('❌ response.lote es null o undefined');
       }
 
       // Verificar si es procesamiento en background
@@ -367,6 +375,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
 
         setIsUploading(false);
         setUploadSuccess(true);
+        console.log('✅ Background: uploadSuccess=true, importacionActualId=', response.data.id);
 
       } else {
         // Procesamiento directo (archivos pequeños) - ya terminó
@@ -390,6 +399,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
 
         setIsUploading(false);
         setUploadSuccess(true);
+        console.log('✅ Directo: uploadSuccess=true, importacionTerminada=true');
       }
 
     } catch (error) {
