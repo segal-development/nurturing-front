@@ -83,21 +83,21 @@ export function ProspectosUploadDialog({ open, onOpenChange, onSuccess }: Prospe
 
       {/* Diálogo de confirmación para cerrar con lote activo */}
       <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white border border-gray-200 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Cerrar mientras se procesa?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-segal-dark">¿Cerrar mientras se procesa?</AlertDialogTitle>
+            <AlertDialogDescription className="text-segal-dark/70">
               Hay un archivo procesándose en "{loteActivo?.nombre}". 
               El procesamiento continuará en segundo plano, pero perderás el progreso visual.
               <br /><br />
-              <strong>Tip:</strong> Esperá a que termine para agregar más archivos o finalizar la carga.
+              <strong className="text-segal-dark">Tip:</strong> Esperá a que termine para agregar más archivos o finalizar la carga.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelClose}>
+            <AlertDialogCancel onClick={handleCancelClose} className="border-segal-blue text-segal-blue hover:bg-segal-blue/5">
               Seguir esperando
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmClose} className="bg-segal-red hover:bg-segal-red/90">
+            <AlertDialogAction onClick={handleConfirmClose} className="bg-segal-red hover:bg-segal-red/90 text-white">
               Cerrar de todos modos
             </AlertDialogAction>
           </AlertDialogFooter>
