@@ -473,16 +473,138 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     onSuccess?.();
   };
 
-  // Debug log para renderizado
-  console.log('🎨 RENDER - Estados:', {
-    uploadSuccess,
-    loteActivo: loteActivo ? { id: loteActivo.id, nombre: loteActivo.nombre } : null,
-    importacionTerminada,
-    progresoActual,
-    fileSelected,
-    isUploading,
-    previewLength: preview.length,
-  });
+  // ==========================================================================
+  // RENDER: Si hay upload exitoso con lote, mostrar SOLO el bloque de éxito
+  // ==========================================================================
+  if (uploadSuccess && loteActivo) {
+    return (
+      <div className="space-y-4">
+        {/* Header del lote */}
+        <div className="bg-gradient-to-r from-segal-blue/10 to-segal-turquoise/10 border border-segal-blue/20 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <FolderOpen className="h-6 w-6 text-segal-blue" />
+            <div>
+              <p className="font-bold text-segal-dark">Carga: "{loteActivo.nombre}"</p>
+              <p className="text-sm text-segal-dark/60">
+                {loteActivo.totalArchivos} archivo{loteActivo.totalArchivos !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de archivos en el lote */}
+        {loteActivo.archivos.length > 0 && (
+          <div className="bg-white border border-segal-blue/10 rounded-lg p-4">
+            <p className="text-sm font-semibold text-segal-dark mb-3">Archivos en este lote:</p>
+            <div className="space-y-2">
+              {loteActivo.archivos.map((archivo, idx) => (
+                <div key={idx} className="flex items-center justify-between py-2 px-3 bg-segal-blue/5 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4 text-segal-blue" />
+                    <span className="text-sm text-segal-dark">{archivo.nombre}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    archivo.estado === 'completado' 
+                      ? 'bg-segal-green/20 text-segal-green' 
+                      : archivo.estado === 'procesando' || archivo.estado === 'pendiente'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {archivo.estado === 'completado' ? '✓ Completado' : 
+                     archivo.estado === 'procesando' ? '⏳ Procesando' : 
+                     archivo.estado === 'pendiente' ? '⏳ Pendiente' : archivo.estado}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Estado del archivo actual - Procesando */}
+        {!importacionTerminada && progresoActual && (
+          <div className="bg-segal-blue/5 border border-segal-blue/20 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Loader className="h-5 w-5 text-segal-blue animate-spin" />
+              <div className="flex-1">
+                <p className="font-semibold text-segal-dark">
+                  {progresoActual.estado === 'pendiente' ? 'En cola...' : 'Procesando...'}
+                </p>
+                <p className="text-sm text-segal-dark/60">{selectedFile?.name}</p>
+              </div>
+            </div>
+            
+            <Progress value={progresoActual.porcentaje} className="h-2" />
+            
+            <div className="flex justify-between text-sm text-segal-dark/70">
+              <span>{progresoActual.registrosExitosos.toLocaleString('es-CL')} registros procesados</span>
+              <span className="font-medium text-segal-blue">{progresoActual.porcentaje}%</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
+              <Clock className="h-4 w-4 text-yellow-600" />
+              <span className="text-yellow-700">Esperá a que termine antes de agregar otro archivo.</span>
+            </div>
+          </div>
+        )}
+
+        {/* Estado del archivo actual - Completado */}
+        {importacionTerminada && progresoActual?.estado === 'completado' && (
+          <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-6 w-6 text-segal-green shrink-0" />
+              <div>
+                <p className="font-semibold text-segal-green">¡Archivo procesado exitosamente!</p>
+                <p className="text-sm text-segal-green/80 mt-1">
+                  "{selectedFile?.name}" - {progresoActual.registrosExitosos.toLocaleString('es-CL')} registros importados
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Estado del archivo actual - Fallido */}
+        {importacionTerminada && progresoActual?.estado === 'fallido' && (
+          <div className="bg-segal-red/10 border border-segal-red/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-6 w-6 text-segal-red shrink-0" />
+              <div>
+                <p className="font-semibold text-segal-red">Error al procesar archivo</p>
+                <p className="text-sm text-segal-red/80 mt-1">
+                  "{selectedFile?.name}" - Hubo un error durante el procesamiento
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botones de acción - SOLO si terminó el procesamiento */}
+        {importacionTerminada && (
+          <div className="flex justify-between items-center pt-2">
+            <p className="text-sm text-segal-dark/60">
+              ¿Tenés más archivos para esta carga?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleAgregarOtroArchivo}
+                className="border-segal-blue text-segal-blue hover:bg-segal-blue/5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar otro archivo
+              </Button>
+              <Button
+                onClick={handleFinalizarLote}
+                className="bg-segal-green hover:bg-segal-green/90 text-white"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Finalizar carga
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -689,164 +811,6 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
                 ))}
               </ul>
               <p className="text-xs text-yellow-600 mt-2 italic">Los datos se cargarán de todas maneras. Revisa estos campos en el backend.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DEBUG: Indicador de estado */}
-      {uploadSuccess && (
-        <div className="bg-purple-100 border border-purple-500 p-2 text-purple-800 text-sm rounded">
-          DEBUG: uploadSuccess=true, loteActivo={loteActivo ? 'SÍ' : 'NO'}, importacionTerminada={importacionTerminada ? 'SÍ' : 'NO'}
-        </div>
-      )}
-
-      {/* Mensaje de éxito con opción de agregar más archivos */}
-      {uploadSuccess && loteActivo && (
-        <div className="space-y-4">
-          {/* Header del lote */}
-          <div className="bg-gradient-to-r from-segal-blue/10 to-segal-turquoise/10 border border-segal-blue/20 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="h-6 w-6 text-segal-blue" />
-              <div>
-                <p className="font-bold text-segal-dark">Carga: "{loteActivo.nombre}"</p>
-                <p className="text-sm text-segal-dark/60">
-                  {loteActivo.totalArchivos} archivo{loteActivo.totalArchivos !== 1 ? 's' : ''}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Lista de archivos en el lote */}
-          {loteActivo.archivos.length > 0 && (
-            <div className="bg-white border border-segal-blue/10 rounded-lg p-4">
-              <p className="text-sm font-semibold text-segal-dark mb-3">Archivos en este lote:</p>
-              <div className="space-y-2">
-                {loteActivo.archivos.map((archivo, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2 px-3 bg-segal-blue/5 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-4 w-4 text-segal-blue" />
-                      <span className="text-sm text-segal-dark">{archivo.nombre}</span>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      archivo.estado === 'completado' 
-                        ? 'bg-segal-green/20 text-segal-green' 
-                        : archivo.estado === 'procesando' || archivo.estado === 'pendiente'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {archivo.estado === 'completado' ? '✓ Completado' : 
-                       archivo.estado === 'procesando' ? '⏳ Procesando' : 
-                       archivo.estado === 'pendiente' ? '⏳ Pendiente' : archivo.estado}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Estado del archivo actual - Procesando */}
-          {!importacionTerminada && progresoActual && (
-            <div className="bg-segal-blue/5 border border-segal-blue/20 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-3">
-                <Loader className="h-5 w-5 text-segal-blue animate-spin" />
-                <div className="flex-1">
-                  <p className="font-semibold text-segal-dark">
-                    {progresoActual.estado === 'pendiente' ? 'En cola...' : 'Procesando...'}
-                  </p>
-                  <p className="text-sm text-segal-dark/60">{selectedFile?.name}</p>
-                </div>
-              </div>
-              
-              <Progress value={progresoActual.porcentaje} className="h-2" />
-              
-              <div className="flex justify-between text-sm text-segal-dark/70">
-                <span>{progresoActual.registrosExitosos.toLocaleString('es-CL')} registros procesados</span>
-                <span className="font-medium text-segal-blue">{progresoActual.porcentaje}%</span>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm bg-yellow-50 border border-yellow-200 rounded px-3 py-2">
-                <Clock className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-700">Esperá a que termine antes de agregar otro archivo.</span>
-              </div>
-            </div>
-          )}
-
-          {/* Estado del archivo actual - Completado */}
-          {importacionTerminada && progresoActual?.estado === 'completado' && (
-            <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-6 w-6 text-segal-green shrink-0" />
-                <div>
-                  <p className="font-semibold text-segal-green">¡Archivo procesado exitosamente!</p>
-                  <p className="text-sm text-segal-green/80 mt-1">
-                    "{selectedFile?.name}" - {progresoActual.registrosExitosos.toLocaleString('es-CL')} registros importados
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estado del archivo actual - Fallido */}
-          {importacionTerminada && progresoActual?.estado === 'fallido' && (
-            <div className="bg-segal-red/10 border border-segal-red/30 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-6 w-6 text-segal-red shrink-0" />
-                <div>
-                  <p className="font-semibold text-segal-red">Error al procesar archivo</p>
-                  <p className="text-sm text-segal-red/80 mt-1">
-                    "{selectedFile?.name}" - Hubo un error durante el procesamiento
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Botones de acción - SOLO si terminó el procesamiento */}
-          {importacionTerminada && (
-            <div className="flex justify-between items-center pt-2">
-              <p className="text-sm text-segal-dark/60">
-                ¿Tenés más archivos para esta carga?
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleAgregarOtroArchivo}
-                  className="border-segal-blue text-segal-blue hover:bg-segal-blue/5"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar otro archivo
-                </Button>
-                <Button
-                  onClick={handleFinalizarLote}
-                  className="bg-segal-green hover:bg-segal-green/90 text-white"
-                >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Finalizar carga
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Mensaje de éxito simple (sin lote - compatibilidad) */}
-      {uploadSuccess && !loteActivo && (
-        <div className="space-y-4">
-          <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0">
-                <CheckCircle2 className="h-8 w-8 text-segal-green animate-bounce" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-lg text-segal-green">¡Importación Exitosa!</p>
-                <p className="text-sm text-segal-green/90 mt-1">
-                  Se han importado correctamente <span className="font-semibold">{preview.length}</span> prospecto{preview.length !== 1 ? 's' : ''}.
-                </p>
-                <p className="text-sm text-segal-green/90 mt-2">
-                  Origen: <span className="font-semibold">{selectedOriginName}</span>
-                </p>
-              </div>
             </div>
           </div>
         </div>
