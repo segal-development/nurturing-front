@@ -1,12 +1,27 @@
 /**
  * Zustand store para tracking global de importaciones en progreso.
+ * 
  * Permite mostrar el estado de importaciones en cualquier parte de la UI,
  * incluso si el usuario cierra el modal de carga.
+ * 
+ * NOTA: Este store se usa para importaciones INDIVIDUALES (legacy).
+ * Para lotes con múltiples archivos, usar loteStore.ts
  */
 
 import { create } from 'zustand'
 import { importacionesService } from '@/api/importaciones.service'
 import { toast } from 'sonner'
+
+// =============================================================================
+// CONFIGURACIÓN
+// =============================================================================
+
+const POLLING_INTERVAL_MS = 2000
+const CLEANUP_DELAY_MS = 5000
+
+// =============================================================================
+// TIPOS
+// =============================================================================
 
 export interface ImportacionEnProgreso {
   id: number
@@ -19,16 +34,8 @@ export interface ImportacionEnProgreso {
   totalEstimado: number
   velocidad: number
   tiempoRestante: string | null
-  iniciadoEn: number // timestamp
+  iniciadoEn: number
   error?: string
-}
-
-// Callback global que se ejecuta cuando una importación termina
-// Se registra desde el componente que necesita invalidar queries
-let onImportacionCompleteCallback: ((importacionId: number) => void) | null = null
-
-export const setOnImportacionComplete = (callback: ((importacionId: number) => void) | null) => {
-  onImportacionCompleteCallback = callback
 }
 
 interface ImportacionStore {
@@ -47,10 +54,109 @@ interface ImportacionStore {
   detenerPolling: () => void
 }
 
-// Variables para el polling (fuera del store para evitar re-renders)
+// =============================================================================
+// CALLBACK GLOBAL
+// =============================================================================
+
+let onImportacionCompleteCallback: ((importacionId: number) => void) | null = null
+
+export const setOnImportacionComplete = (callback: ((importacionId: number) => void) | null) => {
+  onImportacionCompleteCallback = callback
+}
+
+// =============================================================================
+// VARIABLES DE POLLING (fuera del store para evitar re-renders)
+// =============================================================================
+
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 let lastProcessed = 0
 let lastTime = Date.now()
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+function crearImportacionInicial(
+  id: number,
+  nombreArchivo: string,
+  totalEstimado: number
+): ImportacionEnProgreso {
+  return {
+    id,
+    nombreArchivo,
+    estado: 'pendiente',
+    progreso: 0,
+    totalRegistros: 0,
+    registrosExitosos: 0,
+    registrosFallidos: 0,
+    totalEstimado,
+    velocidad: 0,
+    tiempoRestante: null,
+    iniciadoEn: Date.now(),
+  }
+}
+
+function calcularVelocidad(processedDiff: number, timeDiffMs: number): number {
+  const timeDiffSeconds = timeDiffMs / 1000
+  return timeDiffSeconds > 0 ? Math.round(processedDiff / timeDiffSeconds) : 0
+}
+
+function formatearTiempoRestante(segundos: number): string {
+  if (segundos > 3600) {
+    const hours = Math.floor(segundos / 3600)
+    const minutes = Math.floor((segundos % 3600) / 60)
+    return `${hours}h ${minutes}m`
+  }
+  
+  if (segundos > 60) {
+    const minutes = Math.floor(segundos / 60)
+    const secs = segundos % 60
+    return `${minutes}m ${secs}s`
+  }
+  
+  return `${segundos}s`
+}
+
+function calcularTiempoRestante(
+  speed: number,
+  estimated: number,
+  totalRegistros: number
+): string | null {
+  if (speed <= 0) return null
+  
+  const remaining = estimated - totalRegistros
+  if (remaining <= 0) return null
+  
+  const secondsRemaining = Math.round(remaining / speed)
+  return formatearTiempoRestante(secondsRemaining)
+}
+
+function formatearNumero(num: number): string {
+  return num.toLocaleString('es-CL')
+}
+
+function mostrarToastCompletado(importacion: ImportacionEnProgreso): void {
+  const fallidos = importacion.registrosFallidos
+  const mensaje = fallidos > 0
+    ? `Se importaron ${formatearNumero(importacion.registrosExitosos)} registros exitosamente (${fallidos} fallidos).`
+    : `Se importaron ${formatearNumero(importacion.registrosExitosos)} registros exitosamente.`
+  
+  toast.success('Importacion completada', {
+    description: mensaje,
+    duration: 8000,
+  })
+}
+
+function mostrarToastFallido(error?: string): void {
+  toast.error('Importacion fallida', {
+    description: error || 'Ocurrio un error durante la importacion.',
+    duration: 10000,
+  })
+}
+
+// =============================================================================
+// STORE
+// =============================================================================
 
 export const useImportacionStore = create<ImportacionStore>((set, get) => ({
   importacionActiva: null,
@@ -58,22 +164,8 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
 
   iniciarImportacion: (id, nombreArchivo, totalEstimado = 0) => {
     set({
-      importacionActiva: {
-        id,
-        nombreArchivo,
-        estado: 'pendiente',
-        progreso: 0,
-        totalRegistros: 0,
-        registrosExitosos: 0,
-        registrosFallidos: 0,
-        totalEstimado,
-        velocidad: 0,
-        tiempoRestante: null,
-        iniciadoEn: Date.now(),
-      },
+      importacionActiva: crearImportacionInicial(id, nombreArchivo, totalEstimado),
     })
-    
-    // Iniciar polling automáticamente
     get().iniciarPolling()
   },
 
@@ -86,30 +178,17 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
   },
 
   finalizarImportacion: (estado, error) => {
-    const { importacionActiva, detenerPolling } = get()
+    const { importacionActiva, detenerPolling, limpiarImportacion } = get()
     
     detenerPolling()
     
     if (!importacionActiva) return
 
-    const importacionId = importacionActiva.id
-
-    // Mostrar toast según resultado
     if (estado === 'completado') {
-      toast.success('Importación completada', {
-        description: `Se importaron ${importacionActiva.registrosExitosos.toLocaleString('es-CL')} registros exitosamente${importacionActiva.registrosFallidos > 0 ? ` (${importacionActiva.registrosFallidos} fallidos)` : ''}.`,
-        duration: 8000,
-      })
-      
-      // Ejecutar callback para invalidar queries (si está registrado)
-      if (onImportacionCompleteCallback) {
-        onImportacionCompleteCallback(importacionId)
-      }
+      mostrarToastCompletado(importacionActiva)
+      onImportacionCompleteCallback?.(importacionActiva.id)
     } else {
-      toast.error('Importación fallida', {
-        description: error || 'Ocurrió un error durante la importación.',
-        duration: 10000,
-      })
+      mostrarToastFallido(error)
     }
 
     set((state) => ({
@@ -118,11 +197,8 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
         : null,
     }))
 
-    // Limpiar después de 5 segundos si completó
     if (estado === 'completado') {
-      setTimeout(() => {
-        get().limpiarImportacion()
-      }, 5000)
+      setTimeout(limpiarImportacion, CLEANUP_DELAY_MS)
     }
   },
 
@@ -148,61 +224,12 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
       }
 
       try {
-        const progreso = await importacionesService.getProgreso(state.importacionActiva.id)
-        
-        // Calcular velocidad
-        const currentTime = Date.now()
-        const timeDiff = (currentTime - lastTime) / 1000
-        const processedDiff = (progreso.total_registros || 0) - lastProcessed
-        const speed = timeDiff > 0 ? Math.round(processedDiff / timeDiff) : 0
-        
-        // Calcular tiempo restante
-        const estimated = progreso.metadata?.total_estimado || state.importacionActiva.totalEstimado
-        const remaining = estimated - (progreso.total_registros || 0)
-        let tiempoRestante: string | null = null
-        
-        if (speed > 0 && remaining > 0) {
-          const secondsRemaining = Math.round(remaining / speed)
-          if (secondsRemaining > 3600) {
-            const hours = Math.floor(secondsRemaining / 3600)
-            const minutes = Math.floor((secondsRemaining % 3600) / 60)
-            tiempoRestante = `${hours}h ${minutes}m`
-          } else if (secondsRemaining > 60) {
-            const minutes = Math.floor(secondsRemaining / 60)
-            const seconds = secondsRemaining % 60
-            tiempoRestante = `${minutes}m ${seconds}s`
-          } else {
-            tiempoRestante = `${secondsRemaining}s`
-          }
-        }
-
-        lastProcessed = progreso.total_registros || 0
-        lastTime = currentTime
-
-        // Actualizar estado
-        state.actualizarProgreso({
-          estado: progreso.estado,
-          progreso: progreso.progreso_porcentaje,
-          totalRegistros: progreso.total_registros || 0,
-          registrosExitosos: progreso.registros_exitosos || 0,
-          registrosFallidos: progreso.registros_fallidos || 0,
-          totalEstimado: estimated,
-          velocidad: speed > 0 ? speed : state.importacionActiva.velocidad,
-          tiempoRestante,
-        })
-
-        // Verificar si terminó
-        if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
-          state.finalizarImportacion(
-            progreso.estado,
-            progreso.metadata?.error
-          )
-        }
+        await procesarPolling(state)
       } catch (error) {
-        console.error('Error en polling de importación:', error)
+        console.error('Error en polling de importacion:', error)
         // No detener el polling por un error temporal
       }
-    }, 2000) // Polling cada 2 segundos
+    }, POLLING_INTERVAL_MS)
   },
 
   detenerPolling: () => {
@@ -213,3 +240,48 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
     set({ isPolling: false })
   },
 }))
+
+// =============================================================================
+// POLLING LOGIC (extraída para claridad)
+// =============================================================================
+
+async function procesarPolling(state: ImportacionStore): Promise<void> {
+  const { importacionActiva } = state
+  if (!importacionActiva) return
+
+  const progreso = await importacionesService.getProgreso(importacionActiva.id)
+  
+  const currentTime = Date.now()
+  const timeDiff = currentTime - lastTime
+  const processedDiff = (progreso.total_registros || 0) - lastProcessed
+  const speed = calcularVelocidad(processedDiff, timeDiff)
+  
+  const estimated = progreso.metadata?.total_estimado || importacionActiva.totalEstimado
+  const tiempoRestante = calcularTiempoRestante(speed, estimated, progreso.total_registros || 0)
+
+  lastProcessed = progreso.total_registros || 0
+  lastTime = currentTime
+
+  state.actualizarProgreso({
+    estado: progreso.estado,
+    progreso: progreso.progreso_porcentaje,
+    totalRegistros: progreso.total_registros || 0,
+    registrosExitosos: progreso.registros_exitosos || 0,
+    registrosFallidos: progreso.registros_fallidos || 0,
+    totalEstimado: estimated,
+    velocidad: speed > 0 ? speed : importacionActiva.velocidad,
+    tiempoRestante,
+  })
+
+  if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
+    state.finalizarImportacion(progreso.estado, progreso.metadata?.error)
+  }
+}
+
+// =============================================================================
+// SELECTORES
+// =============================================================================
+
+export const selectImportacionActiva = (state: ImportacionStore) => state.importacionActiva
+export const selectIsPolling = (state: ImportacionStore) => state.isPolling
+export const selectHayImportacionActiva = (state: ImportacionStore) => state.importacionActiva !== null

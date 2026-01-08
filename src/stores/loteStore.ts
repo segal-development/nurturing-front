@@ -17,9 +17,16 @@ import { lotesService } from '@/api/lotes.service'
 import { toast } from 'sonner'
 import type { LoteProgreso, LoteProgresoImportacion } from '@/types/lote'
 
-// ============================================================================
-// Types
-// ============================================================================
+// =============================================================================
+// CONFIGURACION
+// =============================================================================
+
+const POLLING_INTERVAL_MS = 3000
+const CLEANUP_DELAY_MS = 5000
+
+// =============================================================================
+// TIPOS
+// =============================================================================
 
 export interface LoteEnProgreso {
   id: number
@@ -44,7 +51,7 @@ export interface LoteEnProgreso {
   importaciones: LoteProgresoImportacion[]
   
   // Metadata
-  iniciadoEn: number // timestamp
+  iniciadoEn: number
   ultimaActualizacion: number
 }
 
@@ -64,39 +71,63 @@ interface LoteStore {
   detenerPolling: () => void
 }
 
-// ============================================================================
-// Callbacks globales
-// ============================================================================
+// =============================================================================
+// CALLBACKS GLOBALES
+// =============================================================================
 
-// Callback que se ejecuta cuando un lote termina completamente
 let onLoteCompleteCallback: ((loteId: number) => void) | null = null
+let onImportacionCompleteCallback: ((importacionId: number, loteId: number) => void) | null = null
 
 export const setOnLoteComplete = (callback: ((loteId: number) => void) | null) => {
   onLoteCompleteCallback = callback
 }
 
-// Callback que se ejecuta cuando una importación individual termina
-let onImportacionCompleteCallback: ((importacionId: number, loteId: number) => void) | null = null
-
 export const setOnImportacionComplete = (callback: ((importacionId: number, loteId: number) => void) | null) => {
   onImportacionCompleteCallback = callback
 }
 
-// ============================================================================
-// Variables de polling (fuera del store para evitar re-renders)
-// ============================================================================
+// =============================================================================
+// VARIABLES DE POLLING (fuera del store para evitar re-renders)
+// =============================================================================
 
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 let importacionesCompletadasPrevias = new Set<number>()
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
 
-/**
- * Transforma la respuesta del API al formato del store
- */
-function transformLoteProgreso(data: LoteProgreso, iniciadoEn: number): LoteEnProgreso {
+function formatearNumero(num: number): string {
+  return num.toLocaleString('es-CL')
+}
+
+function crearLoteInicial(loteId: number, nombre: string): LoteEnProgreso {
+  const ahora = Date.now()
+  return {
+    id: loteId,
+    nombre,
+    estado: 'abierto',
+    
+    totalArchivos: 0,
+    archivosCompletados: 0,
+    archivosProcesando: 0,
+    archivosPendientes: 0,
+    archivosFallidos: 0,
+    
+    totalRegistros: 0,
+    registrosExitosos: 0,
+    registrosFallidos: 0,
+    totalEstimado: 0,
+    progresoPorcentaje: 0,
+    
+    importaciones: [],
+    
+    iniciadoEn: ahora,
+    ultimaActualizacion: ahora,
+  }
+}
+
+function transformarLoteProgreso(data: LoteProgreso, iniciadoEn: number): LoteEnProgreso {
   return {
     id: data.id,
     nombre: data.nombre,
@@ -121,52 +152,81 @@ function transformLoteProgreso(data: LoteProgreso, iniciadoEn: number): LoteEnPr
   }
 }
 
-/**
- * Formatea número con separador de miles
- */
-function formatNumber(num: number): string {
-  return num.toLocaleString('es-CL')
+// =============================================================================
+// NOTIFICACIONES
+// =============================================================================
+
+function notificarImportacionCompletada(
+  importacion: LoteProgresoImportacion,
+  loteId: number
+): void {
+  onImportacionCompleteCallback?.(importacion.id, loteId)
+  
+  toast.success('Archivo procesado', {
+    description: `"${importacion.nombre_archivo}" - ${formatearNumero(importacion.registros_exitosos)} registros importados`,
+    duration: 5000,
+  })
 }
 
-// ============================================================================
-// Store
-// ============================================================================
+function notificarLoteCompletado(lote: LoteEnProgreso): void {
+  toast.success('Carga completada', {
+    description: `"${lote.nombre}" - ${formatearNumero(lote.registrosExitosos)} registros importados en ${lote.totalArchivos} archivo(s)`,
+    duration: 8000,
+  })
+  
+  onLoteCompleteCallback?.(lote.id)
+}
+
+function notificarLoteFallido(lote: LoteEnProgreso): void {
+  toast.error('Carga con errores', {
+    description: `"${lote.nombre}" - ${lote.archivosFallidos} archivo(s) fallaron. Revisa los detalles.`,
+    duration: 10000,
+  })
+}
+
+// =============================================================================
+// DETECCION DE IMPORTACIONES COMPLETADAS
+// =============================================================================
+
+function detectarImportacionesCompletadas(
+  progreso: LoteProgreso
+): Set<number> {
+  return new Set(
+    progreso.importaciones
+      .filter(i => i.estado === 'completado')
+      .map(i => i.id)
+  )
+}
+
+function procesarImportacionesRecienCompletadas(
+  progreso: LoteProgreso,
+  completadasAhora: Set<number>
+): void {
+  completadasAhora.forEach(importacionId => {
+    if (importacionesCompletadasPrevias.has(importacionId)) return
+    
+    const importacion = progreso.importaciones.find(i => i.id === importacionId)
+    if (importacion) {
+      notificarImportacionCompletada(importacion, progreso.id)
+    }
+  })
+  
+  importacionesCompletadasPrevias = completadasAhora
+}
+
+// =============================================================================
+// STORE
+// =============================================================================
 
 export const useLoteStore = create<LoteStore>((set, get) => ({
   loteActivo: null,
   isPolling: false,
 
   iniciarTrackingLote: (loteId, nombre) => {
-    // Detener cualquier polling anterior
     get().detenerPolling()
     importacionesCompletadasPrevias.clear()
     
-    set({
-      loteActivo: {
-        id: loteId,
-        nombre,
-        estado: 'abierto',
-        
-        totalArchivos: 0,
-        archivosCompletados: 0,
-        archivosProcesando: 0,
-        archivosPendientes: 0,
-        archivosFallidos: 0,
-        
-        totalRegistros: 0,
-        registrosExitosos: 0,
-        registrosFallidos: 0,
-        totalEstimado: 0,
-        progresoPorcentaje: 0,
-        
-        importaciones: [],
-        
-        iniciadoEn: Date.now(),
-        ultimaActualizacion: Date.now(),
-      },
-    })
-    
-    // Iniciar polling automáticamente
+    set({ loteActivo: crearLoteInicial(loteId, nombre) })
     get().iniciarPolling()
   },
 
@@ -174,71 +234,28 @@ export const useLoteStore = create<LoteStore>((set, get) => ({
     const { loteActivo } = get()
     if (!loteActivo) return
     
-    // Detectar importaciones que acaban de completarse
-    const importacionesCompletadasAhora = new Set(
-      progreso.importaciones
-        .filter(i => i.estado === 'completado')
-        .map(i => i.id)
-    )
-    
-    // Notificar por cada importación que terminó
-    importacionesCompletadasAhora.forEach(importacionId => {
-      if (!importacionesCompletadasPrevias.has(importacionId)) {
-        const importacion = progreso.importaciones.find(i => i.id === importacionId)
-        if (importacion && onImportacionCompleteCallback) {
-          onImportacionCompleteCallback(importacionId, progreso.id)
-        }
-        
-        // Toast individual por archivo completado
-        if (importacion) {
-          toast.success(`Archivo procesado`, {
-            description: `"${importacion.nombre_archivo}" - ${formatNumber(importacion.registros_exitosos)} registros importados`,
-            duration: 5000,
-          })
-        }
-      }
-    })
-    
-    importacionesCompletadasPrevias = importacionesCompletadasAhora
+    const completadasAhora = detectarImportacionesCompletadas(progreso)
+    procesarImportacionesRecienCompletadas(progreso, completadasAhora)
     
     set({
-      loteActivo: transformLoteProgreso(progreso, loteActivo.iniciadoEn),
+      loteActivo: transformarLoteProgreso(progreso, loteActivo.iniciadoEn),
     })
   },
 
   finalizarLote: () => {
-    const { loteActivo, detenerPolling } = get()
+    const { loteActivo, detenerPolling, limpiarLote } = get()
     
     detenerPolling()
     
     if (!loteActivo) return
     
-    const loteId = loteActivo.id
-    const estado = loteActivo.estado
-    
-    // Mostrar toast según resultado
-    if (estado === 'completado') {
-      toast.success('Carga completada', {
-        description: `"${loteActivo.nombre}" - ${formatNumber(loteActivo.registrosExitosos)} registros importados en ${loteActivo.totalArchivos} archivo(s)`,
-        duration: 8000,
-      })
-      
-      // Ejecutar callback para invalidar queries
-      if (onLoteCompleteCallback) {
-        onLoteCompleteCallback(loteId)
-      }
-    } else if (estado === 'fallido') {
-      const fallidos = loteActivo.archivosFallidos
-      toast.error('Carga con errores', {
-        description: `"${loteActivo.nombre}" - ${fallidos} archivo(s) fallaron. Revisa los detalles.`,
-        duration: 10000,
-      })
+    if (loteActivo.estado === 'completado') {
+      notificarLoteCompletado(loteActivo)
+    } else if (loteActivo.estado === 'fallido') {
+      notificarLoteFallido(loteActivo)
     }
     
-    // Limpiar después de 5 segundos
-    setTimeout(() => {
-      get().limpiarLote()
-    }, 5000)
+    setTimeout(limpiarLote, CLEANUP_DELAY_MS)
   },
 
   limpiarLote: () => {
@@ -262,20 +279,12 @@ export const useLoteStore = create<LoteStore>((set, get) => ({
       }
 
       try {
-        const response = await lotesService.getProgreso(state.loteActivo.id)
-        const progreso = response.data
-        
-        state.actualizarProgreso(progreso)
-        
-        // Verificar si el lote terminó
-        if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
-          state.finalizarLote()
-        }
+        await procesarPolling(state)
       } catch (error) {
         console.error('Error en polling de lote:', error)
         // No detener el polling por un error temporal
       }
-    }, 3000) // Polling cada 3 segundos
+    }, POLLING_INTERVAL_MS)
   },
 
   detenerPolling: () => {
@@ -287,9 +296,27 @@ export const useLoteStore = create<LoteStore>((set, get) => ({
   },
 }))
 
-// ============================================================================
-// Selectores útiles (para evitar re-renders innecesarios)
-// ============================================================================
+// =============================================================================
+// POLLING LOGIC (extraida para claridad)
+// =============================================================================
+
+async function procesarPolling(state: LoteStore): Promise<void> {
+  const { loteActivo } = state
+  if (!loteActivo) return
+
+  const response = await lotesService.getProgreso(loteActivo.id)
+  const progreso = response.data
+  
+  state.actualizarProgreso(progreso)
+  
+  if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
+    state.finalizarLote()
+  }
+}
+
+// =============================================================================
+// SELECTORES
+// =============================================================================
 
 export const selectLoteActivo = (state: LoteStore) => state.loteActivo
 export const selectIsPolling = (state: LoteStore) => state.isPolling
