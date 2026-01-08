@@ -29,13 +29,15 @@ export type {
 // ============================================================================
 export type {
   EstadoProspecto,
-  PaginatedResponse,
   Prospecto,
   ProspectoEstadisticas,
   ProspectoExcelRow,
   ProspectoFormData,
   TipoProspectoBackend,
 } from './prospecto'
+
+// Re-export PaginatedResponse from importacion (canonical source)
+export type { PaginatedResponse } from './importacion'
 
 // ============================================================================
 // Flujo Types
@@ -157,7 +159,56 @@ export type { OfertaFormData, OfertaInfocom } from './oferta'
 // ============================================================================
 // Importacion Types
 // ============================================================================
-export type { Importacion, ImportarResponse } from './importacion'
+export type {
+  ImportacionEstado,
+  ImportacionModo,
+  UserReference,
+  ImportacionRowError,
+  ImportacionMetadata,
+  ImportacionContadores,
+  Importacion,
+  ImportacionProgreso,
+  ImportacionResumen,
+  ImportarResponseLote,
+  ImportarResponse,
+  ProgresoResponse,
+  PaginationMeta,
+  ImportacionesPaginatedResponse,
+  ImportacionFiltros,
+} from './importacion'
+
+export {
+  isImportacionTerminada,
+  isImportacionActiva,
+} from './importacion'
+
+// ============================================================================
+// Lote Types
+// ============================================================================
+export type {
+  LoteEstado,
+  LoteImportacion,
+  LoteProgresoImportacion,
+  LoteContadoresArchivos,
+  LoteContadoresRegistros,
+  Lote,
+  LoteProgreso,
+  CrearLoteResponse,
+  CerrarLoteResponse,
+  LoteProgresoResponse,
+  ListarLotesResponse,
+  LoteOpcionFiltrado,
+  LoteActivoArchivo,
+  LoteActivo,
+} from './lote'
+
+export {
+  isLoteAbierto,
+  isLoteTerminado,
+  loteTieneTrabajoPendiente,
+  calcularProgresoLote,
+  crearLoteActivoDesdeRespuesta,
+} from './lote'
 
 // ============================================================================
 // Configuracion Types

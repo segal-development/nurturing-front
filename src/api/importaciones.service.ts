@@ -1,147 +1,239 @@
 /**
- * Servicio de Importaciones para el backend Laravel 12
+ * Servicio de Importaciones
+ * 
+ * @description Maneja todas las operaciones relacionadas con importaciones
+ * de prospectos desde archivos Excel.
  */
 
 import apiClient from './client'
-import type { Importacion, ImportarResponse, ImportacionProgreso, PaginatedResponse } from '@/types/importacion'
+import type {
+  Importacion,
+  ImportarResponse,
+  ImportacionProgreso,
+  ImportacionFiltros,
+  ImportacionesPaginatedResponse,
+  ImportacionEstado,
+} from '@/types/importacion'
+import { isImportacionTerminada } from '@/types/importacion'
+
+// =============================================================================
+// TIPOS INTERNOS
+// =============================================================================
+
+/** Opciones para importar un archivo */
+interface ImportarOptions {
+  archivo: File
+  origen: string
+  loteId?: number
+}
+
+/** Opciones para polling de progreso */
+interface PollingOptions {
+  intervalMs?: number
+  maxAttempts?: number
+  onProgress?: (progreso: ImportacionProgreso) => void
+}
+
+/** Respuesta envuelta del API */
+interface ApiResponse<T> {
+  data: T
+}
+
+// =============================================================================
+// CONSTANTES
+// =============================================================================
+
+const API_ENDPOINTS = {
+  BASE: '/importaciones',
+  BY_ID: (id: number) => `/importaciones/${id}`,
+  PROGRESO: (id: number) => `/importaciones/${id}/progreso`,
+  RETRY: (id: number) => `/importaciones/${id}/retry`,
+} as const
+
+const POLLING_DEFAULTS = {
+  INTERVAL_MS: 3000,
+  MAX_ATTEMPTS: 200, // ~10 minutos con 3s de intervalo
+} as const
+
+// =============================================================================
+// FUNCIONES AUXILIARES
+// =============================================================================
+
+/**
+ * Parsea la respuesta de importación que puede venir en diferentes estructuras.
+ */
+function parseImportarResponse(responseData: unknown): ImportarResponse {
+  const data = responseData as Record<string, unknown>
+
+  // La respuesta siempre debería tener estos campos
+  if (data && 'mensaje' in data && 'data' in data) {
+    return data as ImportarResponse
+  }
+
+  // Fallback: asumir que es la estructura correcta
+  console.warn('[importacionesService] Estructura de respuesta no estándar:', data)
+  return data as ImportarResponse
+}
+
+/**
+ * Crea el FormData para subir un archivo.
+ */
+function createUploadFormData({ archivo, origen, loteId }: ImportarOptions): FormData {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  formData.append('origen', origen)
+  
+  if (loteId !== undefined) {
+    formData.append('lote_id', loteId.toString())
+  }
+
+  return formData
+}
+
+// =============================================================================
+// SERVICIO
+// =============================================================================
 
 export const importacionesService = {
+  // ===========================================================================
+  // CRUD BÁSICO
+  // ===========================================================================
+
   /**
-   * Obtener lista paginada de importaciones
+   * Obtiene lista paginada de importaciones con filtros opcionales.
    */
-  async getAll(params?: {
-    origen?: string
-    estado?: 'procesando' | 'completado' | 'fallido'
-    fecha_desde?: string
-    fecha_hasta?: string
-    page?: number
-  }): Promise<PaginatedResponse<Importacion>> {
-    const { data } = await apiClient.get<PaginatedResponse<Importacion>>('/importaciones', {
-      params,
-    })
+  async getAll(filtros?: ImportacionFiltros): Promise<ImportacionesPaginatedResponse> {
+    const { data } = await apiClient.get<ImportacionesPaginatedResponse>(
+      API_ENDPOINTS.BASE,
+      { params: filtros }
+    )
     return data
   },
 
   /**
-   * Obtener una importación específica
+   * Obtiene una importación por ID.
    */
   async getById(id: number): Promise<Importacion> {
-    const { data } = await apiClient.get<{ data: Importacion }>(`/importaciones/${id}`)
+    const { data } = await apiClient.get<ApiResponse<Importacion>>(
+      API_ENDPOINTS.BY_ID(id)
+    )
     return data.data
   },
 
   /**
-   * Importar archivo Excel
-   * @param archivo - Archivo Excel a importar
-   * @param origen - Nombre del origen/lote
-   * @param loteId - ID del lote existente (opcional). Si no se envía, crea un nuevo lote.
-   */
-  async importar(archivo: File, origen: string, loteId?: number): Promise<ImportarResponse> {
-    const formData = new FormData()
-    formData.append('archivo', archivo)
-    formData.append('origen', origen)
-    
-    // Si viene lote_id, agregarlo al lote existente
-    if (loteId) {
-      formData.append('lote_id', loteId.toString())
-    }
-
-    try {
-      const response = await apiClient.post<any>('/importaciones', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-
-      console.log('📥 importacionesService.importar() - Response completo:', response.data)
-
-      const { data } = response
-
-      // El backend puede devolver directamente ImportarResponse o envuelto en { data: ImportarResponse }
-      // Case 1: { data: { mensaje, data: Importacion, resumen } }
-      if (data && 'data' in data && data.data && 'resumen' in data) {
-        console.log('✅ Estructura Type 1 detectada (envuelto en data)')
-        return data as ImportarResponse
-      }
-
-      // Case 2: { mensaje, data: Importacion, resumen }
-      if (data && 'resumen' in data && 'mensaje' in data) {
-        console.log('✅ Estructura Type 2 detectada (directo ImportarResponse)')
-        return data as ImportarResponse
-      }
-
-      // Case 3: Respuesta con lote (nuevo formato)
-      if (data && 'lote' in data) {
-        console.log('✅ Estructura Type 3 detectada (con lote)')
-        return data as ImportarResponse
-      }
-
-      // Fallback
-      console.warn('⚠️ Estructura no reconocida, intentando usar como fallback')
-      return data as ImportarResponse
-    } catch (error: any) {
-      console.error('❌ importacionesService.importar() - Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      })
-      throw error
-    }
-  },
-
-  /**
-   * Eliminar una importación
+   * Elimina una importación.
+   * 
+   * @throws Error si la importación tiene prospectos asociados
    */
   async delete(id: number): Promise<void> {
-    await apiClient.delete(`/importaciones/${id}`)
+    await apiClient.delete(API_ENDPOINTS.BY_ID(id))
   },
 
+  // ===========================================================================
+  // IMPORTACIÓN DE ARCHIVOS
+  // ===========================================================================
+
   /**
-   * Obtener progreso de una importación en background
+   * Importa un archivo Excel.
+   * 
+   * @param archivo - Archivo Excel (.xlsx, .xls) a importar
+   * @param origen - Nombre descriptivo de la carga
+   * @param loteId - ID del lote existente (opcional, si no se envía crea uno nuevo)
+   * @returns Respuesta con la importación creada y el lote
+   */
+  async importar(archivo: File, origen: string, loteId?: number): Promise<ImportarResponse> {
+    const formData = createUploadFormData({ archivo, origen, loteId })
+
+    const response = await apiClient.post<unknown>(
+      API_ENDPOINTS.BASE,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    )
+
+    return parseImportarResponse(response.data)
+  },
+
+  // ===========================================================================
+  // PROGRESO Y POLLING
+  // ===========================================================================
+
+  /**
+   * Obtiene el progreso actual de una importación.
    */
   async getProgreso(id: number): Promise<ImportacionProgreso> {
-    const { data } = await apiClient.get<{ data: ImportacionProgreso }>(`/importaciones/${id}/progreso`)
+    const { data } = await apiClient.get<ApiResponse<ImportacionProgreso>>(
+      API_ENDPOINTS.PROGRESO(id)
+    )
     return data.data
   },
 
   /**
-   * Polling de progreso hasta que termine
-   * Retorna el estado final de la importación
+   * Espera hasta que una importación termine (completado o fallido).
+   * 
+   * @param id - ID de la importación
+   * @param options - Opciones de polling
+   * @returns Estado final de la importación
+   * @throws Error si se excede el tiempo máximo
    */
   async waitForCompletion(
-    id: number, 
-    onProgress?: (progreso: ImportacionProgreso) => void,
-    intervalMs: number = 3000,
-    maxAttempts: number = 200 // ~10 minutos con 3s de intervalo
+    id: number,
+    options: PollingOptions = {}
   ): Promise<ImportacionProgreso> {
-    let attempts = 0;
-    
-    return new Promise((resolve, reject) => {
-      const checkProgress = async () => {
-        try {
-          attempts++;
-          const progreso = await this.getProgreso(id);
-          
-          if (onProgress) {
-            onProgress(progreso);
-          }
+    const {
+      intervalMs = POLLING_DEFAULTS.INTERVAL_MS,
+      maxAttempts = POLLING_DEFAULTS.MAX_ATTEMPTS,
+      onProgress,
+    } = options
 
-          if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
-            resolve(progreso);
-            return;
+    let attempts = 0
+
+    return new Promise((resolve, reject) => {
+      const poll = async () => {
+        try {
+          attempts++
+          const progreso = await this.getProgreso(id)
+
+          onProgress?.(progreso)
+
+          if (isImportacionTerminada(progreso.estado)) {
+            resolve(progreso)
+            return
           }
 
           if (attempts >= maxAttempts) {
-            reject(new Error('Timeout esperando que la importación termine'));
-            return;
+            reject(new Error(`Timeout: la importación ${id} no terminó después de ${maxAttempts} intentos`))
+            return
           }
 
-          setTimeout(checkProgress, intervalMs);
+          setTimeout(poll, intervalMs)
         } catch (error) {
-          reject(error);
+          reject(error)
         }
-      };
+      }
 
-      checkProgress();
-    });
+      poll()
+    })
+  },
+
+  // ===========================================================================
+  // OPERACIONES DE RECUPERACIÓN
+  // ===========================================================================
+
+  /**
+   * Reintenta una importación fallida.
+   */
+  async retry(id: number): Promise<{ mensaje: string; data: { importacion_id: number; checkpoint: number; estado: ImportacionEstado } }> {
+    const { data } = await apiClient.post<{ mensaje: string; data: { importacion_id: number; checkpoint: number; estado: ImportacionEstado } }>(
+      API_ENDPOINTS.RETRY(id)
+    )
+    return data
   },
 }
+
+// =============================================================================
+// EXPORT TYPE PARA USO EXTERNO
+// =============================================================================
+
+export type ImportacionesService = typeof importacionesService
