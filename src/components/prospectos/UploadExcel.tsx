@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { importacionesService } from '@/api/importaciones.service';
+import { lotesService } from '@/api/lotes.service';
 import { useLoteStore } from '@/stores/loteStore';
 import { toast } from 'sonner';
 import {
@@ -464,13 +465,34 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   // ============================================================
   // FINALIZAR LOTE Y CERRAR
   // ============================================================
-  const handleFinalizarLote = () => {
-    toast.success('Lote completado', {
-      description: `Carga "${loteActivo?.nombre}" con ${loteActivo?.totalArchivos} archivo(s) finalizada.`,
-      duration: 5000,
-    });
-    handleReset();
-    onSuccess?.();
+  const handleFinalizarLote = async () => {
+    if (!loteActivo?.id) {
+      handleReset();
+      onSuccess?.();
+      return;
+    }
+
+    try {
+      // Llamar al endpoint para cerrar el lote
+      const response = await lotesService.cerrar(loteActivo.id);
+      
+      toast.success('Lote completado', {
+        description: response.mensaje || `Carga "${loteActivo.nombre}" con ${loteActivo.totalArchivos} archivo(s) finalizada.`,
+        duration: 5000,
+      });
+      
+      handleReset();
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error al cerrar lote:', error);
+      
+      // Mostrar error pero permitir cerrar igual (el lote queda abierto para agregar más)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error('Error al finalizar lote', {
+        description: errorMessage,
+        duration: 8000,
+      });
+    }
   };
 
   // ==========================================================================
