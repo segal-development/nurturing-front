@@ -694,6 +694,13 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
         </div>
       )}
 
+      {/* DEBUG: Indicador de estado */}
+      {uploadSuccess && (
+        <div className="bg-purple-100 border border-purple-500 p-2 text-purple-800 text-sm rounded">
+          DEBUG: uploadSuccess=true, loteActivo={loteActivo ? 'SÍ' : 'NO'}, importacionTerminada={importacionTerminada ? 'SÍ' : 'NO'}
+        </div>
+      )}
+
       {/* Mensaje de éxito con opción de agregar más archivos */}
       {uploadSuccess && loteActivo && (
         <div className="space-y-4">
