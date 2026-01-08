@@ -473,6 +473,17 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     onSuccess?.();
   };
 
+  // Debug log para renderizado
+  console.log('🎨 RENDER - Estados:', {
+    uploadSuccess,
+    loteActivo: loteActivo ? { id: loteActivo.id, nombre: loteActivo.nombre } : null,
+    importacionTerminada,
+    progresoActual,
+    fileSelected,
+    isUploading,
+    previewLength: preview.length,
+  });
+
   return (
     <div className="space-y-6">
       {/* Instrucciones */}
