@@ -133,19 +133,19 @@ function transformarLoteProgreso(data: LoteProgreso, iniciadoEn: number): LoteEn
     nombre: data.nombre,
     estado: data.estado,
     
-    totalArchivos: data.total_archivos,
-    archivosCompletados: data.archivos_completados,
-    archivosProcesando: data.archivos_procesando,
-    archivosPendientes: data.archivos_pendientes,
-    archivosFallidos: data.archivos_fallidos,
+    totalArchivos: data.total_archivos ?? 0,
+    archivosCompletados: data.archivos_completados ?? 0,
+    archivosProcesando: data.archivos_procesando ?? 0,
+    archivosPendientes: data.archivos_pendientes ?? 0,
+    archivosFallidos: data.archivos_fallidos ?? 0,
     
-    totalRegistros: data.total_registros,
-    registrosExitosos: data.registros_exitosos,
-    registrosFallidos: data.registros_fallidos,
-    totalEstimado: data.total_estimado,
-    progresoPorcentaje: data.progreso_porcentaje,
+    totalRegistros: data.total_registros ?? 0,
+    registrosExitosos: data.registros_exitosos ?? 0,
+    registrosFallidos: data.registros_fallidos ?? 0,
+    totalEstimado: data.total_estimado ?? 0,
+    progresoPorcentaje: data.progreso_porcentaje ?? 0,
     
-    importaciones: data.importaciones,
+    importaciones: data.importaciones ?? [],
     
     iniciadoEn,
     ultimaActualizacion: Date.now(),
@@ -191,6 +191,10 @@ function notificarLoteFallido(lote: LoteEnProgreso): void {
 function detectarImportacionesCompletadas(
   progreso: LoteProgreso
 ): Set<number> {
+  if (!progreso.importaciones) {
+    return new Set()
+  }
+  
   return new Set(
     progreso.importaciones
       .filter(i => i.estado === 'completado')
@@ -202,6 +206,8 @@ function procesarImportacionesRecienCompletadas(
   progreso: LoteProgreso,
   completadasAhora: Set<number>
 ): void {
+  if (!progreso.importaciones) return
+  
   completadasAhora.forEach(importacionId => {
     if (importacionesCompletadasPrevias.has(importacionId)) return
     
