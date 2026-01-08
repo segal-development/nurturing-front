@@ -1,15 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader, Plus, FolderOpen } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader, Plus, FolderOpen, Clock, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { importacionesService } from '@/api/importaciones.service';
 import { useLoteStore } from '@/stores/loteStore';
 import { toast } from 'sonner';
+import type { ImportacionProgreso } from '@/types/importacion';
 import {
   Table,
   TableBody,
@@ -70,6 +72,18 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   // Estado para manejo de lotes (multi-archivo)
   const [loteActivo, setLoteActivo] = useState<LoteActivo | null>(null);
   const [modoAgregarArchivo, setModoAgregarArchivo] = useState(false);
+
+  // Estado para tracking de importación individual (CLAVE para flujo secuencial)
+  const [importacionEnProceso, setImportacionEnProceso] = useState<{
+    id: number;
+    nombreArchivo: string;
+    estado: 'pendiente' | 'procesando' | 'completado' | 'fallido';
+    progresoPorcentaje: number;
+    registrosExitosos: number;
+    registrosFallidos: number;
+    totalEstimado: number;
+    error?: string;
+  } | null>(null);
 
   // Store global de lotes
   const { iniciarTrackingLote, loteActivo: loteEnStore } = useLoteStore();
@@ -241,6 +255,24 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   };
 
   // ============================================================
+  // CALLBACK PARA ACTUALIZAR PROGRESO DE IMPORTACIÓN
+  // ============================================================
+  const handleProgresoUpdate = useCallback((progreso: ImportacionProgreso) => {
+    setImportacionEnProceso(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        estado: progreso.estado,
+        progresoPorcentaje: progreso.progreso_porcentaje,
+        registrosExitosos: progreso.registros_exitosos ?? 0,
+        registrosFallidos: progreso.registros_fallidos ?? 0,
+        totalEstimado: progreso.metadata?.total_estimado ?? prev.totalEstimado,
+        error: progreso.metadata?.error,
+      };
+    });
+  }, []);
+
+  // ============================================================
   // MANEJAR UPLOAD A BACKEND
   // ============================================================
   const handleUpload = async () => {
@@ -287,31 +319,103 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
           iniciarTrackingLote(response.lote.id, response.lote.nombre);
         }
 
-        // Mostrar toast informativo
-        toast.info('Archivo agregado a la carga', {
-          description: `"${file.name}" se está procesando en background. Puedes agregar más archivos.`,
+        // =============================================================
+        // FLUJO SECUENCIAL: Esperar a que este archivo termine
+        // =============================================================
+        const importacionId = response.data.id;
+        
+        // Inicializar estado de importación en proceso
+        setImportacionEnProceso({
+          id: importacionId,
+          nombreArchivo: file.name,
+          estado: 'pendiente',
+          progresoPorcentaje: 0,
+          registrosExitosos: 0,
+          registrosFallidos: 0,
+          totalEstimado: preview.length,
+        });
+
+        setIsUploading(false); // Ya no está "subiendo", ahora está "procesando"
+
+        toast.info('Archivo en cola de procesamiento', {
+          description: `"${file.name}" se está procesando. Esperá a que termine para agregar otro.`,
           duration: 5000,
         });
 
-        setIsUploading(false);
-        setUploadSuccess(true);
-        // NO cerrar el modal automáticamente - permitir agregar más archivos
+        // Esperar a que termine el procesamiento
+        try {
+          const resultado = await importacionesService.waitForCompletion(
+            importacionId,
+            handleProgresoUpdate,
+            3000, // Polling cada 3 segundos
+            400   // Max 20 minutos (400 * 3s)
+          );
+
+          // Actualizar estado final
+          setImportacionEnProceso(prev => prev ? {
+            ...prev,
+            estado: resultado.estado,
+            progresoPorcentaje: 100,
+            registrosExitosos: resultado.registros_exitosos ?? 0,
+            registrosFallidos: resultado.registros_fallidos ?? 0,
+            error: resultado.metadata?.error,
+          } : null);
+
+          if (resultado.estado === 'completado') {
+            toast.success('Archivo procesado', {
+              description: `"${file.name}" - ${(resultado.registros_exitosos ?? 0).toLocaleString('es-CL')} registros importados`,
+              duration: 5000,
+            });
+          } else if (resultado.estado === 'fallido') {
+            toast.error('Error al procesar archivo', {
+              description: resultado.metadata?.error || 'Error desconocido',
+              duration: 8000,
+            });
+          }
+
+          setUploadSuccess(true);
+
+        } catch (pollingError) {
+          console.error('Error en polling:', pollingError);
+          setImportacionEnProceso(prev => prev ? {
+            ...prev,
+            estado: 'fallido',
+            error: pollingError instanceof Error ? pollingError.message : 'Error de conexión',
+          } : null);
+
+          toast.error('Error de conexión', {
+            description: 'No se pudo obtener el estado del procesamiento',
+            duration: 8000,
+          });
+          
+          setUploadSuccess(true); // Mostrar opciones de todas formas
+        }
 
       } else {
-        // Procesamiento directo (archivos pequeños)
+        // Procesamiento directo (archivos pequeños) - termina inmediatamente
         console.log('✅ Importación directa exitosa:');
         console.log('   ID Importación:', response.data?.id);
         console.log('   Lote:', response.lote);
         console.log('   Resumen:', response.resumen);
 
+        // Simular estado completado para archivos pequeños
+        setImportacionEnProceso({
+          id: response.data.id,
+          nombreArchivo: file.name,
+          estado: 'completado',
+          progresoPorcentaje: 100,
+          registrosExitosos: response.resumen?.registros_exitosos ?? 0,
+          registrosFallidos: response.resumen?.registros_fallidos ?? 0,
+          totalEstimado: preview.length,
+        });
+
         toast.success('Archivo importado', {
-          description: `Se importaron ${response.resumen?.registros_exitosos || 0} registros. Puedes agregar más archivos.`,
+          description: `Se importaron ${response.resumen?.registros_exitosos || 0} registros.`,
           duration: 5000,
         });
 
         setIsUploading(false);
         setUploadSuccess(true);
-        // NO cerrar el modal automáticamente - permitir agregar más archivos
       }
 
     } catch (error) {
@@ -325,6 +429,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       
       setErrors([`Error al importar los prospectos: ${errorMessage}`]);
       setIsUploading(false);
+      setImportacionEnProceso(null);
     }
   };
 
@@ -346,6 +451,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     setSelectedFile(null);
     setLoteActivo(null);
     setModoAgregarArchivo(false);
+    setImportacionEnProceso(null);
   };
 
   // ============================================================
@@ -363,6 +469,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     setFileSelected(false);
     setSelectedFile(null);
     setModoAgregarArchivo(true);
+    setImportacionEnProceso(null); // Limpiar tracking del archivo anterior
   };
 
   // ============================================================
@@ -588,7 +695,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       )}
 
       {/* Mensaje de éxito con opción de agregar más archivos */}
-      {uploadSuccess && loteActivo && (
+      {uploadSuccess && loteActivo && importacionEnProceso && (
         <div className="space-y-4">
           {/* Header del lote */}
           <div className="bg-gradient-to-r from-segal-blue/10 to-segal-turquoise/10 border border-segal-blue/20 rounded-lg p-4">
@@ -597,8 +704,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
               <div>
                 <p className="font-bold text-segal-dark">Carga: "{loteActivo.nombre}"</p>
                 <p className="text-sm text-segal-dark/60">
-                  {loteActivo.totalArchivos} archivo{loteActivo.totalArchivos !== 1 ? 's' : ''} • 
-                  {loteActivo.totalRegistros > 0 ? ` ${loteActivo.totalRegistros.toLocaleString('es-CL')} registros` : ' Procesando...'}
+                  {loteActivo.totalArchivos} archivo{loteActivo.totalArchivos !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
@@ -620,11 +726,14 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
                         ? 'bg-segal-green/20 text-segal-green' 
                         : archivo.estado === 'procesando' || archivo.estado === 'pendiente'
                         ? 'bg-yellow-100 text-yellow-700'
+                        : archivo.estado === 'fallido'
+                        ? 'bg-segal-red/20 text-segal-red'
                         : 'bg-gray-100 text-gray-600'
                     }`}>
                       {archivo.estado === 'completado' ? '✓ Completado' : 
                        archivo.estado === 'procesando' ? '⏳ Procesando' : 
-                       archivo.estado === 'pendiente' ? '⏳ Pendiente' : archivo.estado}
+                       archivo.estado === 'pendiente' ? '⏳ Pendiente' : 
+                       archivo.estado === 'fallido' ? '✗ Fallido' : archivo.estado}
                     </span>
                   </div>
                 ))}
@@ -632,42 +741,68 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
             </div>
           )}
 
-          {/* Último archivo subido */}
-          <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
+          {/* Estado del último archivo procesado */}
+          <div className={`rounded-lg p-4 ${
+            importacionEnProceso.estado === 'completado' 
+              ? 'bg-segal-green/10 border border-segal-green/30'
+              : 'bg-segal-red/10 border border-segal-red/30'
+          }`}>
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-6 w-6 text-segal-green shrink-0" />
+              {importacionEnProceso.estado === 'completado' ? (
+                <CheckCircle2 className="h-6 w-6 text-segal-green shrink-0" />
+              ) : (
+                <Ban className="h-6 w-6 text-segal-red shrink-0" />
+              )}
               <div>
-                <p className="font-semibold text-segal-green">¡Archivo agregado exitosamente!</p>
-                <p className="text-sm text-segal-green/80 mt-1">
-                  "{selectedFile?.name}" - {preview.length.toLocaleString('es-CL')} registros
+                <p className={`font-semibold ${
+                  importacionEnProceso.estado === 'completado' ? 'text-segal-green' : 'text-segal-red'
+                }`}>
+                  {importacionEnProceso.estado === 'completado' 
+                    ? '¡Archivo procesado exitosamente!' 
+                    : 'El archivo falló al procesarse'}
                 </p>
+                <p className={`text-sm mt-1 ${
+                  importacionEnProceso.estado === 'completado' ? 'text-segal-green/80' : 'text-segal-red/80'
+                }`}>
+                  "{importacionEnProceso.nombreArchivo}" - {importacionEnProceso.registrosExitosos.toLocaleString('es-CL')} registros importados
+                  {importacionEnProceso.registrosFallidos > 0 && (
+                    <span className="text-segal-red"> ({importacionEnProceso.registrosFallidos.toLocaleString('es-CL')} fallidos)</span>
+                  )}
+                </p>
+                {importacionEnProceso.error && (
+                  <p className="text-sm text-segal-red mt-2">
+                    Error: {importacionEnProceso.error}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex justify-between items-center pt-2">
-            <p className="text-sm text-segal-dark/60">
-              ¿Tenés más archivos para esta carga?
-            </p>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={handleAgregarOtroArchivo}
-                className="border-segal-blue text-segal-blue hover:bg-segal-blue/5"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar otro archivo
-              </Button>
-              <Button
-                onClick={handleFinalizarLote}
-                className="bg-segal-green hover:bg-segal-green/90 text-white"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Finalizar carga
-              </Button>
+          {/* Botones de acción - SOLO si el archivo terminó */}
+          {(importacionEnProceso.estado === 'completado' || importacionEnProceso.estado === 'fallido') && (
+            <div className="flex justify-between items-center pt-2">
+              <p className="text-sm text-segal-dark/60">
+                ¿Tenés más archivos para esta carga?
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleAgregarOtroArchivo}
+                  className="border-segal-blue text-segal-blue hover:bg-segal-blue/5"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar otro archivo
+                </Button>
+                <Button
+                  onClick={handleFinalizarLote}
+                  className="bg-segal-green hover:bg-segal-green/90 text-white"
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Finalizar carga
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -693,7 +828,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
         </div>
       )}
 
-      {/* Estado de subida */}
+      {/* Estado de subida inicial */}
       {isUploading && (
         <div className="space-y-4 bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 rounded-xl border border-segal-blue/20 p-6 shadow-lg">
           <div className="flex items-center gap-4">
@@ -709,6 +844,80 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* ESTADO DE PROCESAMIENTO EN BACKGROUND (FLUJO SECUENCIAL)     */}
+      {/* ============================================================ */}
+      {importacionEnProceso && !uploadSuccess && (
+        <div className="space-y-4 bg-gradient-to-br from-segal-blue/5 to-segal-turquoise/5 rounded-xl border border-segal-blue/20 p-6 shadow-lg">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              importacionEnProceso.estado === 'procesando' || importacionEnProceso.estado === 'pendiente'
+                ? 'bg-segal-blue/10'
+                : importacionEnProceso.estado === 'completado'
+                ? 'bg-segal-green/10'
+                : 'bg-segal-red/10'
+            }`}>
+              {importacionEnProceso.estado === 'procesando' || importacionEnProceso.estado === 'pendiente' ? (
+                <Loader className="h-6 w-6 text-segal-blue animate-spin" />
+              ) : importacionEnProceso.estado === 'completado' ? (
+                <CheckCircle2 className="h-6 w-6 text-segal-green" />
+              ) : (
+                <Ban className="h-6 w-6 text-segal-red" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-lg text-segal-dark">
+                {importacionEnProceso.estado === 'pendiente' && 'Archivo en cola...'}
+                {importacionEnProceso.estado === 'procesando' && 'Procesando archivo...'}
+                {importacionEnProceso.estado === 'completado' && '¡Archivo procesado!'}
+                {importacionEnProceso.estado === 'fallido' && 'Error al procesar'}
+              </p>
+              <p className="text-sm text-segal-dark/60">
+                {importacionEnProceso.nombreArchivo}
+              </p>
+            </div>
+          </div>
+
+          {/* Barra de progreso */}
+          {(importacionEnProceso.estado === 'procesando' || importacionEnProceso.estado === 'pendiente') && (
+            <div className="space-y-2">
+              <Progress 
+                value={importacionEnProceso.progresoPorcentaje} 
+                className="h-3"
+              />
+              <div className="flex justify-between text-sm text-segal-dark/70">
+                <span>
+                  {importacionEnProceso.registrosExitosos.toLocaleString('es-CL')} de ~{importacionEnProceso.totalEstimado.toLocaleString('es-CL')} registros
+                </span>
+                <span className="font-medium text-segal-blue">
+                  {importacionEnProceso.progresoPorcentaje}%
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje de espera */}
+          {(importacionEnProceso.estado === 'procesando' || importacionEnProceso.estado === 'pendiente') && (
+            <div className="flex items-center gap-2 text-sm text-segal-dark/60 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3">
+              <Clock className="h-4 w-4 text-yellow-600" />
+              <span>
+                <strong className="text-yellow-700">Esperá a que termine</strong> este archivo antes de agregar otro.
+                Esto evita problemas de concurrencia.
+              </span>
+            </div>
+          )}
+
+          {/* Error */}
+          {importacionEnProceso.estado === 'fallido' && importacionEnProceso.error && (
+            <div className="flex items-start gap-2 text-sm text-segal-red bg-segal-red/10 border border-segal-red/20 rounded-lg px-4 py-3">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{importacionEnProceso.error}</span>
+            </div>
+          )}
         </div>
       )}
 
