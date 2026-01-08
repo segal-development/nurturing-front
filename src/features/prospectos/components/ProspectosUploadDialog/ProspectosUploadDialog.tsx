@@ -1,10 +1,12 @@
 /**
- * Diálogo para cargar prospectos desde Excel
+ * Dialogo para cargar prospectos desde Excel
  * 
- * Maneja el cierre del modal con confirmación si hay un lote activo procesándose.
+ * Maneja el cierre del modal:
+ * - BLOQUEA el cierre mientras hay una importacion procesando
+ * - Muestra confirmacion si el lote esta en estado "procesando" pero no hay archivo activo
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,24 +29,45 @@ import {
 } from '@/components/ui/alert-dialog'
 import { UploadExcel } from '@/components/prospectos/UploadExcel'
 import { useLoteStore, selectHayLoteActivo } from '@/stores/loteStore'
+import { useImportacionStore } from '@/stores/importacionStore'
 import type { ProspectosUploadDialogProps } from '../../types/prospectos'
 
 export function ProspectosUploadDialog({ open, onOpenChange, onSuccess }: ProspectosUploadDialogProps) {
   const [showConfirmClose, setShowConfirmClose] = useState(false)
   const hayLoteActivo = useLoteStore(selectHayLoteActivo)
   const loteActivo = useLoteStore(state => state.loteActivo)
+  const importacionActiva = useImportacionStore(state => state.importacionActiva)
+
+  // Determinar si hay una importacion activamente procesando
+  const hayImportacionProcesando = useMemo(() => {
+    // Revisar si hay importacion individual procesando
+    if (importacionActiva && ['pendiente', 'procesando'].includes(importacionActiva.estado)) {
+      return true
+    }
+    // Revisar si hay archivos procesando en el lote
+    if (loteActivo?.archivos?.some(a => ['pendiente', 'procesando'].includes(a.estado))) {
+      return true
+    }
+    return false
+  }, [importacionActiva, loteActivo])
 
   // Manejar intento de cierre del modal
   const handleOpenChange = useCallback((newOpen: boolean) => {
-    // Si intenta cerrar y hay un lote activo procesando, mostrar confirmación
+    // Si intenta cerrar y hay importacion procesando, BLOQUEAR completamente
+    if (!newOpen && hayImportacionProcesando) {
+      // No hacer nada - el modal no se puede cerrar
+      return
+    }
+
+    // Si intenta cerrar y hay un lote activo (pero no procesando), mostrar confirmacion
     if (!newOpen && hayLoteActivo && loteActivo?.estado === 'procesando') {
       setShowConfirmClose(true)
       return
     }
     
-    // Si no hay lote activo o está completado, cerrar normalmente
+    // Si no hay lote activo o esta completado, cerrar normalmente
     onOpenChange(newOpen)
-  }, [hayLoteActivo, loteActivo?.estado, onOpenChange])
+  }, [hayImportacionProcesando, hayLoteActivo, loteActivo?.estado, onOpenChange])
 
   // Confirmar cierre forzado
   const handleConfirmClose = useCallback(() => {
@@ -66,7 +89,15 @@ export function ProspectosUploadDialog({ open, onOpenChange, onSuccess }: Prospe
             Cargar Excel
           </Button>
         </DialogTrigger>
-        <DialogContent className="w-[60vw] bg-white border border-segal-blue/20 shadow-2xl">
+        <DialogContent 
+          className="w-[60vw] bg-white border border-segal-blue/20 shadow-2xl"
+          // Deshabilitar cierre por Escape y click en overlay mientras procesa
+          onEscapeKeyDown={hayImportacionProcesando ? (e) => e.preventDefault() : undefined}
+          onPointerDownOutside={hayImportacionProcesando ? (e) => e.preventDefault() : undefined}
+          onInteractOutside={hayImportacionProcesando ? (e) => e.preventDefault() : undefined}
+          // Ocultar boton de cerrar mientras procesa
+          showCloseButton={!hayImportacionProcesando}
+        >
           <DialogHeader className="border-b border-segal-blue/10 pb-4">
             <DialogTitle className="text-2xl font-bold text-segal-dark">
               Cargar Prospectos desde Excel

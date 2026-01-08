@@ -25,13 +25,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       toastOptions={{
         classNames: {
-          toast: 'group toast bg-white dark:bg-gray-800 border shadow-lg',
-          success: 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800',
-          error: 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800',
-          info: 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800',
-          warning: 'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800',
-          title: 'text-gray-900 dark:text-gray-100 font-medium',
-          description: 'text-gray-600 dark:text-gray-400',
+          // z-[100] para estar sobre el modal (z-50), opacity-100 para no ser transparente
+          toast: 'group toast bg-white dark:bg-gray-800 border shadow-2xl !opacity-100 z-[100]',
+          success: 'border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-800 !bg-opacity-100',
+          error: 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800 !bg-opacity-100',
+          info: 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 !bg-opacity-100',
+          warning: 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 !bg-opacity-100',
+          title: 'text-gray-900 dark:text-gray-100 font-semibold',
+          description: 'text-gray-700 dark:text-gray-300',
         },
       }}
       style={
@@ -40,6 +41,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          // Asegurar que el container del toast este sobre todo
+          zIndex: 9999,
         } as React.CSSProperties
       }
       {...props}
