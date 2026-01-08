@@ -3,12 +3,12 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader, Plus, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { importacionesService } from '@/api/importaciones.service';
-import { useImportacionStore } from '@/stores/importacionStore';
+import { useLoteStore } from '@/stores/loteStore';
 import { toast } from 'sonner';
 import {
   Table,
@@ -20,15 +20,25 @@ import {
 } from '@/components/ui/table';
 import type { ProspectoExcelRow } from '@/types/prospecto';
 
+// Tipo para el lote actual
+interface LoteActivo {
+  id: number;
+  nombre: string;
+  totalArchivos: number;
+  totalRegistros: number;
+  archivos: Array<{ nombre: string; registros: number; estado: string }>;
+}
+
 // ============================================================
 // VALIDACIÓN CON ZOD
 // ============================================================
 const uploadFormSchema = z.object({
   originName: z
     .string()
-    .min(1, 'El nombre de origen es requerido')
-    .min(3, 'El nombre de origen debe tener al menos 3 caracteres')
-    .max(50, 'El nombre de origen no puede exceder 50 caracteres'),
+    .min(3, 'El nombre debe tener al menos 3 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres')
+    .optional()
+    .or(z.literal('')),
   archivo: z
     .instanceof(FileList)
     .refine((files) => files.length > 0, 'Debes seleccionar un archivo')
@@ -56,9 +66,13 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
   const [fileSelected, setFileSelected] = useState(false);
   const [selectedOriginName, setSelectedOriginName] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Estado para manejo de lotes (multi-archivo)
+  const [loteActivo, setLoteActivo] = useState<LoteActivo | null>(null);
+  const [modoAgregarArchivo, setModoAgregarArchivo] = useState(false);
 
-  // Store global de importaciones
-  const { iniciarImportacion } = useImportacionStore();
+  // Store global de lotes
+  const { iniciarTrackingLote, loteActivo: loteEnStore } = useLoteStore();
 
   // ============================================================
   // REACT HOOK FORM
@@ -209,13 +223,21 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
       return;
     }
 
+    // Validar nombre de origen si es nueva carga (no modo agregar archivo)
+    if (!modoAgregarArchivo && (!data.originName || data.originName.trim().length < 3)) {
+      setErrors(['El nombre de la carga es requerido (mínimo 3 caracteres)']);
+      return;
+    }
+
     const file = data.archivo[0];
 
     // Procesar el archivo Excel
     await processExcelFile(file);
 
-    // Guardar el nombre de origen para usar al hacer upload
-    setSelectedOriginName(data.originName);
+    // Guardar el nombre de origen para usar al hacer upload (solo si no estamos agregando a lote)
+    if (!modoAgregarArchivo && data.originName) {
+      setSelectedOriginName(data.originName);
+    }
   };
 
   // ============================================================
@@ -232,53 +254,64 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     try {
       const file = selectedFile;
 
-      // Enviar el archivo al backend
-      const response = await importacionesService.importar(file, selectedOriginName);
+      // Enviar el archivo al backend (con lote_id si estamos agregando a un lote existente)
+      const response = await importacionesService.importar(
+        file, 
+        loteActivo?.nombre || selectedOriginName,
+        loteActivo?.id
+      );
       
       console.log('📥 Respuesta del servidor:', response);
 
+      // Actualizar el lote activo con la respuesta
+      if (response.lote) {
+        const archivosDelLote = response.lote.importaciones?.map(imp => ({
+          nombre: imp.nombre_archivo,
+          registros: 0, // Se actualizará cuando termine
+          estado: imp.estado,
+        })) || [];
+
+        setLoteActivo({
+          id: response.lote.id,
+          nombre: response.lote.nombre,
+          totalArchivos: response.lote.total_archivos,
+          totalRegistros: response.lote.total_registros,
+          archivos: archivosDelLote,
+        });
+      }
+
       // Verificar si es procesamiento en background
       if (response.procesamiento === 'background') {
-        // Iniciar tracking global con el store
-        const estimatedTotal = response.data.metadata?.total_estimado || 0;
-        iniciarImportacion(
-          response.data.id,
-          response.data.nombre_archivo,
-          estimatedTotal
-        );
+        // Iniciar tracking del lote (solo si no hay uno activo con el mismo ID)
+        if (response.lote && (!loteEnStore || loteEnStore.id !== response.lote.id)) {
+          iniciarTrackingLote(response.lote.id, response.lote.nombre);
+        }
 
         // Mostrar toast informativo
-        toast.info('Importación iniciada', {
-          description: 'El archivo se está procesando en segundo plano. Puedes cerrar este diálogo y seguir trabajando.',
+        toast.info('Archivo agregado a la carga', {
+          description: `"${file.name}" se está procesando en background. Puedes agregar más archivos.`,
           duration: 5000,
         });
 
-        // Cerrar el modal y notificar éxito
         setIsUploading(false);
         setUploadSuccess(true);
-        
-        setTimeout(() => {
-          onSuccess?.();
-        }, 1500);
+        // NO cerrar el modal automáticamente - permitir agregar más archivos
 
       } else {
         // Procesamiento directo (archivos pequeños)
         console.log('✅ Importación directa exitosa:');
         console.log('   ID Importación:', response.data?.id);
-        console.log('   Nombre de origen:', selectedOriginName);
+        console.log('   Lote:', response.lote);
         console.log('   Resumen:', response.resumen);
 
-        toast.success('Importación completada', {
-          description: `Se importaron ${response.resumen?.registros_exitosos || 0} registros exitosamente.`,
+        toast.success('Archivo importado', {
+          description: `Se importaron ${response.resumen?.registros_exitosos || 0} registros. Puedes agregar más archivos.`,
           duration: 5000,
         });
 
         setIsUploading(false);
         setUploadSuccess(true);
-
-        setTimeout(() => {
-          onSuccess?.();
-        }, 1500);
+        // NO cerrar el modal automáticamente - permitir agregar más archivos
       }
 
     } catch (error) {
@@ -311,6 +344,37 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
     setFileSelected(false);
     setSelectedOriginName('');
     setSelectedFile(null);
+    setLoteActivo(null);
+    setModoAgregarArchivo(false);
+  };
+
+  // ============================================================
+  // AGREGAR OTRO ARCHIVO AL LOTE
+  // ============================================================
+  const handleAgregarOtroArchivo = () => {
+    // Mantener el lote activo pero resetear el resto
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setPreview([]);
+    setErrors([]);
+    setWarnings([]);
+    setUploadSuccess(false);
+    setFileSelected(false);
+    setSelectedFile(null);
+    setModoAgregarArchivo(true);
+  };
+
+  // ============================================================
+  // FINALIZAR LOTE Y CERRAR
+  // ============================================================
+  const handleFinalizarLote = () => {
+    toast.success('Lote completado', {
+      description: `Carga "${loteActivo?.nombre}" con ${loteActivo?.totalArchivos} archivo(s) finalizada.`,
+      duration: 5000,
+    });
+    handleReset();
+    onSuccess?.();
   };
 
   return (
@@ -333,39 +397,57 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
         </div>
       </div>
 
+      {/* Indicador de lote activo cuando se está agregando otro archivo */}
+      {modoAgregarArchivo && loteActivo && (
+        <div className="bg-gradient-to-r from-segal-blue/10 to-segal-turquoise/10 border border-segal-blue/20 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <FolderOpen className="h-5 w-5 text-segal-blue" />
+            <div>
+              <p className="text-sm text-segal-dark/60">Agregando archivo a:</p>
+              <p className="font-bold text-segal-dark">{loteActivo.nombre}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Formulario de carga - Solo si no hay archivo seleccionado o no hay preview */}
       {!fileSelected && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Campo: Nombre de Origen */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="originName"
-              className="block text-sm font-semibold text-segal-dark"
-            >
-              Nombre de Origen
-              <span className="text-segal-red ml-1">*</span>
-            </Label>
-            <Controller
-              name="originName"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  {...field}
-                  id="originName"
-                  placeholder="Ej: Importación Enero 2025"
-                  className={`
-                    bg-white border border-segal-blue/30 text-segal-dark
-                    placeholder:text-segal-dark/40
-                    focus:border-segal-blue focus:ring-2 focus:ring-segal-blue/20
-                    ${formErrors.originName ? 'border-segal-red focus:border-segal-red focus:ring-segal-red/20' : ''}
-                  `}
-                />
+          {/* Campo: Nombre de Origen - Solo si no estamos agregando a un lote existente */}
+          {!modoAgregarArchivo && (
+            <div className="space-y-2">
+              <Label
+                htmlFor="originName"
+                className="block text-sm font-semibold text-segal-dark"
+              >
+                Nombre de la Carga
+                <span className="text-segal-red ml-1">*</span>
+              </Label>
+              <Controller
+                name="originName"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    id="originName"
+                    placeholder="Ej: Carga masiva Enero 2025"
+                    className={`
+                      bg-white border border-segal-blue/30 text-segal-dark
+                      placeholder:text-segal-dark/40
+                      focus:border-segal-blue focus:ring-2 focus:ring-segal-blue/20
+                      ${formErrors.originName ? 'border-segal-red focus:border-segal-red focus:ring-segal-red/20' : ''}
+                    `}
+                  />
+                )}
+              />
+              {formErrors.originName && (
+                <p className="text-sm text-segal-red">{formErrors.originName.message}</p>
               )}
-            />
-            {formErrors.originName && (
-              <p className="text-sm text-segal-red">{formErrors.originName.message}</p>
-            )}
-          </div>
+              <p className="text-xs text-segal-dark/50">
+                Este nombre agrupará todos los archivos que subas para esta carga.
+              </p>
+            </div>
+          )}
 
           {/* Campo: Archivo */}
           <div className="space-y-2">
@@ -505,8 +587,92 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
         </div>
       )}
 
-      {/* Mensaje de éxito */}
-      {uploadSuccess && (
+      {/* Mensaje de éxito con opción de agregar más archivos */}
+      {uploadSuccess && loteActivo && (
+        <div className="space-y-4">
+          {/* Header del lote */}
+          <div className="bg-gradient-to-r from-segal-blue/10 to-segal-turquoise/10 border border-segal-blue/20 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <FolderOpen className="h-6 w-6 text-segal-blue" />
+              <div>
+                <p className="font-bold text-segal-dark">Carga: "{loteActivo.nombre}"</p>
+                <p className="text-sm text-segal-dark/60">
+                  {loteActivo.totalArchivos} archivo{loteActivo.totalArchivos !== 1 ? 's' : ''} • 
+                  {loteActivo.totalRegistros > 0 ? ` ${loteActivo.totalRegistros.toLocaleString('es-CL')} registros` : ' Procesando...'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de archivos en el lote */}
+          {loteActivo.archivos.length > 0 && (
+            <div className="bg-white border border-segal-blue/10 rounded-lg p-4">
+              <p className="text-sm font-semibold text-segal-dark mb-3">Archivos en este lote:</p>
+              <div className="space-y-2">
+                {loteActivo.archivos.map((archivo, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-2 px-3 bg-segal-blue/5 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-segal-blue" />
+                      <span className="text-sm text-segal-dark">{archivo.nombre}</span>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      archivo.estado === 'completado' 
+                        ? 'bg-segal-green/20 text-segal-green' 
+                        : archivo.estado === 'procesando' || archivo.estado === 'pendiente'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {archivo.estado === 'completado' ? '✓ Completado' : 
+                       archivo.estado === 'procesando' ? '⏳ Procesando' : 
+                       archivo.estado === 'pendiente' ? '⏳ Pendiente' : archivo.estado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Último archivo subido */}
+          <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-6 w-6 text-segal-green shrink-0" />
+              <div>
+                <p className="font-semibold text-segal-green">¡Archivo agregado exitosamente!</p>
+                <p className="text-sm text-segal-green/80 mt-1">
+                  "{selectedFile?.name}" - {preview.length.toLocaleString('es-CL')} registros
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex justify-between items-center pt-2">
+            <p className="text-sm text-segal-dark/60">
+              ¿Tenés más archivos para esta carga?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleAgregarOtroArchivo}
+                className="border-segal-blue text-segal-blue hover:bg-segal-blue/5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar otro archivo
+              </Button>
+              <Button
+                onClick={handleFinalizarLote}
+                className="bg-segal-green hover:bg-segal-green/90 text-white"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Finalizar carga
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje de éxito simple (sin lote - compatibilidad) */}
+      {uploadSuccess && !loteActivo && (
         <div className="space-y-4">
           <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-6">
             <div className="flex items-start gap-4">
@@ -521,26 +687,7 @@ export function UploadExcel({ onSuccess }: UploadExcelProps) {
                 <p className="text-sm text-segal-green/90 mt-2">
                   Origen: <span className="font-semibold">{selectedOriginName}</span>
                 </p>
-                <p className="text-xs text-segal-green/70 mt-2">
-                  El diálogo se cerrará automáticamente en unos segundos...
-                </p>
               </div>
-            </div>
-          </div>
-
-          {/* Success Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-segal-green/5 rounded-lg p-3 text-center border border-segal-green/10">
-              <p className="text-2xl font-bold text-segal-green">{preview.length}</p>
-              <p className="text-xs text-segal-dark/60 mt-1">Prospectos cargados</p>
-            </div>
-            <div className="bg-segal-blue/5 rounded-lg p-3 text-center border border-segal-blue/10">
-              <p className="text-2xl font-bold text-segal-blue">0</p>
-              <p className="text-xs text-segal-dark/60 mt-1">Errores</p>
-            </div>
-            <div className="bg-segal-turquoise/5 rounded-lg p-3 text-center border border-segal-turquoise/10">
-              <p className="text-2xl font-bold text-segal-turquoise">100%</p>
-              <p className="text-xs text-segal-dark/60 mt-1">Tasa éxito</p>
             </div>
           </div>
         </div>
