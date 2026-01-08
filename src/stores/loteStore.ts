@@ -310,8 +310,8 @@ async function procesarPolling(state: LoteStore): Promise<void> {
   const { loteActivo } = state
   if (!loteActivo) return
 
-  const response = await lotesService.getProgreso(loteActivo.id)
-  const progreso = response.data
+  // lotesService.getProgreso() ya devuelve LoteProgreso directamente (no { data })
+  const progreso = await lotesService.getProgreso(loteActivo.id)
   
   state.actualizarProgreso(progreso)
   
