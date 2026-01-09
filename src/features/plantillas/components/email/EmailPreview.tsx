@@ -76,6 +76,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                       fontWeight: componente.contenido.negrita ? 'bold' : 'normal',
                       fontStyle: componente.contenido.italica ? 'italic' : 'normal',
                       marginBottom: '16px',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {renderTextoConEnlaces(componente.contenido.texto, componente.contenido.enlaces)}

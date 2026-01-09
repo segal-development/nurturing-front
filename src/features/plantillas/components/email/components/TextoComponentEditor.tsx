@@ -311,6 +311,7 @@ export function TextoComponentEditor({
             color: contenido.color || '#000000',
             fontWeight: contenido.negrita ? 'bold' : 'normal',
             fontStyle: contenido.italica ? 'italic' : 'normal',
+            whiteSpace: 'pre-line',
           }}
         >
           {contenido.texto}
