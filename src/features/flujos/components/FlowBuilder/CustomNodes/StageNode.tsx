@@ -382,6 +382,8 @@ export function StageNode({
                 type="text"
                 value={localData.label || ''}
                 onChange={(e) => setLocalData({ ...localData, label: e.target.value })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
                 className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
                 placeholder="Ej: Recordatorio inicial"
               />
@@ -404,6 +406,8 @@ export function StageNode({
                     const value = parseInt(e.target.value)
                     setLocalData({ ...localData, tiempo_espera: isNaN(value) ? 0 : value })
                   }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
                   className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
                 />
               </div>
@@ -443,6 +447,8 @@ export function StageNode({
                   const value = parseInt(e.target.value)
                   setLocalData({ ...localData, tiempo_verificacion_condicion: isNaN(value) ? 24 : value })
                 }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
                 className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
               />
               <p className="text-xs text-segal-dark/60">Se usa cuando hay una condición después de esta etapa</p>

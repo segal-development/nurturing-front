@@ -147,6 +147,8 @@ function InlineEditor({ tipo_mensaje, contenido, onChange }: InlineEditorProps) 
         placeholder={placeholder}
         value={contenido}
         onChange={(e) => onChange(e.target.value)}
+        onMouseDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
         maxLength={maxLength}
         className="min-h-24 border-segal-blue/30 text-sm"
       />
@@ -287,7 +289,7 @@ function PlantillaSelect({ plantillas, selectedId, tipo, onSelect }: PlantillaSe
       <SelectTrigger className="w-full">
         <SelectValue placeholder={`Seleccionar plantilla ${label}`} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-white border border-gray-200 shadow-lg z-[9999]">
         {plantillas.map((plantilla) => (
           <SelectItem key={plantilla.id} value={plantilla.id!.toString()}>
             <div className="flex items-center gap-2">
