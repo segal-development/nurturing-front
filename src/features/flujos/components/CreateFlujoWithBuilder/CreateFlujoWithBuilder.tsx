@@ -321,7 +321,7 @@ export function CreateFlujoWithBuilder({
               initialDescription=""
               selectedOriginId={selectedOriginId || ''}
               selectedOriginName={selectedOriginName || ''}
-              selectedProspectoCount={selectedProspectoIds.size}
+              selectedProspectoCount={selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size}
             />
           )}
         </div>
