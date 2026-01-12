@@ -394,10 +394,16 @@ export function StageNode({
                   type="number"
                   min="0"
                   max="365"
-                  value={localData.tiempo_espera ?? 0}
-                  onChange={(e) =>
-                    setLocalData({ ...localData, tiempo_espera: parseInt(e.target.value) || 0 })
-                  }
+                  value={localData.tiempo_espera ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : parseInt(e.target.value)
+                    setLocalData({ ...localData, tiempo_espera: value as any })
+                  }}
+                  onBlur={(e) => {
+                    // Al perder el foco, asegurar que sea un número válido
+                    const value = parseInt(e.target.value)
+                    setLocalData({ ...localData, tiempo_espera: isNaN(value) ? 0 : value })
+                  }}
                   className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
                 />
               </div>
@@ -427,10 +433,16 @@ export function StageNode({
                 type="number"
                 min="1"
                 max="2160"
-                value={localData.tiempo_verificacion_condicion ?? 24}
-                onChange={(e) =>
-                  setLocalData({ ...localData, tiempo_verificacion_condicion: parseInt(e.target.value) || 24 })
-                }
+                value={localData.tiempo_verificacion_condicion ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? '' : parseInt(e.target.value)
+                  setLocalData({ ...localData, tiempo_verificacion_condicion: value as any })
+                }}
+                onBlur={(e) => {
+                  // Al perder el foco, asegurar que sea un número válido (default 24)
+                  const value = parseInt(e.target.value)
+                  setLocalData({ ...localData, tiempo_verificacion_condicion: isNaN(value) ? 24 : value })
+                }}
                 className="w-full px-2 py-1 text-sm border border-segal-blue/30 rounded focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
               />
               <p className="text-xs text-segal-dark/60">Se usa cuando hay una condición después de esta etapa</p>
