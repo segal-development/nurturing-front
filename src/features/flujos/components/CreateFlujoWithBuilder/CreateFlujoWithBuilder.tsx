@@ -117,6 +117,7 @@ export function CreateFlujoWithBuilder({
     setSelectedOriginName(null)
     setSelectedProspectoIds(new Set())
     setSelectedTipoProspectoId(null)
+    setSelectAllFromOrigin(false)
     setError(null)
 
     // Si hay origen inicial, lo carga automáticamente
@@ -200,6 +201,13 @@ export function CreateFlujoWithBuilder({
    * Manejo robusto de errores con logs detallados
    */
   const handleSaveFlow = async (config: any) => {
+    // Validación crítica: tipo de prospecto es obligatorio
+    if (!selectedTipoProspectoId) {
+      setError('Error: No se ha seleccionado un tipo de prospecto. Por favor vuelve al paso anterior.')
+      console.error('❌ selectedTipoProspectoId is null/undefined')
+      return
+    }
+
     setSaving(true)
     setError(null)
 
