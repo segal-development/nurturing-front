@@ -175,4 +175,21 @@ export const prospectosService = {
     )
     return data.data
   },
+
+  /**
+   * Obtener el conteo total de prospectos que coinciden con los filtros (sin cargar los datos)
+   */
+  async getCount(params?: {
+    lote_id?: number
+    importacion_id?: number
+    estado?: string
+    tipo_prospecto_id?: number
+    origen?: string
+    search?: string
+  }): Promise<number> {
+    const { data } = await apiClient.get<{ data: { total: number } }>('/prospectos/count', {
+      params,
+    })
+    return data.data.total
+  },
 }

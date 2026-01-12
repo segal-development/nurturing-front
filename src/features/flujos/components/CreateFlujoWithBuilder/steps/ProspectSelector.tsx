@@ -15,8 +15,11 @@ import { AlertCircle, Check, Loader2, Users, X } from 'lucide-react'
 
 interface ProspectSelectorProps {
   prospectos: Prospecto[]
+  totalEnBD: number
   selectedIds: Set<number>
+  selectAllFromOrigin: boolean
   onSelectionChange: (ids: Set<number>) => void
+  onSelectAllFromOriginChange: (selectAll: boolean) => void
   onTipoChange?: (tipoId: number | null) => void
   onContinue: () => void
   originName: string
@@ -26,8 +29,11 @@ interface ProspectSelectorProps {
 
 export function ProspectSelector({
   prospectos,
+  totalEnBD,
   selectedIds,
+  selectAllFromOrigin,
   onSelectionChange,
+  onSelectAllFromOriginChange,
   onTipoChange,
   onContinue,
   originName,
@@ -169,9 +175,23 @@ export function ProspectSelector({
    */
   const handleDeselectAll = useCallback(() => {
     onSelectionChange(new Set())
+    onSelectAllFromOriginChange(false)
     setSelectedTipoId(null)
     onTipoChange?.(null)
-  }, [onSelectionChange, onTipoChange])
+  }, [onSelectionChange, onSelectAllFromOriginChange, onTipoChange])
+
+  /**
+   * Select all prospects from origin (without loading them)
+   */
+  const handleSelectAllFromOrigin = useCallback(
+    (tipo: TipoProspecto) => {
+      onSelectAllFromOriginChange(true)
+      onSelectionChange(new Set()) // Clear manual selection
+      setSelectedTipoId(tipo.id)
+      onTipoChange?.(tipo.id)
+    },
+    [onSelectAllFromOriginChange, onSelectionChange, onTipoChange]
+  )
 
   /**
    * Get the selected tipo name for display
@@ -192,7 +212,12 @@ export function ProspectSelector({
           </div>
           <div className="text-right">
             <p className="text-sm text-segal-dark/60">Total disponibles</p>
-            <p className="text-lg font-bold text-segal-blue">{prospectos.length}</p>
+            <p className="text-lg font-bold text-segal-blue">{totalEnBD.toLocaleString('es-CL')}</p>
+            {prospectos.length < totalEnBD && (
+              <p className="text-xs text-segal-dark/40">
+                Mostrando {prospectos.length} para preview
+              </p>
+            )}
           </div>
         </div>
 
@@ -215,28 +240,48 @@ export function ProspectSelector({
               Cargando tipos...
             </div>
           ) : tiposProspecto && tiposProspecto.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
-              {tiposProspecto.map((tipo) => (
-                <Button
-                  key={tipo.id}
-                  size="sm"
-                  onClick={() => handleSelectTipo(tipo)}
-                  variant={selectedTipoId === tipo.id ? 'default' : 'outline'}
-                  className={
-                    selectedTipoId === tipo.id
-                      ? 'bg-segal-blue text-white'
-                      : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'
-                  }
-                >
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs">{tipo.nombre}</span>
-                    <span className="text-xs font-bold">
-                      {categorizedProspectos[tipo.id]?.length || 0}
-                    </span>
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                {tiposProspecto.map((tipo) => (
+                  <div key={tipo.id} className="space-y-1">
+                    <Button
+                      size="sm"
+                      onClick={() => handleSelectTipo(tipo)}
+                      variant={selectedTipoId === tipo.id && !selectAllFromOrigin ? 'default' : 'outline'}
+                      className={
+                        selectedTipoId === tipo.id && !selectAllFromOrigin
+                          ? 'bg-segal-blue text-white w-full'
+                          : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full'
+                      }
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs">{tipo.nombre}</span>
+                        <span className="text-xs font-bold">
+                          {categorizedProspectos[tipo.id]?.length || 0}
+                        </span>
+                      </div>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSelectAllFromOrigin(tipo)}
+                      variant={selectedTipoId === tipo.id && selectAllFromOrigin ? 'default' : 'outline'}
+                      className={
+                        selectedTipoId === tipo.id && selectAllFromOrigin
+                          ? 'bg-segal-green text-white w-full text-xs'
+                          : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full text-xs'
+                      }
+                    >
+                      Todos ({totalEnBD.toLocaleString('es-CL')})
+                    </Button>
                   </div>
-                </Button>
-              ))}
-            </div>
+                ))}
+              </div>
+              {selectAllFromOrigin && (
+                <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">
+                  ✓ Seleccionarás <strong>todos los prospectos del origen</strong> automáticamente
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-sm text-segal-dark/60">No hay tipos de prospecto disponibles</p>
           )}
@@ -307,8 +352,19 @@ export function ProspectSelector({
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-segal-blue" />
             <p className="text-sm font-semibold text-segal-dark">
-              <span className="text-segal-blue font-bold">{selectedIds.size}</span> de{' '}
-              {prospectos.length} prospectos seleccionados
+              {selectAllFromOrigin ? (
+                <>
+                  <span className="text-segal-green font-bold">
+                    Todos ({totalEnBD.toLocaleString('es-CL')})
+                  </span>{' '}
+                  prospectos del origen serán seleccionados
+                </>
+              ) : (
+                <>
+                  <span className="text-segal-blue font-bold">{selectedIds.size}</span> de{' '}
+                  {prospectos.length} prospectos seleccionados (cargados)
+                </>
+              )}
               {selectedTipoNombre && (
                 <span className="ml-2 text-xs text-segal-dark/60">
                   (Tipo: <span className="font-medium">{selectedTipoNombre}</span>)
@@ -316,13 +372,13 @@ export function ProspectSelector({
               )}
             </p>
           </div>
-          {selectedIds.size === 0 && (
+          {selectedIds.size === 0 && !selectAllFromOrigin && (
             <p className="text-xs text-segal-dark/60 flex items-center gap-2">
               <AlertCircle className="h-3 w-3" />
-              Debes seleccionar al menos un prospecto para continuar
+              Debes seleccionar al menos un prospecto o usar "Todos" para continuar
             </p>
           )}
-          {selectedIds.size > 0 && !selectedTipoId && (
+          {(selectedIds.size > 0 || selectAllFromOrigin) && !selectedTipoId && (
             <p className="text-xs text-amber-600 flex items-center gap-2">
               <AlertCircle className="h-3 w-3" />
               No se pudo determinar el tipo de prospecto. Selecciona un tipo manualmente.
@@ -351,7 +407,7 @@ export function ProspectSelector({
         </div>
         <Button
           onClick={onContinue}
-          disabled={selectedIds.size === 0 || !selectedTipoId}
+          disabled={(selectedIds.size === 0 && !selectAllFromOrigin) || !selectedTipoId}
           className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
         >
           Continuar al Constructor

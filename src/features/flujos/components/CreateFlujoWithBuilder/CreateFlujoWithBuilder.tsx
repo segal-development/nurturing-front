@@ -48,9 +48,11 @@ export function CreateFlujoWithBuilder({
   // Prospectos seleccionados
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
+  const [selectAllFromOrigin, setSelectAllFromOrigin] = useState(false)
 
   // Prospectos disponibles
   const [prospectos, setProspectos] = useState<Prospecto[]>([])
+  const [totalProspectosEnBD, setTotalProspectosEnBD] = useState<number>(0)
   const [loadingProspectos, setLoadingProspectos] = useState(false)
 
   // UI state
@@ -79,9 +81,16 @@ export function CreateFlujoWithBuilder({
       setError(null)
 
       try {
+        // Cargar el conteo total primero (sin datos)
+        const totalCount = await prospectosService.getCount({
+          origen: originId,
+        })
+        setTotalProspectosEnBD(totalCount)
+
+        // Cargar solo los primeros 100 para preview
         const response = await prospectosService.getAll({
           origen: originId,
-          per_page: 1000,
+          per_page: 100,
         })
         setProspectos(response.data)
         setCurrentStep('prospects')
@@ -121,9 +130,9 @@ export function CreateFlujoWithBuilder({
    * Usa early returns para validaciones
    */
   const handleProspectsSelect = () => {
-    // Validación 1: Mínimo un prospecto
-    if (selectedProspectoIds.size === 0) {
-      setError('Debes seleccionar al menos un prospecto')
+    // Validación 1: Mínimo un prospecto o seleccionar todos
+    if (selectedProspectoIds.size === 0 && !selectAllFromOrigin) {
+      setError('Debes seleccionar al menos un prospecto o usar "Seleccionar Todos del Origen"')
       return
     }
 
@@ -170,10 +179,11 @@ export function CreateFlujoWithBuilder({
       origen_id: selectedOriginId,
       origen_nombre: selectedOriginName,
       prospectos: {
-        total_seleccionados: selectedProspectoIds.size,
-        ids_seleccionados: Array.from(selectedProspectoIds),
-        total_disponibles: prospectos.length,
+        total_seleccionados: selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size,
+        ids_seleccionados: selectAllFromOrigin ? [] : Array.from(selectedProspectoIds),
+        total_disponibles: totalProspectosEnBD,
         tipo_prospecto_id: selectedTipoProspectoId,
+        select_all_from_origin: selectAllFromOrigin,
       },
       visual: config.visual,
       structure: config.structure,
@@ -290,8 +300,11 @@ export function CreateFlujoWithBuilder({
           {currentStep === 'prospects' && (
             <ProspectSelector
               prospectos={prospectos}
+              totalEnBD={totalProspectosEnBD}
               selectedIds={selectedProspectoIds}
+              selectAllFromOrigin={selectAllFromOrigin}
               onSelectionChange={setSelectedProspectoIds}
+              onSelectAllFromOriginChange={setSelectAllFromOrigin}
               onTipoChange={setSelectedTipoProspectoId}
               onContinue={handleProspectsSelect}
               originName={selectedOriginName || ''}
