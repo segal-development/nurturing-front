@@ -437,7 +437,10 @@ export function Flujos() {
                   Cancelar
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={handleConfirmDelete}
+                  onClick={(e) => {
+                    e.preventDefault() // Prevent auto-close, we'll close manually after delete
+                    handleConfirmDelete()
+                  }}
                   className="bg-segal-red hover:bg-segal-red/90 text-white"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
