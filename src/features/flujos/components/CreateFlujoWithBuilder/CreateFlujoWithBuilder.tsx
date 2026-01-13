@@ -144,13 +144,38 @@ export function CreateFlujoWithBuilder({
   const [flujoCreado, setFlujoCreado] = useState<{ id: number; nombre: string } | null>(null)
 
   // Hook de procesamiento async
-  const { estado: estadoProcesamiento, iniciarTracking } = useFlujoProcesamiento({
+  const { estado: estadoProcesamiento, iniciarTracking, detenerTracking } = useFlujoProcesamiento({
     onComplete: () => {
       // Cuando completa el procesamiento async, cerrar modal y notificar
       onOpenChange(false)
       onSuccess?.()
     },
   })
+
+  /**
+   * Reset all state when modal closes
+   * This ensures a clean slate when opening the modal again
+   */
+  useEffect(() => {
+    if (!open) {
+      // Reset to initial state
+      setCurrentStep('origin')
+      setSelectedOriginId(null)
+      setSelectedOriginName(null)
+      setSelectedProspectoIds(new Set())
+      setSelectedTipoProspectoId(null)
+      setSelectAllFromOrigin(false)
+      setSelectedCount(0)
+      setProspectos([])
+      setTotalProspectosEnBD(0)
+      setLoadingProspectos(false)
+      setSaving(false)
+      setError(null)
+      setFlujoCreado(null)
+      // Stop any ongoing polling from previous flujo
+      detenerTracking()
+    }
+  }, [open, detenerTracking])
 
   /**
    * Obtiene el nombre de un origen por su ID
