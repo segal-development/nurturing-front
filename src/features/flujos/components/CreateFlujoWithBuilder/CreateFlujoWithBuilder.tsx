@@ -233,9 +233,18 @@ export function CreateFlujoWithBuilder({
 
   /**
    * Retrocede al paso anterior
+   * Limpia el estado relacionado para permitir re-selección
    */
   const handleBack = () => {
     if (currentStep === 'prospects') {
+      // Limpiar estado de origen para mostrar el selector
+      setSelectedOriginId(null)
+      setSelectedOriginName(null)
+      setProspectos([])
+      setTotalProspectosEnBD(0)
+      setSelectedProspectoIds(new Set())
+      setSelectedTipoProspectoId(null)
+      setSelectAllFromOrigin(false)
       setCurrentStep('origin')
       return
     }
@@ -409,7 +418,7 @@ export function CreateFlujoWithBuilder({
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          {currentStep === 'origin' && !initialOriginId && (
+          {currentStep === 'origin' && (
             <OriginSelector
               opciones={opciones}
               onSelect={handleOriginSelect}
