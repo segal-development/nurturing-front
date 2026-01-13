@@ -119,6 +119,7 @@ export function CreateFlujoWithBuilder({
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
   const [selectAllFromOrigin, setSelectAllFromOrigin] = useState(false)
+  const [selectedCount, setSelectedCount] = useState<number>(0) // Actual count to use
 
   // Prospectos disponibles
   const [prospectos, setProspectos] = useState<Prospecto[]>([])
@@ -200,6 +201,7 @@ export function CreateFlujoWithBuilder({
     setSelectedProspectoIds(new Set())
     setSelectedTipoProspectoId(null)
     setSelectAllFromOrigin(false)
+    setSelectedCount(0)
     setError(null)
     setFlujoCreado(null)
 
@@ -245,6 +247,7 @@ export function CreateFlujoWithBuilder({
       setSelectedProspectoIds(new Set())
       setSelectedTipoProspectoId(null)
       setSelectAllFromOrigin(false)
+      setSelectedCount(0)
       setCurrentStep('origin')
       return
     }
@@ -436,6 +439,7 @@ export function CreateFlujoWithBuilder({
               onSelectionChange={setSelectedProspectoIds}
               onSelectAllFromOriginChange={setSelectAllFromOrigin}
               onTipoChange={setSelectedTipoProspectoId}
+              onSelectedCountChange={setSelectedCount}
               onContinue={handleProspectsSelect}
               originId={selectedOriginId || ''}
               originName={selectedOriginName || ''}
@@ -452,7 +456,7 @@ export function CreateFlujoWithBuilder({
               initialDescription=""
               selectedOriginId={selectedOriginId || ''}
               selectedOriginName={selectedOriginName || ''}
-              selectedProspectoCount={selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size}
+              selectedProspectoCount={selectedCount || selectedProspectoIds.size}
             />
           )}
 

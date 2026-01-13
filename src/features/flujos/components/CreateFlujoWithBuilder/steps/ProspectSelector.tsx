@@ -22,6 +22,7 @@ interface ProspectSelectorProps {
   onSelectionChange: (ids: Set<number>) => void
   onSelectAllFromOriginChange: (selectAll: boolean) => void
   onTipoChange?: (tipoId: number | null) => void
+  onSelectedCountChange?: (count: number) => void
   onContinue: () => void
   originId: string
   originName: string
@@ -37,6 +38,7 @@ export function ProspectSelector({
   onSelectionChange,
   onSelectAllFromOriginChange,
   onTipoChange,
+  onSelectedCountChange,
   onContinue,
   originId,
   originName,
@@ -147,17 +149,19 @@ export function ProspectSelector({
   )
 
   /**
-   * Select all prospectos of a specific tipo
+   * Select all prospectos of a specific tipo (from loaded preview)
    */
   const handleSelectTipo = useCallback(
     (tipo: TipoProspecto) => {
       const idsDelTipo = new Set(categorizedProspectos[tipo.id]?.map((p) => p.id) || [])
 
       setSelectedTipoId(tipo.id)
+      setIsAllTypesSelected(false)
       onSelectionChange(idsDelTipo)
       onTipoChange?.(tipo.id)
+      onSelectedCountChange?.(idsDelTipo.size)
     },
-    [categorizedProspectos, onSelectionChange, onTipoChange]
+    [categorizedProspectos, onSelectionChange, onTipoChange, onSelectedCountChange]
   )
 
   /**
@@ -173,13 +177,15 @@ export function ProspectSelector({
       }
 
       onSelectionChange(newSelected)
+      setIsAllTypesSelected(false)
 
       // Infer tipo from the new selection
       const inferredTipo = inferTipoFromSelection(newSelected)
       setSelectedTipoId(inferredTipo)
       onTipoChange?.(inferredTipo)
+      onSelectedCountChange?.(newSelected.size)
     },
-    [selectedIds, onSelectionChange, inferTipoFromSelection, onTipoChange]
+    [selectedIds, onSelectionChange, inferTipoFromSelection, onTipoChange, onSelectedCountChange]
   )
 
   /**
@@ -188,12 +194,14 @@ export function ProspectSelector({
   const handleSelectAll = useCallback(() => {
     const ids = new Set(filteredProspectos.map((p) => p.id))
     onSelectionChange(ids)
+    setIsAllTypesSelected(false)
 
     // Infer tipo from the selection
     const inferredTipo = inferTipoFromSelection(ids)
     setSelectedTipoId(inferredTipo)
     onTipoChange?.(inferredTipo)
-  }, [filteredProspectos, onSelectionChange, inferTipoFromSelection, onTipoChange])
+    onSelectedCountChange?.(ids.size)
+  }, [filteredProspectos, onSelectionChange, inferTipoFromSelection, onTipoChange, onSelectedCountChange])
 
   /**
    * Deselect all
@@ -204,20 +212,23 @@ export function ProspectSelector({
     setSelectedTipoId(null)
     setIsAllTypesSelected(false)
     onTipoChange?.(null)
-  }, [onSelectionChange, onSelectAllFromOriginChange, onTipoChange])
+    onSelectedCountChange?.(0)
+  }, [onSelectionChange, onSelectAllFromOriginChange, onTipoChange, onSelectedCountChange])
 
   /**
    * Select all prospects from origin of a SPECIFIC type
    */
   const handleSelectAllFromOrigin = useCallback(
     (tipo: TipoProspecto) => {
+      const tipoCount = conteoByTipoId[tipo.id] ?? 0
       onSelectAllFromOriginChange(true)
       onSelectionChange(new Set()) // Clear manual selection
       setSelectedTipoId(tipo.id)
       setIsAllTypesSelected(false) // Only this specific type
       onTipoChange?.(tipo.id)
+      onSelectedCountChange?.(tipoCount)
     },
-    [onSelectAllFromOriginChange, onSelectionChange, onTipoChange]
+    [onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, conteoByTipoId]
   )
 
   /**
@@ -266,7 +277,8 @@ export function ProspectSelector({
     setSelectedTipoId(majorityTipoId)
     setIsAllTypesSelected(true) // ALL types selected
     onTipoChange?.(majorityTipoId)
-  }, [getMajorityTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange])
+    onSelectedCountChange?.(totalEnBD) // All prospects from origin
+  }, [getMajorityTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, totalEnBD])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
