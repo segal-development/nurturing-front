@@ -224,6 +224,45 @@ export function ProspectSelector({
     return tiposProspecto.find((t) => t.id === selectedTipoId)?.nombre || null
   }, [selectedTipoId, tiposProspecto])
 
+  /**
+   * Get the count of the selected tipo for display in summary
+   */
+  const selectedTipoCount = useMemo(() => {
+    if (!selectedTipoId) return 0
+    return conteoByTipoId[selectedTipoId] ?? 0
+  }, [selectedTipoId, conteoByTipoId])
+
+  /**
+   * Find the majority tipo (the one with most prospects)
+   */
+  const getMajorityTipoId = useCallback((): number | null => {
+    if (!conteoPorTipo?.por_tipo || conteoPorTipo.por_tipo.length === 0) return null
+
+    let maxCount = 0
+    let majorityId: number | null = null
+
+    conteoPorTipo.por_tipo.forEach((item) => {
+      if (item.total > maxCount) {
+        maxCount = item.total
+        majorityId = item.id
+      }
+    })
+
+    return majorityId
+  }, [conteoPorTipo])
+
+  /**
+   * Select ALL prospects from origin (all types) - infers majority tipo
+   */
+  const handleSelectAllFromOriginAllTypes = useCallback(() => {
+    const majorityTipoId = getMajorityTipoId()
+
+    onSelectAllFromOriginChange(true)
+    onSelectionChange(new Set())
+    setSelectedTipoId(majorityTipoId)
+    onTipoChange?.(majorityTipoId)
+  }, [getMajorityTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange])
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
@@ -254,8 +293,25 @@ export function ProspectSelector({
         />
 
         {/* Tipos de Deuda - Quick Select */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-segal-dark">Seleccionar por Tipo de Deuda:</p>
+        <div className="space-y-3">
+          {/* Button to select ALL prospects from origin */}
+          {!loadingTipos && !loadingConteo && (
+            <Button
+              size="sm"
+              onClick={handleSelectAllFromOriginAllTypes}
+              variant={selectAllFromOrigin && selectedTipoId === getMajorityTipoId() ? 'default' : 'outline'}
+              className={
+                selectAllFromOrigin
+                  ? 'bg-segal-green text-white w-full'
+                  : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full'
+              }
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Seleccionar Todos del Origen ({totalEnBD.toLocaleString('es-CL')})
+            </Button>
+          )}
+
+          <p className="text-xs font-semibold text-segal-dark">O seleccionar por Tipo de Deuda:</p>
 
           {loadingTipos || loadingConteo ? (
             <div className="flex items-center gap-2 text-sm text-segal-dark/60">
@@ -304,9 +360,9 @@ export function ProspectSelector({
                   )
                 })}
               </div>
-              {selectAllFromOrigin && (
+              {selectAllFromOrigin && selectedTipoNombre && (
                 <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">
-                  ✓ Seleccionarás <strong>todos los prospectos del origen</strong> automáticamente
+                  ✓ Seleccionarás <strong>{selectedTipoCount.toLocaleString('es-CL')} prospectos de {selectedTipoNombre}</strong> automáticamente
                 </div>
               )}
             </>
@@ -383,9 +439,9 @@ export function ProspectSelector({
               {selectAllFromOrigin ? (
                 <>
                   <span className="text-segal-green font-bold">
-                    Todos ({totalEnBD.toLocaleString('es-CL')})
+                    {selectedTipoCount.toLocaleString('es-CL')}
                   </span>{' '}
-                  prospectos del origen serán seleccionados
+                  prospectos de <span className="font-bold">{selectedTipoNombre}</span> serán seleccionados
                 </>
               ) : (
                 <>
@@ -393,7 +449,7 @@ export function ProspectSelector({
                   {prospectos.length} prospectos seleccionados (cargados)
                 </>
               )}
-              {selectedTipoNombre && (
+              {!selectAllFromOrigin && selectedTipoNombre && (
                 <span className="ml-2 text-xs text-segal-dark/60">
                   (Tipo: <span className="font-medium">{selectedTipoNombre}</span>)
                 </span>
