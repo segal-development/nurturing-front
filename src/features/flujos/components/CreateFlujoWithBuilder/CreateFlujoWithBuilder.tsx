@@ -37,7 +37,17 @@ interface ProcessingStepProps {
 }
 
 function ProcessingStep({ flujoNombre, estadoProcesamiento, onClose }: ProcessingStepProps) {
-  const isCompleted = estadoProcesamiento === 'completado'
+  // Keep completed state locally so it doesn't reset when store cleans up
+  const [wasCompleted, setWasCompleted] = useState(false)
+
+  useEffect(() => {
+    if (estadoProcesamiento === 'completado') {
+      setWasCompleted(true)
+    }
+  }, [estadoProcesamiento])
+
+  // Once completed, stay completed (even if store resets to null)
+  const isCompleted = wasCompleted || estadoProcesamiento === 'completado'
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-8">
