@@ -13,6 +13,7 @@ import { CreateFlujoWithBuilder } from './components/CreateFlujoWithBuilder/Crea
 import { FlujoDetailDialog } from './components/FlujoDetailDialog/FlujoDetailDialog'
 import { EditFlujoBuilderDialog } from './components/EditFlujoBuilderDialog/EditFlujoBuilderDialog'
 import { FlujoProgressPanel } from './components/FlujoProgressPanel/FlujoProgressPanel'
+import { FlujoProcesamientoIndicator } from './components/FlujoProcesamientoIndicator'
 import { useFlujoOpciones } from './hooks/useFlujoOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
@@ -330,6 +331,9 @@ export function Flujos() {
           setSelectedFlujoId(null)
         }}
       />
+
+      {/* Indicador flotante de procesamiento de prospectos (visible cuando hay flujo creándose) */}
+      <FlujoProcesamientoIndicator variant="floating" />
     </div>
   )
 }
