@@ -5,6 +5,7 @@
 
 import { apiClient, getApiErrorMessage } from './client'
 import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure } from '@/types/flujo'
+import type { FlujoProgresoResponse, FlujoCreacionResponse } from '@/types/flujoAsignacion'
 
 /**
  * Estructura de un origen de flujos
@@ -400,6 +401,87 @@ export const flujosService = {
       return data
     } catch (error) {
       console.error('❌ flujosService.obtenerHistorialEjecuciones() - Error:', getApiErrorMessage(error))
+      throw error
+    }
+  },
+
+  // ============================================================================
+  // Progreso de Asignación de Prospectos
+  // ============================================================================
+
+  /**
+   * Obtiene el progreso de asignación de prospectos a un flujo.
+   *
+   * Usado para polling cuando se crean flujos con >100 prospectos
+   * y el backend procesa la asignación en background.
+   *
+   * @param flujoId - ID del flujo
+   * @returns Progreso actual de la asignación
+   *
+   * @example
+   * const progreso = await flujosService.getProgresoAsignacion(123)
+   * if (progreso.data.completado) {
+   *   console.log('Asignación completada!')
+   * }
+   */
+  async getProgresoAsignacion(flujoId: number): Promise<FlujoProgresoResponse> {
+    try {
+      const response = await apiClient.get<FlujoProgresoResponse>(`/flujos/${flujoId}/progreso`)
+      return response.data
+    } catch (error) {
+      console.error(`❌ flujosService.getProgresoAsignacion(${flujoId}) - Error:`, getApiErrorMessage(error))
+      throw error
+    }
+  },
+
+  /**
+   * Crear flujo con prospectos y recibir info de procesamiento async.
+   *
+   * @param payload - Datos del flujo y prospectos
+   * @returns Response con info de si el procesamiento es async
+   *
+   * @example
+   * const response = await flujosService.createWithProspectosAsync(payload)
+   * if (response.resumen.procesamiento_async) {
+   *   // Iniciar polling de progreso
+   *   startPolling(response.data.id)
+   * }
+   */
+  async createWithProspectosAsync(payload: {
+    flujo: {
+      nombre: string
+      descripcion?: string
+      tipo_prospecto?: number | string | null
+      activo?: boolean
+    }
+    origen_id?: string | null
+    origen_nombre?: string | null
+    prospectos: {
+      total_seleccionados: number
+      ids_seleccionados: number[]
+      total_disponibles: number
+      tipo_prospecto_id?: number | null
+      select_all_from_origin?: boolean
+    }
+    visual?: ConfigVisual
+    structure?: ConfigStructure
+    stages?: unknown
+    metadata?: Record<string, unknown>
+  }): Promise<FlujoCreacionResponse> {
+    try {
+      console.log('📤 flujosService.createWithProspectosAsync() - Creando flujo con payload')
+
+      const { data } = await apiClient.post<FlujoCreacionResponse>(
+        '/flujos/crear-con-prospectos',
+        payload
+      )
+
+      const isAsync = data.resumen?.procesamiento_async ?? false
+      console.log(`✅ Flujo creado (async: ${isAsync}):`, data.data.id)
+
+      return data
+    } catch (error) {
+      console.error('❌ flujosService.createWithProspectosAsync() - Error:', getApiErrorMessage(error))
       throw error
     }
   },

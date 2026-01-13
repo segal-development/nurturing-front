@@ -12,16 +12,86 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Loader2, AlertCircle, ChevronLeft } from 'lucide-react'
+import { Loader2, AlertCircle, ChevronLeft, CheckCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { OpcionesFlujos } from '@/api/flujos.service'
 import type { Prospecto } from '@/types/prospecto'
 import { FlowBuilder } from '../FlowBuilder/FlowBuilder'
 import { OriginSelector } from './steps/OriginSelector'
 import { ProspectSelector } from './steps/ProspectSelector'
+import { FlujoProcesamientoIndicator } from '../FlujoProcesamientoIndicator'
+import { useFlujoProcesamiento } from '../../hooks/useFlujoProcesamiento'
 import { prospectosService } from '@/api/prospectos.service'
 import { flujosService } from '@/api/flujos.service'
 
-type Step = 'origin' | 'prospects' | 'builder'
+type Step = 'origin' | 'prospects' | 'builder' | 'processing'
+
+// =============================================================================
+// SUB-COMPONENTE: ProcessingStep
+// =============================================================================
+
+interface ProcessingStepProps {
+  flujoNombre: string
+  estadoProcesamiento: string | null
+  onClose: () => void
+}
+
+function ProcessingStep({ flujoNombre, estadoProcesamiento, onClose }: ProcessingStepProps) {
+  const isCompleted = estadoProcesamiento === 'completado'
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-8">
+      <div className="max-w-md w-full space-y-6">
+        {/* Título */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-segal-blue/10 mb-4">
+            {isCompleted ? (
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            ) : (
+              <Loader2 className="h-8 w-8 text-segal-blue animate-spin" />
+            )}
+          </div>
+          <h3 className="text-xl font-semibold text-segal-dark">
+            {isCompleted ? '¡Flujo Creado!' : 'Creando Flujo'}
+          </h3>
+          <p className="text-segal-dark/70">
+            {isCompleted
+              ? `El flujo "${flujoNombre}" está listo para usar.`
+              : `Asignando prospectos a "${flujoNombre}"...`}
+          </p>
+        </div>
+
+        {/* Indicador de progreso */}
+        <FlujoProcesamientoIndicator variant="inline" />
+
+        {/* Nota informativa */}
+        {!isCompleted && (
+          <div className="text-center text-sm text-segal-dark/60 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p>
+              Puedes cerrar este modal. El procesamiento continuará en segundo plano
+              y recibirás una notificación cuando termine.
+            </p>
+          </div>
+        )}
+
+        {/* Botón de cerrar */}
+        <div className="flex justify-center">
+          <Button
+            variant={isCompleted ? 'default' : 'outline'}
+            onClick={onClose}
+            className="min-w-32"
+          >
+            {isCompleted ? 'Cerrar' : 'Cerrar y continuar en segundo plano'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
+// COMPONENTE PRINCIPAL
+// =============================================================================
 
 interface CreateFlujoWithBuilderProps {
   open: boolean
@@ -58,6 +128,18 @@ export function CreateFlujoWithBuilder({
   // UI state
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Estado para flujo creado (usado en step processing)
+  const [flujoCreado, setFlujoCreado] = useState<{ id: number; nombre: string } | null>(null)
+
+  // Hook de procesamiento async
+  const { estado: estadoProcesamiento, iniciarTracking } = useFlujoProcesamiento({
+    onComplete: () => {
+      // Cuando completa el procesamiento async, cerrar modal y notificar
+      onOpenChange(false)
+      onSuccess?.()
+    },
+  })
 
   /**
    * Obtiene el nombre de un origen por su ID
@@ -119,6 +201,7 @@ export function CreateFlujoWithBuilder({
     setSelectedTipoProspectoId(null)
     setSelectAllFromOrigin(false)
     setError(null)
+    setFlujoCreado(null)
 
     // Si hay origen inicial, lo carga automáticamente
     if (initialOriginId) {
@@ -198,7 +281,7 @@ export function CreateFlujoWithBuilder({
 
   /**
    * Guarda flujo en backend
-   * Manejo robusto de errores con logs detallados
+   * Manejo robusto de errores y soporte para procesamiento async
    */
   const handleSaveFlow = async (config: any) => {
     // Validación crítica: tipo de prospecto es obligatorio
@@ -213,35 +296,62 @@ export function CreateFlujoWithBuilder({
 
     try {
       const payload = buildFlowPayload(config)
+      const totalProspectos = selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size
 
       console.log('📤 Enviando payload a backend:', JSON.stringify(payload, null, 2))
 
-      const createdFlow = await flujosService.createWithProspectos(payload)
+      // Usar el nuevo método que retorna info de procesamiento async
+      const response = await flujosService.createWithProspectosAsync(payload)
 
       // Guardar la configuración visual y estructura
-      // Esto asegura que el nodo inicial y otros datos se guarden correctamente
-      if (createdFlow && createdFlow.id && config.visual && config.structure) {
-        try {
-          await flujosService.updateFlowConfiguration(createdFlow.id, {
-            config_visual: config.visual,
-            config_structure: config.structure,
-          })
-          console.log('✅ Configuración visual y estructura guardadas correctamente')
-        } catch (err) {
-          console.warn('⚠️ Error al guardar la configuración visual, pero el flujo fue creado:', err)
-          // No lanzar error aquí - el flujo ya se creó
-        }
-      }
+      await guardarConfiguracionVisual(response.data.id, config)
 
-      console.log('✅ Flujo creado exitosamente')
-      onOpenChange(false)
-      onSuccess?.()
+      // ¿El backend está procesando en background?
+      const isAsync = response.resumen?.procesamiento_async ?? false
+
+      if (isAsync) {
+        // Procesamiento async: mostrar indicador de progreso
+        console.log('⏳ Procesamiento async iniciado para flujo:', response.data.id)
+
+        setFlujoCreado({ id: response.data.id, nombre: response.data.nombre || config.nombre })
+        setCurrentStep('processing')
+
+        // Iniciar tracking del progreso
+        iniciarTracking(
+          response.data.id,
+          response.data.nombre || config.nombre,
+          totalProspectos
+        )
+      } else {
+        // Procesamiento síncrono: cerrar y notificar
+        console.log('✅ Flujo creado exitosamente (síncrono)')
+        onOpenChange(false)
+        onSuccess?.()
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       setError(`Error al crear el flujo: ${errorMessage}`)
-      console.error('❌ Error creando flujo:', { payload: buildFlowPayload(config), error })
+      console.error('❌ Error creando flujo:', error)
     } finally {
       setSaving(false)
+    }
+  }
+
+  /**
+   * Guarda la configuración visual del flujo (separado para claridad)
+   */
+  const guardarConfiguracionVisual = async (flujoId: number, config: any): Promise<void> => {
+    if (!config.visual || !config.structure) return
+
+    try {
+      await flujosService.updateFlowConfiguration(flujoId, {
+        config_visual: config.visual,
+        config_structure: config.structure,
+      })
+      console.log('✅ Configuración visual guardada')
+    } catch (err) {
+      // No es crítico, el flujo ya se creó
+      console.warn('⚠️ Error al guardar configuración visual:', err)
     }
   }
 
@@ -263,6 +373,7 @@ export function CreateFlujoWithBuilder({
                 {currentStep === 'origin' && 'Crear Nuevo Flujo'}
                 {currentStep === 'prospects' && 'Selecciona Prospectos'}
                 {currentStep === 'builder' && 'Constructor de Flujos'}
+                {currentStep === 'processing' && 'Procesando Flujo'}
               </DialogTitle>
               <DialogDescription className="text-segal-dark/70 mt-1">
                 {currentStep === 'origin' &&
@@ -271,10 +382,12 @@ export function CreateFlujoWithBuilder({
                   `${selectedOriginName} - Elige qué prospectos incluir en el flujo`}
                 {currentStep === 'builder' &&
                   'Diseña visualmente tu flujo de nurturing con etapas y conexiones'}
+                {currentStep === 'processing' &&
+                  'Los prospectos se están asignando al flujo en segundo plano'}
               </DialogDescription>
             </div>
 
-            {currentStep !== 'origin' && (
+            {currentStep !== 'origin' && currentStep !== 'processing' && (
               <button
                 type="button"
                 onClick={handleBack}
@@ -330,6 +443,14 @@ export function CreateFlujoWithBuilder({
               selectedOriginId={selectedOriginId || ''}
               selectedOriginName={selectedOriginName || ''}
               selectedProspectoCount={selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size}
+            />
+          )}
+
+          {currentStep === 'processing' && (
+            <ProcessingStep
+              flujoNombre={flujoCreado?.nombre || ''}
+              estadoProcesamiento={estadoProcesamiento}
+              onClose={handleClose}
             />
           )}
         </div>

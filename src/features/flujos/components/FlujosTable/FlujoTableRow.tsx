@@ -21,13 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Edit2, Eye, MoreHorizontal, Play, Trash2 } from 'lucide-react'
+import { Edit2, Eye, Loader2, MoreHorizontal, Play, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { FlujoNurturing } from '@/types/flujo'
 import { useFlujoExecutionState } from './hooks/useFlujoExecutionState'
 import { getTipoProspectoName, calculateStagesCount } from './utils/flujoTableHelpers'
 import { ProgressDisplay, NoExecutionDisplay } from './ProgressDisplay'
 import { formatCurrency } from '@/features/costos/hooks'
+import { getEstadoProcesamientoConfig, isProcesamientoActivo } from '@/types/flujoAsignacion'
 
 interface FlujoTableRowProps {
   flujo: FlujoNurturing
@@ -38,11 +39,42 @@ interface FlujoTableRowProps {
 }
 
 /**
- * Renders the nombre cell
+ * Badge de estado de procesamiento de asignación de prospectos
  */
-function NombreCell({ nombre }: { nombre: string }) {
+function ProcesamientoBadge({ estado }: { estado?: FlujoNurturing['estado_procesamiento'] }) {
+  // Early return: no mostrar si no hay estado o ya completó
+  if (!estado || estado === 'completado') return null
+
+  const config = getEstadoProcesamientoConfig(estado)
+
   return (
-    <TableCell className="font-medium text-segal-dark dark:text-gray-300">{nombre}</TableCell>
+    <Badge
+      variant="outline"
+      className={`text-xs py-0 px-1.5 ${config.bgClass} ${config.colorClass} border`}
+    >
+      {config.animate && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+      {config.label}
+    </Badge>
+  )
+}
+
+/**
+ * Renders the nombre cell with optional procesamiento badge
+ */
+function NombreCell({
+  nombre,
+  estadoProcesamiento,
+}: {
+  nombre: string
+  estadoProcesamiento?: FlujoNurturing['estado_procesamiento']
+}) {
+  return (
+    <TableCell className="font-medium text-segal-dark dark:text-gray-300">
+      <div className="flex items-center gap-2">
+        <span>{nombre}</span>
+        <ProcesamientoBadge estado={estadoProcesamiento} />
+      </div>
+    </TableCell>
   )
 }
 
@@ -179,6 +211,7 @@ function ActionsCell({
   flujoId,
   canExecute,
   isExecuting,
+  isProcessing,
   onEjecutarFlujo,
   onViewFlujo,
   onEditFlujo,
@@ -187,11 +220,19 @@ function ActionsCell({
   flujoId: number
   canExecute: boolean
   isExecuting: boolean
+  isProcessing: boolean
   onEjecutarFlujo?: (id: number) => void
   onViewFlujo?: (id: number) => void
   onEditFlujo?: (id: number) => void
   onDeleteFlujo?: (id: number) => void
 }) {
+  // Determine disabled message
+  const getExecuteLabel = (): string => {
+    if (isProcessing) return 'Asignando prospectos...'
+    if (isExecuting) return 'En ejecución...'
+    return 'Ejecutar Flujo'
+  }
+
   return (
     <TableCell className="text-right">
       <DropdownMenu>
@@ -212,9 +253,7 @@ function ActionsCell({
               className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Play className="h-4 w-4 text-segal-green mr-2" />
-              <span className="text-segal-dark">
-                {canExecute ? 'Ejecutar Flujo' : 'En ejecución...'}
-              </span>
+              <span className="text-segal-dark">{getExecuteLabel()}</span>
             </DropdownMenuItem>
           )}
           {onViewFlujo && (
@@ -268,7 +307,7 @@ export function FlujoTableRow({
   onEjecutarFlujo,
 }: FlujoTableRowProps) {
   // Get execution state (includes canExecute logic)
-  const { canExecute, displayExecution } = useFlujoExecutionState(flujo.id)
+  const { canExecute: canExecuteFromState, displayExecution } = useFlujoExecutionState(flujo.id)
 
   // Calculate stages count
   const etapasCount = calculateStagesCount(flujo)
@@ -276,9 +315,17 @@ export function FlujoTableRow({
   // Check if flow is currently executing (in_progress or paused)
   const isExecuting = displayExecution?.estado === 'in_progress' || displayExecution?.estado === 'paused'
 
+  // Check if flow is still processing prospect assignment
+  const isProcesamientoEnCurso = isProcesamientoActivo(flujo.estado_procesamiento ?? 'completado')
+
+  // Flow can only execute if:
+  // 1. No active execution (canExecuteFromState)
+  // 2. Prospect assignment is complete (not processing)
+  const canExecute = canExecuteFromState && !isProcesamientoEnCurso
+
   return (
     <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:border-segal-blue">
-      <NombreCell nombre={flujo.nombre} />
+      <NombreCell nombre={flujo.nombre} estadoProcesamiento={flujo.estado_procesamiento} />
       <TipoProspectoCell tipoProspecto={flujo.tipo_prospecto} />
       <StagesCell count={etapasCount} />
       <ProgressCell flujoId={flujo.id} />
@@ -290,6 +337,7 @@ export function FlujoTableRow({
         flujoId={flujo.id}
         canExecute={canExecute}
         isExecuting={isExecuting}
+        isProcessing={isProcesamientoEnCurso}
         onEjecutarFlujo={onEjecutarFlujo}
         onViewFlujo={onViewFlujo}
         onEditFlujo={onEditFlujo}

@@ -286,6 +286,12 @@ export interface FlujoNurturing {
   };
   metadata?: Record<string, unknown>;
 
+  /**
+   * Estado de procesamiento de asignación de prospectos.
+   * Cuando se crean flujos con >100 prospectos, se procesan en background.
+   */
+  estado_procesamiento?: 'pendiente' | 'procesando' | 'completado' | 'fallido';
+
   // Configuraciones para reconstrucción y ejecución
   config_visual?: ConfigVisual;
   config_structure?: ConfigStructure;

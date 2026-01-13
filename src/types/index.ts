@@ -220,3 +220,25 @@ export type {
   ConfiguracionNotificaciones,
   ConfiguracionPrecio,
 } from './configuracion'
+
+// ============================================================================
+// Flujo Asignacion Types (Prospect Assignment Tracking)
+// ============================================================================
+export type {
+  EstadoProcesamientoFlujo,
+  EstadoProcesamientoConfig,
+  ProgresoAsignacion,
+  FlujoProgresoResponse,
+  FlujoCreacionResponse,
+} from './flujoAsignacion'
+
+export {
+  ESTADO_PROCESAMIENTO_CONFIG,
+  PROGRESO_ASIGNACION_VACIO,
+  isProcesamientoActivo,
+  isProcesamientoTerminado,
+  isProcesamientoExitoso,
+  getEstadoProcesamientoConfig,
+  formatTiempoRestante,
+  formatVelocidadProcesamiento,
+} from './flujoAsignacion'
