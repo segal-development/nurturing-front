@@ -45,6 +45,8 @@ export function ProspectSelector({
 }: ProspectSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
+  // Track if user selected "all types" (full origin) vs "all of specific type"
+  const [isAllTypesSelected, setIsAllTypesSelected] = useState(false)
 
   // Fetch tipos de prospecto from backend
   const { data: tiposProspecto, isLoading: loadingTipos } = useTiposProspecto()
@@ -200,17 +202,19 @@ export function ProspectSelector({
     onSelectionChange(new Set())
     onSelectAllFromOriginChange(false)
     setSelectedTipoId(null)
+    setIsAllTypesSelected(false)
     onTipoChange?.(null)
   }, [onSelectionChange, onSelectAllFromOriginChange, onTipoChange])
 
   /**
-   * Select all prospects from origin (without loading them)
+   * Select all prospects from origin of a SPECIFIC type
    */
   const handleSelectAllFromOrigin = useCallback(
     (tipo: TipoProspecto) => {
       onSelectAllFromOriginChange(true)
       onSelectionChange(new Set()) // Clear manual selection
       setSelectedTipoId(tipo.id)
+      setIsAllTypesSelected(false) // Only this specific type
       onTipoChange?.(tipo.id)
     },
     [onSelectAllFromOriginChange, onSelectionChange, onTipoChange]
@@ -260,6 +264,7 @@ export function ProspectSelector({
     onSelectAllFromOriginChange(true)
     onSelectionChange(new Set())
     setSelectedTipoId(majorityTipoId)
+    setIsAllTypesSelected(true) // ALL types selected
     onTipoChange?.(majorityTipoId)
   }, [getMajorityTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange])
 
@@ -362,7 +367,11 @@ export function ProspectSelector({
               </div>
               {selectAllFromOrigin && selectedTipoNombre && (
                 <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">
-                  ✓ Seleccionarás <strong>{selectedTipoCount.toLocaleString('es-CL')} prospectos de {selectedTipoNombre}</strong> automáticamente
+                  {isAllTypesSelected ? (
+                    <>✓ Seleccionarás <strong>{totalEnBD.toLocaleString('es-CL')} prospectos (todos los tipos)</strong> automáticamente</>
+                  ) : (
+                    <>✓ Seleccionarás <strong>{selectedTipoCount.toLocaleString('es-CL')} prospectos de {selectedTipoNombre}</strong> automáticamente</>
+                  )}
                 </div>
               )}
             </>
@@ -437,12 +446,24 @@ export function ProspectSelector({
             <Users className="h-4 w-4 text-segal-blue" />
             <p className="text-sm font-semibold text-segal-dark">
               {selectAllFromOrigin ? (
-                <>
-                  <span className="text-segal-green font-bold">
-                    {selectedTipoCount.toLocaleString('es-CL')}
-                  </span>{' '}
-                  prospectos de <span className="font-bold">{selectedTipoNombre}</span> serán seleccionados
-                </>
+                isAllTypesSelected ? (
+                  <>
+                    <span className="text-segal-green font-bold">
+                      {totalEnBD.toLocaleString('es-CL')}
+                    </span>{' '}
+                    prospectos del origen serán seleccionados
+                    <span className="ml-2 text-xs text-segal-dark/60">
+                      (Tipo asignado: <span className="font-medium">{selectedTipoNombre}</span>)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-segal-green font-bold">
+                      {selectedTipoCount.toLocaleString('es-CL')}
+                    </span>{' '}
+                    prospectos de <span className="font-bold">{selectedTipoNombre}</span> serán seleccionados
+                  </>
+                )
               ) : (
                 <>
                   <span className="text-segal-blue font-bold">{selectedIds.size}</span> de{' '}
