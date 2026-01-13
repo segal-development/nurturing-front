@@ -304,9 +304,9 @@ export function ProspectSelector({
             <Button
               size="sm"
               onClick={handleSelectAllFromOriginAllTypes}
-              variant={selectAllFromOrigin && selectedTipoId === getMajorityTipoId() ? 'default' : 'outline'}
+              variant={selectAllFromOrigin && isAllTypesSelected ? 'default' : 'outline'}
               className={
-                selectAllFromOrigin
+                selectAllFromOrigin && isAllTypesSelected
                   ? 'bg-segal-green text-white w-full'
                   : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full'
               }
@@ -352,9 +352,9 @@ export function ProspectSelector({
                       <Button
                         size="sm"
                         onClick={() => handleSelectAllFromOrigin(tipo)}
-                        variant={selectedTipoId === tipo.id && selectAllFromOrigin ? 'default' : 'outline'}
+                        variant={selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected ? 'default' : 'outline'}
                         className={
-                          selectedTipoId === tipo.id && selectAllFromOrigin
+                          selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected
                             ? 'bg-segal-green text-white w-full text-xs'
                             : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full text-xs'
                         }
