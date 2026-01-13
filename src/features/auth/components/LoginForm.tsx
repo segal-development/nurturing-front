@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -35,7 +35,7 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
   const handleSubmit = async (data: LoginFormData) => {
     try {
       await onSubmit(data)
-    } catch (err) {
+    } catch {
       // Error is handled by parent component
     }
   }
@@ -137,7 +137,14 @@ export const LoginForm = ({ onSubmit, isLoading = false, error }: LoginFormProps
           disabled={isLoading || form.formState.isSubmitting}
           aria-busy={isLoading || form.formState.isSubmitting}
         >
-          {isLoading || form.formState.isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          {isLoading || form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Iniciando sesión...
+            </>
+          ) : (
+            'Iniciar Sesión'
+          )}
         </Button>
       </form>
     </Form>

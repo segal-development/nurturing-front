@@ -3,6 +3,7 @@
  * Allows user to select which origin/source to use for prospects
  */
 
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { OpcionesFlujos } from '@/api/flujos.service'
 
@@ -19,6 +20,31 @@ export function OriginSelector({
   loading,
   onClose,
 }: OriginSelectorProps) {
+  // Early return: Show loading overlay when fetching prospects
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 p-8">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-full bg-segal-blue/10 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-segal-blue animate-spin" />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-segal-dark">
+                Cargando Prospectos
+              </h3>
+              <p className="text-sm text-segal-dark/60 max-w-xs">
+                Obteniendo la lista de prospectos del origen seleccionado...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="flex-1 p-6 space-y-6">
