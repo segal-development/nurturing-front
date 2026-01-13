@@ -23,6 +23,45 @@ import {
 import type { EndNodeData } from './flowMapper'
 import type { CustomEdge } from '../../../types/flowBuilder'
 
+// =============================================================================
+// EDGE CLEANUP UTILITIES
+// =============================================================================
+
+/**
+ * Filtra edges que referencian nodos inexistentes (huérfanos)
+ * Previene errores de validación cuando hay desincronización ReactFlow/Zustand
+ */
+function filterOrphanedEdges(
+  edges: CustomEdge[],
+  nodes: ReactFlowNode[]
+): CustomEdge[] {
+  const nodeIds = new Set(nodes.map((n) => n.id))
+
+  const validEdges = edges.filter((edge) => {
+    const sourceExists = nodeIds.has(edge.source)
+    const targetExists = nodeIds.has(edge.target)
+
+    if (!sourceExists || !targetExists) {
+      console.warn(
+        `⚠️ [flowConfig] Removiendo edge huérfano: ${edge.id}`,
+        `source=${edge.source} (${sourceExists ? 'OK' : 'MISSING'})`,
+        `target=${edge.target} (${targetExists ? 'OK' : 'MISSING'})`
+      )
+      return false
+    }
+
+    return true
+  })
+
+  if (validEdges.length !== edges.length) {
+    console.warn(
+      `⚠️ [flowConfig] Se removieron ${edges.length - validEdges.length} edges huérfanos`
+    )
+  }
+
+  return validEdges
+}
+
 /**
  * Estructura de configuración visual
  */
@@ -86,6 +125,7 @@ export function buildStructureConfig(
 
 /**
  * Construye la configuración completa del flujo
+ * IMPORTANTE: Limpia edges huérfanos antes de construir para evitar errores de validación
  */
 export function buildFlowConfiguration(
   flowName: string,
@@ -93,8 +133,11 @@ export function buildFlowConfiguration(
   storeNodes: ReactFlowNode[],
   storeEdges: CustomEdge[]
 ): FlowConfiguration {
-  const visualConfig = buildVisualConfig(storeNodes, storeEdges)
-  const structureConfig = buildStructureConfig(storeNodes, storeEdges)
+  // Limpiar edges huérfanos antes de construir configuración
+  const cleanedEdges = filterOrphanedEdges(storeEdges, storeNodes)
+
+  const visualConfig = buildVisualConfig(storeNodes, cleanedEdges)
+  const structureConfig = buildStructureConfig(storeNodes, cleanedEdges)
   const stages = structureConfig.stages
 
   return {
