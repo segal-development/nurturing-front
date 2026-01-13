@@ -18,6 +18,7 @@ import { FlujoProcesamientoIndicator } from './components/FlujoProcesamientoIndi
 import { useFlujoOpciones } from './hooks/useFlujoOpciones'
 import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
+import { useFlujoProcesamiento } from './hooks/useFlujoProcesamiento'
 import { usePagination } from '@/hooks/usePagination'
 import { Button } from '@/components/ui/button'
 import {
@@ -78,6 +79,17 @@ export function Flujos() {
 
   // Cálculo de páginas totales
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE)
+
+  // Hook para detectar cuando termina el procesamiento de prospectos
+  // y refrescar automáticamente la tabla
+  useFlujoProcesamiento({
+    onComplete: () => {
+      console.log('✅ Procesamiento de prospectos completado - refrescando tabla')
+      queryClient.invalidateQueries({
+        queryKey: ['flujos-page'],
+      })
+    },
+  })
 
   // Handlers de filtros
   const handleFiltrosChange = (newFiltros: typeof filtros) => {
