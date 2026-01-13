@@ -387,43 +387,53 @@ export function Flujos() {
       <FlujoProcesamientoIndicator variant="floating" />
 
       {/* Dialog de confirmación para eliminar flujo */}
-      <AlertDialog open={!!flujoToDelete} onOpenChange={(open) => !open && setFlujoToDelete(null)}>
+      <AlertDialog
+        open={!!flujoToDelete}
+        onOpenChange={(open) => {
+          // Prevenir cierre mientras está eliminando
+          if (isDeleting) return
+          if (!open) setFlujoToDelete(null)
+        }}
+      >
         <AlertDialogContent className="bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-segal-dark">
-              <Trash2 className="h-5 w-5 text-segal-red" />
-              ¿Eliminar flujo?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-segal-dark/70">
-              Estás a punto de eliminar el flujo <strong>"{flujoToDelete?.nombre}"</strong>.
-              Esta acción no se puede deshacer y eliminará todas las etapas y datos asociados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isDeleting}
-              className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
-            >
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-segal-red hover:bg-segal-red/90 text-white"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Eliminando...
-                </>
-              ) : (
-                <>
+          {isDeleting ? (
+            // Estado de carga
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <Loader2 className="h-10 w-10 text-segal-red animate-spin" />
+              <div className="text-center">
+                <p className="text-lg font-semibold text-segal-dark">Eliminando flujo...</p>
+                <p className="text-sm text-segal-dark/60 mt-1">
+                  Esto puede tomar unos segundos si hay muchos registros asociados.
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Estado de confirmación
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-segal-dark">
+                  <Trash2 className="h-5 w-5 text-segal-red" />
+                  ¿Eliminar flujo?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-segal-dark/70">
+                  Estás a punto de eliminar el flujo <strong>"{flujoToDelete?.nombre}"</strong>.
+                  Esta acción no se puede deshacer y eliminará todas las etapas y datos asociados.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5">
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleConfirmDelete}
+                  className="bg-segal-red hover:bg-segal-red/90 text-white"
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Sí, eliminar
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>
