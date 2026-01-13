@@ -275,7 +275,8 @@ export function CreateFlujoWithBuilder({
       origen_id: selectedOriginId,
       origen_nombre: selectedOriginName,
       prospectos: {
-        total_seleccionados: selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size,
+        // Use selectedCount which reflects the actual count (all types OR specific tipo)
+        total_seleccionados: selectedCount || selectedProspectoIds.size,
         ids_seleccionados: selectAllFromOrigin ? [] : Array.from(selectedProspectoIds),
         total_disponibles: totalProspectosEnBD,
         tipo_prospecto_id: selectedTipoProspectoId,
@@ -308,7 +309,8 @@ export function CreateFlujoWithBuilder({
 
     try {
       const payload = buildFlowPayload(config)
-      const totalProspectos = selectAllFromOrigin ? totalProspectosEnBD : selectedProspectoIds.size
+      // Use selectedCount which reflects the actual count (all types OR specific tipo)
+      const totalProspectos = selectedCount || selectedProspectoIds.size
 
       console.log('📤 Enviando payload a backend:', JSON.stringify(payload, null, 2))
 
