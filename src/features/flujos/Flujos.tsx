@@ -5,7 +5,8 @@
 
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { GitBranch, Loader2, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { GitBranch, Loader2, AlertCircle, Trash2 } from 'lucide-react'
 import { FlujosFilters } from './components/FlujosFilters/FlujosFilters'
 import { FlujosTable } from './components/FlujosTable/FlujosTable'
 import { Pagination } from '@/components/shared/Pagination'
@@ -19,6 +20,17 @@ import { useFlujosPage } from './hooks/useFlujosPage'
 import { useFlujosFilters } from './hooks/useFlujosFilters'
 import { usePagination } from '@/hooks/usePagination'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { flujosService } from '@/api/flujos.service'
 import type { FlujoNurturing } from '@/types/flujo'
 
 const ITEMS_PER_PAGE = 15
@@ -37,6 +49,10 @@ export function Flujos() {
 
   // Estado para crear flujo desde origen preseleccionado
   const [initialOriginIdForCreation, setInitialOriginIdForCreation] = useState<string | null>(null)
+
+  // Estado para eliminación de flujo
+  const [flujoToDelete, setFlujoToDelete] = useState<FlujoNurturing | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Query client para invalidar caché
   const queryClient = useQueryClient()
@@ -142,12 +158,47 @@ export function Flujos() {
   }
 
   /**
-   * Cierra modal de detalle y refresca lista de flujos
+   * Abre dialog de confirmación para eliminar flujo
    */
-  const handleDeleteFlujo = () => {
+  const handleDeleteFlujo = (flujoId: number) => {
+    const flujoEncontrado = flujos.find((flujo) => flujo.id === flujoId) ?? null
+    setFlujoToDelete(flujoEncontrado)
+  }
+
+  /**
+   * Callback para cuando el flujo se elimina desde el modal de detalle
+   */
+  const handleDeleteFromDetail = () => {
     setDetailDialogOpen(false)
     setSelectedFlujo(null)
     invalidateFlujosCache()
+  }
+
+  /**
+   * Confirma y ejecuta la eliminación del flujo
+   */
+  const handleConfirmDelete = async () => {
+    if (!flujoToDelete?.id) return
+
+    setIsDeleting(true)
+    try {
+      const result = await flujosService.delete(flujoToDelete.id)
+      toast.success(`Flujo "${flujoToDelete.nombre}" eliminado correctamente`, {
+        description: result.mensaje || 'El flujo y todos sus datos asociados han sido eliminados',
+      })
+      setFlujoToDelete(null)
+      invalidateFlujosCache()
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ||
+        (error as { message?: string })?.message ||
+        'Error al eliminar el flujo'
+      toast.error('Error al eliminar el flujo', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   /**
@@ -307,7 +358,7 @@ export function Flujos() {
           setDetailDialogOpen(false)
           setEditDialogOpen(true)
         }}
-        onDelete={handleDeleteFlujo}
+        onDelete={handleDeleteFromDetail}
         onExecutionStart={(ejecucionId) => {
           setCurrentExecutionId(ejecucionId.toString())
         }}
@@ -334,6 +385,47 @@ export function Flujos() {
 
       {/* Indicador flotante de procesamiento de prospectos (visible cuando hay flujo creándose) */}
       <FlujoProcesamientoIndicator variant="floating" />
+
+      {/* Dialog de confirmación para eliminar flujo */}
+      <AlertDialog open={!!flujoToDelete} onOpenChange={(open) => !open && setFlujoToDelete(null)}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-segal-dark">
+              <Trash2 className="h-5 w-5 text-segal-red" />
+              ¿Eliminar flujo?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-segal-dark/70">
+              Estás a punto de eliminar el flujo <strong>"{flujoToDelete?.nombre}"</strong>.
+              Esta acción no se puede deshacer y eliminará todas las etapas y datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              className="border-segal-blue/20 text-segal-dark hover:bg-segal-blue/5"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-segal-red hover:bg-segal-red/90 text-white"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Sí, eliminar
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
