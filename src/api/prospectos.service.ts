@@ -8,6 +8,7 @@ import type {
   PaginatedResponse,
   ProspectoFormData,
   ProspectoEstadisticas,
+  ConteoPorTipoResponse,
 } from '@/types/prospecto'
 
 interface Importacion {
@@ -191,5 +192,23 @@ export const prospectosService = {
       params,
     })
     return data.data.total
+  },
+
+  /**
+   * Obtener conteo de prospectos agrupados por tipo de deuda
+   * Devuelve el total y el desglose por cada categoría de deuda
+   */
+  async getConteoPorTipo(params?: {
+    lote_id?: number
+    importacion_id?: number
+    estado?: string
+    origen?: string
+    search?: string
+  }): Promise<ConteoPorTipoResponse> {
+    const { data } = await apiClient.get<{ data: ConteoPorTipoResponse }>(
+      '/prospectos/conteo-por-tipo',
+      { params }
+    )
+    return data.data
   },
 }

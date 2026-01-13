@@ -9,6 +9,7 @@ import { useCallback, useMemo, useState } from 'react'
 import type { TipoProspecto } from '@/api/tiposProspecto.service'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useProspectosConteoPorTipo } from '@/hooks/useProspectosConteoPorTipo'
 import { findTipoByMonto, useTiposProspecto } from '@/hooks/useTiposProspecto'
 import type { Prospecto } from '@/types/prospecto'
 import { AlertCircle, Check, Loader2, Users, X } from 'lucide-react'
@@ -22,6 +23,7 @@ interface ProspectSelectorProps {
   onSelectAllFromOriginChange: (selectAll: boolean) => void
   onTipoChange?: (tipoId: number | null) => void
   onContinue: () => void
+  originId: string
   originName: string
   onBack: () => void
   onClose: () => void
@@ -36,6 +38,7 @@ export function ProspectSelector({
   onSelectAllFromOriginChange,
   onTipoChange,
   onContinue,
+  originId,
   originName,
   onBack,
   onClose,
@@ -46,8 +49,28 @@ export function ProspectSelector({
   // Fetch tipos de prospecto from backend
   const { data: tiposProspecto, isLoading: loadingTipos } = useTiposProspecto()
 
+  // Fetch REAL counts from backend (not calculated from preview)
+  const { data: conteoPorTipo, isLoading: loadingConteo } = useProspectosConteoPorTipo({
+    origen: originId,
+    enabled: !!originId,
+  })
+
   /**
-   * Categorize prospectos by tipo using backend ranges
+   * Map conteo data by tipo_id for easy lookup
+   */
+  const conteoByTipoId = useMemo(() => {
+    if (!conteoPorTipo?.por_tipo) return {}
+    return conteoPorTipo.por_tipo.reduce(
+      (acc, item) => {
+        acc[item.id] = item.total
+        return acc
+      },
+      {} as Record<number, number>
+    )
+  }, [conteoPorTipo])
+
+  /**
+   * Categorize prospectos by tipo using backend ranges (for local selection only)
    */
   const categorizedProspectos = useMemo(() => {
     if (!tiposProspecto) return {}
@@ -234,7 +257,7 @@ export function ProspectSelector({
         <div className="space-y-2">
           <p className="text-xs font-semibold text-segal-dark">Seleccionar por Tipo de Deuda:</p>
 
-          {loadingTipos ? (
+          {loadingTipos || loadingConteo ? (
             <div className="flex items-center gap-2 text-sm text-segal-dark/60">
               <Loader2 className="h-4 w-4 animate-spin" />
               Cargando tipos...
@@ -242,39 +265,44 @@ export function ProspectSelector({
           ) : tiposProspecto && tiposProspecto.length > 0 ? (
             <>
               <div className="grid grid-cols-3 gap-2">
-                {tiposProspecto.map((tipo) => (
-                  <div key={tipo.id} className="space-y-1">
-                    <Button
-                      size="sm"
-                      onClick={() => handleSelectTipo(tipo)}
-                      variant={selectedTipoId === tipo.id && !selectAllFromOrigin ? 'default' : 'outline'}
-                      className={
-                        selectedTipoId === tipo.id && !selectAllFromOrigin
-                          ? 'bg-segal-blue text-white w-full'
-                          : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full'
-                      }
-                    >
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs">{tipo.nombre}</span>
-                        <span className="text-xs font-bold">
-                          {categorizedProspectos[tipo.id]?.length || 0}
-                        </span>
-                      </div>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleSelectAllFromOrigin(tipo)}
-                      variant={selectedTipoId === tipo.id && selectAllFromOrigin ? 'default' : 'outline'}
-                      className={
-                        selectedTipoId === tipo.id && selectAllFromOrigin
-                          ? 'bg-segal-green text-white w-full text-xs'
-                          : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full text-xs'
-                      }
-                    >
-                      Todos ({totalEnBD.toLocaleString('es-CL')})
-                    </Button>
-                  </div>
-                ))}
+                {tiposProspecto.map((tipo) => {
+                  // Use backend count, fallback to local count if not available
+                  const realCount = conteoByTipoId[tipo.id] ?? categorizedProspectos[tipo.id]?.length ?? 0
+
+                  return (
+                    <div key={tipo.id} className="space-y-1">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSelectTipo(tipo)}
+                        variant={selectedTipoId === tipo.id && !selectAllFromOrigin ? 'default' : 'outline'}
+                        className={
+                          selectedTipoId === tipo.id && !selectAllFromOrigin
+                            ? 'bg-segal-blue text-white w-full'
+                            : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full'
+                        }
+                      >
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs">{tipo.nombre}</span>
+                          <span className="text-xs font-bold">
+                            {realCount.toLocaleString('es-CL')}
+                          </span>
+                        </div>
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSelectAllFromOrigin(tipo)}
+                        variant={selectedTipoId === tipo.id && selectAllFromOrigin ? 'default' : 'outline'}
+                        className={
+                          selectedTipoId === tipo.id && selectAllFromOrigin
+                            ? 'bg-segal-green text-white w-full text-xs'
+                            : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full text-xs'
+                        }
+                      >
+                        Todos ({realCount.toLocaleString('es-CL')})
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
               {selectAllFromOrigin && (
                 <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">

@@ -84,3 +84,19 @@ export interface ProspectoExcelRow {
   monto_deuda: string | number;
   url_informe?: string;
 }
+
+/**
+ * Conteo de prospectos agrupados por tipo de deuda
+ */
+export interface ConteoPorTipoItem {
+  id: number;
+  nombre: string;
+  total: number;
+  monto_min: number | null;
+  monto_max: number | null;
+}
+
+export interface ConteoPorTipoResponse {
+  total: number;
+  por_tipo: ConteoPorTipoItem[];
+}

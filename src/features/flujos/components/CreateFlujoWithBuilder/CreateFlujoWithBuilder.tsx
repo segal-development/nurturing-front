@@ -437,6 +437,7 @@ export function CreateFlujoWithBuilder({
               onSelectAllFromOriginChange={setSelectAllFromOrigin}
               onTipoChange={setSelectedTipoProspectoId}
               onContinue={handleProspectsSelect}
+              originId={selectedOriginId || ''}
               originName={selectedOriginName || ''}
               onBack={handleBack}
               onClose={handleClose}
