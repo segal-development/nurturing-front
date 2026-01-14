@@ -178,18 +178,25 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
 
     actualizarProgreso: (response) => {
       const { data } = response
+      const { flujoActivo } = get()
 
-      set((state) => {
-        if (!state.flujoActivo) return state
+      // IMPORTANTE: Ignorar respuestas de flujos anteriores (race condition)
+      // Esto previene que una respuesta tardía de un flujo eliminado/anterior
+      // sobrescriba el estado del flujo actual
+      if (!flujoActivo || data.flujo_id !== flujoActivo.flujoId) {
+        console.warn(
+          `Ignorando respuesta de flujo ${data.flujo_id} - flujo activo: ${flujoActivo?.flujoId ?? 'ninguno'}`
+        )
+        return
+      }
 
-        return {
-          flujoActivo: {
-            ...state.flujoActivo,
-            estado: data.estado,
-            progreso: data.progreso,
-            mensaje: data.mensaje,
-          },
-        }
+      set({
+        flujoActivo: {
+          ...flujoActivo,
+          estado: data.estado,
+          progreso: data.progreso,
+          mensaje: data.mensaje,
+        },
       })
 
       // Verificar si terminó
@@ -252,8 +259,18 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
         try {
           await ejecutarPolling(state)
         } catch (error) {
-          console.error('Error en polling de flujo:', error)
-          // No detener por errores temporales de red
+          // Detectar errores fatales que requieren detener el polling
+          const httpStatus = (error as { response?: { status?: number } })?.response?.status
+
+          if (httpStatus === 404) {
+            // Flujo fue eliminado - detener polling silenciosamente
+            console.warn(`Flujo ${state.flujoActivo?.flujoId} no encontrado (404) - deteniendo polling`)
+            state.limpiarFlujo()
+            return
+          }
+
+          // Errores temporales de red - continuar polling
+          console.error('Error temporal en polling de flujo:', error)
         }
       }, POLLING_INTERVAL_MS)
     },
