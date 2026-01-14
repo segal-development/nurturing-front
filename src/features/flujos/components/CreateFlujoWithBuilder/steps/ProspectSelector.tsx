@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { useProspectosConteoPorTipo } from '@/hooks/useProspectosConteoPorTipo'
 import { findTipoByMonto, useTiposProspecto } from '@/hooks/useTiposProspecto'
 import type { Prospecto } from '@/types/prospecto'
-import { AlertCircle, Check, Loader2, Users, X } from 'lucide-react'
+import { AlertCircle, Loader2, Users, X } from 'lucide-react'
 
 interface ProspectSelectorProps {
   prospectos: Prospecto[]
@@ -189,22 +189,7 @@ export function ProspectSelector({
   )
 
   /**
-   * Select all visible prospects
-   */
-  const handleSelectAll = useCallback(() => {
-    const ids = new Set(filteredProspectos.map((p) => p.id))
-    onSelectionChange(ids)
-    setIsAllTypesSelected(false)
-
-    // Infer tipo from the selection
-    const inferredTipo = inferTipoFromSelection(ids)
-    setSelectedTipoId(inferredTipo)
-    onTipoChange?.(inferredTipo)
-    onSelectedCountChange?.(ids.size)
-  }, [filteredProspectos, onSelectionChange, inferTipoFromSelection, onTipoChange, onSelectedCountChange])
-
-  /**
-   * Deselect all
+   * Deselect all / Clear selection
    */
   const handleDeselectAll = useCallback(() => {
     onSelectionChange(new Set())
@@ -392,28 +377,6 @@ export function ProspectSelector({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={handleSelectAll}
-            variant="outline"
-            className="border-segal-green/20 text-segal-green hover:bg-segal-green/5"
-          >
-            <Check className="h-4 w-4 mr-2" />
-            Seleccionar Todo
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleDeselectAll}
-            variant="outline"
-            className="border-segal-red/20 text-segal-red hover:bg-segal-red/5"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Deseleccionar
-          </Button>
-        </div>
-
         {/* Prospects list */}
         <div className="flex-1 overflow-y-auto border border-segal-blue/10 rounded-lg">
           {filteredProspectos.length > 0 ? (
@@ -454,9 +417,10 @@ export function ProspectSelector({
 
         {/* Summary */}
         <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="h-4 w-4 text-segal-blue" />
-            <p className="text-sm font-semibold text-segal-dark">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-segal-blue" />
+              <p className="text-sm font-semibold text-segal-dark">
               {selectAllFromOrigin ? (
                 isAllTypesSelected ? (
                   <>
@@ -488,6 +452,18 @@ export function ProspectSelector({
                 </span>
               )}
             </p>
+            </div>
+            {/* Limpiar selección - solo visible si hay algo seleccionado */}
+            {(selectedIds.size > 0 || selectAllFromOrigin) && (
+              <button
+                type="button"
+                onClick={handleDeselectAll}
+                className="text-xs text-segal-red hover:text-segal-red/80 hover:underline flex items-center gap-1"
+              >
+                <X className="h-3 w-3" />
+                Limpiar selección
+              </button>
+            )}
           </div>
           {selectedIds.size === 0 && !selectAllFromOrigin && (
             <p className="text-xs text-segal-dark/60 flex items-center gap-2">
