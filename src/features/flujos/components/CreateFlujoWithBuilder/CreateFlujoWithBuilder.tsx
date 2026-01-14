@@ -146,9 +146,10 @@ export function CreateFlujoWithBuilder({
   // Hook de procesamiento async
   const { estado: estadoProcesamiento, iniciarTracking, detenerTracking } = useFlujoProcesamiento({
     onComplete: () => {
-      // Cuando completa el procesamiento async, cerrar modal y notificar
-      onOpenChange(false)
+      // IMPORTANTE: Primero notificar (invalida cache) y LUEGO cerrar modal
+      // Si cerramos primero, el componente se desmonta y el callback puede perderse
       onSuccess?.()
+      onOpenChange(false)
     },
   })
 
