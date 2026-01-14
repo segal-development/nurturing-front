@@ -8,9 +8,8 @@ import { useCallback, useMemo, useState } from 'react'
 
 import type { TipoProspecto } from '@/api/tiposProspecto.service'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useProspectosConteoPorTipo } from '@/hooks/useProspectosConteoPorTipo'
-import { findTipoByMonto, useTiposProspecto } from '@/hooks/useTiposProspecto'
+import { useTiposProspecto } from '@/hooks/useTiposProspecto'
 import type { Prospecto } from '@/types/prospecto'
 import { AlertCircle, Loader2, Users, X } from 'lucide-react'
 
@@ -45,7 +44,6 @@ export function ProspectSelector({
   onBack,
   onClose,
 }: ProspectSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
   // Track if user selected "all types" (full origin) vs "all of specific type"
   const [isAllTypesSelected, setIsAllTypesSelected] = useState(false)
@@ -72,121 +70,6 @@ export function ProspectSelector({
       {} as Record<number, number>
     )
   }, [conteoPorTipo])
-
-  /**
-   * Categorize prospectos by tipo using backend ranges (for local selection only)
-   */
-  const categorizedProspectos = useMemo(() => {
-    if (!tiposProspecto) return {}
-
-    const result: Record<number, Prospecto[]> = {}
-
-    // Initialize empty arrays for each tipo
-    tiposProspecto.forEach((tipo) => {
-      result[tipo.id] = []
-    })
-
-    // Categorize each prospecto
-    prospectos.forEach((prospecto) => {
-      const tipo = findTipoByMonto(tiposProspecto, prospecto.monto_deuda)
-      if (tipo) {
-        result[tipo.id].push(prospecto)
-      }
-    })
-
-    return result
-  }, [prospectos, tiposProspecto])
-
-  /**
-   * Infer tipo from selected prospectos based on majority
-   * Returns the tipo that contains most of the selected prospectos
-   */
-  const inferTipoFromSelection = useCallback(
-    (selectedProspectoIds: Set<number>): number | null => {
-      if (!tiposProspecto || selectedProspectoIds.size === 0) return null
-
-      // Count how many selected prospectos belong to each tipo
-      const countByTipo: Record<number, number> = {}
-
-      selectedProspectoIds.forEach((id) => {
-        const prospecto = prospectos.find((p) => p.id === id)
-        if (prospecto) {
-          const tipo = findTipoByMonto(tiposProspecto, prospecto.monto_deuda)
-          if (tipo) {
-            countByTipo[tipo.id] = (countByTipo[tipo.id] || 0) + 1
-          }
-        }
-      })
-
-      // Find the tipo with the most prospectos
-      let maxCount = 0
-      let dominantTipoId: number | null = null
-
-      Object.entries(countByTipo).forEach(([tipoId, count]) => {
-        if (count > maxCount) {
-          maxCount = count
-          dominantTipoId = Number(tipoId)
-        }
-      })
-
-      return dominantTipoId
-    },
-    [prospectos, tiposProspecto]
-  )
-
-  /**
-   * Filter prospects by search term
-   */
-  const filteredProspectos = useMemo(
-    () =>
-      prospectos.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.telefono?.includes(searchTerm)
-      ),
-    [prospectos, searchTerm]
-  )
-
-  /**
-   * Select all prospectos of a specific tipo (from loaded preview)
-   */
-  const handleSelectTipo = useCallback(
-    (tipo: TipoProspecto) => {
-      const idsDelTipo = new Set(categorizedProspectos[tipo.id]?.map((p) => p.id) || [])
-
-      setSelectedTipoId(tipo.id)
-      setIsAllTypesSelected(false)
-      onSelectionChange(idsDelTipo)
-      onTipoChange?.(tipo.id)
-      onSelectedCountChange?.(idsDelTipo.size)
-    },
-    [categorizedProspectos, onSelectionChange, onTipoChange, onSelectedCountChange]
-  )
-
-  /**
-   * Toggle prospect selection - also infers tipo from selection
-   */
-  const handleToggle = useCallback(
-    (prospecto: Prospecto) => {
-      const newSelected = new Set(selectedIds)
-      if (newSelected.has(prospecto.id)) {
-        newSelected.delete(prospecto.id)
-      } else {
-        newSelected.add(prospecto.id)
-      }
-
-      onSelectionChange(newSelected)
-      setIsAllTypesSelected(false)
-
-      // Infer tipo from the new selection
-      const inferredTipo = inferTipoFromSelection(newSelected)
-      setSelectedTipoId(inferredTipo)
-      onTipoChange?.(inferredTipo)
-      onSelectedCountChange?.(newSelected.size)
-    },
-    [selectedIds, onSelectionChange, inferTipoFromSelection, onTipoChange, onSelectedCountChange]
-  )
 
   /**
    * Deselect all / Clear selection
@@ -277,22 +160,8 @@ export function ProspectSelector({
           <div className="text-right">
             <p className="text-sm text-segal-dark/60">Total disponibles</p>
             <p className="text-lg font-bold text-segal-blue">{totalEnBD.toLocaleString('es-CL')}</p>
-            {prospectos.length < totalEnBD && (
-              <p className="text-xs text-segal-dark/40">
-                Mostrando {prospectos.length} para preview
-              </p>
-            )}
           </div>
         </div>
-
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Buscar por nombre, email o teléfono..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-3 py-2 border border-segal-blue/30 rounded-lg focus:border-segal-blue focus:ring-1 focus:ring-segal-blue/20"
-        />
 
         {/* Tipos de Deuda - Quick Select */}
         <div className="space-y-3">
@@ -322,43 +191,30 @@ export function ProspectSelector({
             </div>
           ) : tiposProspecto && tiposProspecto.length > 0 ? (
             <>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {tiposProspecto.map((tipo) => {
-                  // Use backend count, fallback to local count if not available
-                  const realCount = conteoByTipoId[tipo.id] ?? categorizedProspectos[tipo.id]?.length ?? 0
+                  const realCount = conteoByTipoId[tipo.id] ?? 0
+                  const isSelected = selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected
 
                   return (
-                    <div key={tipo.id} className="space-y-1">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSelectTipo(tipo)}
-                        variant={selectedTipoId === tipo.id && !selectAllFromOrigin ? 'default' : 'outline'}
-                        className={
-                          selectedTipoId === tipo.id && !selectAllFromOrigin
-                            ? 'bg-segal-blue text-white w-full'
-                            : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full'
-                        }
-                      >
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs">{tipo.nombre}</span>
-                          <span className="text-xs font-bold">
-                            {realCount.toLocaleString('es-CL')}
-                          </span>
-                        </div>
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSelectAllFromOrigin(tipo)}
-                        variant={selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected ? 'default' : 'outline'}
-                        className={
-                          selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected
-                            ? 'bg-segal-green text-white w-full text-xs'
-                            : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5 w-full text-xs'
-                        }
-                      >
-                        Todos ({realCount.toLocaleString('es-CL')})
-                      </Button>
-                    </div>
+                    <Button
+                      key={tipo.id}
+                      size="lg"
+                      onClick={() => handleSelectAllFromOrigin(tipo)}
+                      variant={isSelected ? 'default' : 'outline'}
+                      className={
+                        isSelected
+                          ? 'bg-segal-blue text-white w-full h-auto py-3'
+                          : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full h-auto py-3'
+                      }
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-sm font-medium">{tipo.nombre}</span>
+                        <span className="text-lg font-bold">
+                          {realCount.toLocaleString('es-CL')}
+                        </span>
+                      </div>
+                    </Button>
                   )
                 })}
               </div>
@@ -377,44 +233,6 @@ export function ProspectSelector({
           )}
         </div>
 
-        {/* Prospects list */}
-        <div className="flex-1 overflow-y-auto border border-segal-blue/10 rounded-lg">
-          {filteredProspectos.length > 0 ? (
-            <div className="divide-y divide-segal-blue/10">
-              {filteredProspectos.map((prospecto) => {
-                const checkboxId = `prospecto-${prospecto.id}`
-                return (
-                  <div
-                    key={prospecto.id}
-                    className="p-3 hover:bg-segal-blue/5 transition-colors flex items-start gap-3"
-                  >
-                    <Checkbox
-                      id={checkboxId}
-                      checked={selectedIds.has(prospecto.id)}
-                      onCheckedChange={() => handleToggle(prospecto)}
-                      className="mt-1"
-                    />
-                    <label htmlFor={checkboxId} className="flex-1 min-w-0 cursor-pointer">
-                      <p className="font-medium text-segal-dark text-sm">{prospecto.nombre}</p>
-                      <div className="flex gap-4 mt-1 text-xs text-segal-dark/60 flex-wrap">
-                        {prospecto.email && <span>📧 {prospecto.email}</span>}
-                        {prospecto.telefono && <span>📱 {prospecto.telefono}</span>}
-                        {prospecto.monto_deuda && (
-                          <span>💰 ${prospecto.monto_deuda.toLocaleString('es-CL')}</span>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-segal-dark/60">
-              <p>No se encontraron prospectos</p>
-            </div>
-          )}
-        </div>
-
         {/* Summary */}
         <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
           <div className="flex items-center justify-between mb-2">
@@ -429,7 +247,7 @@ export function ProspectSelector({
                     </span>{' '}
                     prospectos del origen serán seleccionados
                     <span className="ml-2 text-xs text-segal-dark/60">
-                      (Tipo asignado: <span className="font-medium">{selectedTipoNombre}</span>)
+                      (Tipo mayoritario: <span className="font-medium">{selectedTipoNombre}</span>)
                     </span>
                   </>
                 ) : (
@@ -441,15 +259,7 @@ export function ProspectSelector({
                   </>
                 )
               ) : (
-                <>
-                  <span className="text-segal-blue font-bold">{selectedIds.size}</span> de{' '}
-                  {prospectos.length} prospectos seleccionados (cargados)
-                </>
-              )}
-              {!selectAllFromOrigin && selectedTipoNombre && (
-                <span className="ml-2 text-xs text-segal-dark/60">
-                  (Tipo: <span className="font-medium">{selectedTipoNombre}</span>)
-                </span>
+                <span className="text-segal-dark/60">Selecciona un tipo de deuda o todos los prospectos</span>
               )}
             </p>
             </div>
