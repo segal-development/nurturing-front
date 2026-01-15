@@ -176,32 +176,20 @@ function FlowBuilderContent({
 
   // Sincronizar Zustand store con ReactFlow cuando cambian
   // Esta es la ÚNICA fuente de verdad para ReactFlow
+  // IMPORTANTE: No incluir setNodes/setEdges en dependencias (causan loop infinito)
   useEffect(() => {
-    console.log('🔄 [useEffect Sync] Sincronizando desde Zustand...')
-    console.log(`   - Nodos en Zustand: ${storeNodes.length}`)
-    console.log(`   - Edges en Zustand: ${storeEdges.length}`)
-
     // Actualizar nodos
     setNodes(storeNodes)
 
     // Actualizar edges con tipo asegurado
-    const edgesWithType = storeEdges.map((edge) => {
-      const edgeWithType = {
-        ...edge,
-        type: edge.type || 'animated',
-      }
+    const edgesWithType = storeEdges.map((edge) => ({
+      ...edge,
+      type: edge.type || 'animated',
+    }))
 
-      // Log para debugging de edges específicos
-      if (edge.sourceHandle?.includes('-yes') || edge.sourceHandle?.includes('-no')) {
-        console.log(`   ✓ Edge ${edge.id}: sourceHandle="${edge.sourceHandle}"`)
-      }
-
-      return edgeWithType
-    })
-
-    console.log(`🎨 [useEffect Sync] ReactFlow actualizado con ${edgesWithType.length} edges`)
     setEdges(edgesWithType)
-  }, [storeNodes, storeEdges, setNodes, setEdges])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeNodes, storeEdges])
 
   // Initialize form values
   useEffect(() => {
@@ -300,18 +288,8 @@ function FlowBuilderContent({
 
       // Validar que source y target existan
       if (!connection.source || !connection.target) {
-        console.warn('⚠️ Conexión inválida: source o target missing')
         return
       }
-
-      // Log de debugging
-      console.log('🔗 Nueva conexión:', {
-        source: connection.source,
-        sourceHandle,
-        target: connection.target,
-        targetHandle,
-        isConditionalBranch: sourceHandle.includes('-yes') || sourceHandle.includes('-no'),
-      })
 
       // Construir edge
       const newEdge: CustomEdge = {
@@ -322,9 +300,6 @@ function FlowBuilderContent({
         targetHandle,
         type: 'animated',
       } as any
-
-      console.log('➕ Edge creado:', newEdge)
-      console.log('📌 Agregando a Zustand (source of truth)')
 
       // Agregar a Zustand - ReactFlow se actualizará automáticamente
       addFlowEdge(newEdge)
@@ -394,18 +369,17 @@ function FlowBuilderContent({
   }, [])
 
   const handleConfirmDiscard = useCallback(() => {
-    console.log('🗑️ Descartando cambios del flujo...')
     resetFlow()
     // Sincronizar ReactFlow con los nodos y edges vacios del store
     setNodes([])
     setEdges([])
     setIsDiscardDialogOpen(false)
-    console.log('✅ Flujo descartado exitosamente')
     // Cerrar el modal de creación y volver a flujos
     if (onCancel) {
       onCancel()
     }
-  }, [resetFlow, setNodes, setEdges, onCancel])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetFlow, onCancel])
 
   // Contadores
   const stageCount = storeNodes.filter((n) => n.type === 'stage').length

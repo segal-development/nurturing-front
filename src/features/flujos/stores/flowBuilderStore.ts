@@ -144,14 +144,11 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   },
 
   updateNode: (nodeId: string, data: Partial<any>) => {
-    console.log(`[DEBUG Store] updateNode called for ${nodeId} with data:`, data)
-    set((state) => {
-      const updated = state.nodes.map((n) =>
+    set((state) => ({
+      nodes: state.nodes.map((n) =>
         n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
-      )
-      console.log(`[DEBUG Store] Node ${nodeId} after update:`, updated.find((n) => n.id === nodeId)?.data)
-      return { nodes: updated }
-    })
+      ),
+    }))
   },
 
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => {
@@ -176,32 +173,18 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
     )
 
     if (exists) {
-      console.warn('⚠️ [Zustand] Edge duplicado evitado:', edge.id)
       return
     }
 
-    console.log('✅ [Zustand] Agregando edge:', {
-      id: edge.id,
-      source: edge.source,
-      sourceHandle: edge.sourceHandle,
-      target: edge.target,
-      targetHandle: edge.targetHandle,
-    })
-
-    set((state) => {
-      const updated = [...state.edges, edge]
-      console.log(`📊 [Zustand] Total edges después de agregar: ${updated.length}`)
-      return { edges: updated }
-    })
+    set((state) => ({
+      edges: [...state.edges, edge],
+    }))
   },
 
   removeEdge: (edgeId: string) => {
-    console.log('🗑️ [Zustand] Eliminando edge:', edgeId)
-    set((state) => {
-      const updated = state.edges.filter((e) => e.id !== edgeId)
-      console.log(`📊 [Zustand] Total edges después de eliminar: ${updated.length}`)
-      return { edges: updated }
-    })
+    set((state) => ({
+      edges: state.edges.filter((e) => e.id !== edgeId),
+    }))
   },
 
   // Flow actions
@@ -244,10 +227,6 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   },
 
   loadFlowConfiguration: (nodes: CustomNode[], edges: CustomEdge[]) => {
-    console.log('📂 [Store] Cargando configuración completa del flujo:', {
-      nodesCount: nodes.length,
-      edgesCount: edges.length,
-    })
     set({
       nodes,
       edges,
