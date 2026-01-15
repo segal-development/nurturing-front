@@ -77,21 +77,77 @@ interface FlujoProcesamientoActions {
 type FlujoProcesamientoStore = FlujoProcesamientoState & FlujoProcesamientoActions
 
 // =============================================================================
-// CALLBACK GLOBAL
+// SISTEMA DE SUSCRIPCIÓN MÚLTIPLE
 // =============================================================================
 
 type OnFlujoCompleteCallback = (flujoId: number) => void
 
-let onFlujoCompleteCallback: OnFlujoCompleteCallback | null = null
+/**
+ * Set de listeners suscritos a la completación de flujos.
+ * Usamos un Map con ID único para poder desuscribir específicamente.
+ */
+const completionListeners = new Map<string, OnFlujoCompleteCallback>()
 
 /**
- * Registra un callback que se ejecuta cuando un flujo completa su procesamiento.
- * Útil para refrescar tablas o mostrar notificaciones personalizadas.
+ * Genera un ID único para cada suscripción.
+ */
+function generateSubscriptionId(): string {
+  return `sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+}
+
+/**
+ * Suscribe un callback que se ejecuta cuando un flujo completa su procesamiento.
+ * Retorna una función para desuscribirse (patrón similar a useEffect cleanup).
+ *
+ * @example
+ * const unsubscribe = subscribeToFlujoComplete((flujoId) => {
+ *   console.log('Flujo completado:', flujoId)
+ * })
+ * // Luego para limpiar:
+ * unsubscribe()
+ */
+export function subscribeToFlujoComplete(
+  callback: OnFlujoCompleteCallback
+): () => void {
+  const subscriptionId = generateSubscriptionId()
+  completionListeners.set(subscriptionId, callback)
+
+  // Retorna función de cleanup
+  return () => {
+    completionListeners.delete(subscriptionId)
+  }
+}
+
+/**
+ * Notifica a todos los listeners suscritos que un flujo completó.
+ * @internal - Solo debe ser llamado desde el store
+ */
+function notifyFlujoComplete(flujoId: number): void {
+  completionListeners.forEach((callback) => {
+    try {
+      callback(flujoId)
+    } catch (error) {
+      console.error('Error en listener de flujo completado:', error)
+    }
+  })
+}
+
+/**
+ * @deprecated Usar subscribeToFlujoComplete() en su lugar.
+ * Mantiene compatibilidad con código existente pero ya no es necesario.
  */
 export function setOnFlujoProcesamientoComplete(
   callback: OnFlujoCompleteCallback | null
 ): void {
-  onFlujoCompleteCallback = callback
+  // Legacy: si alguien todavía usa esto, lo convertimos a suscripción
+  // pero no podemos retornar el unsubscribe, así que usamos un ID fijo
+  const LEGACY_ID = '__legacy__'
+
+  if (callback) {
+    completionListeners.set(LEGACY_ID, callback)
+  } else {
+    completionListeners.delete(LEGACY_ID)
+  }
 }
 
 // =============================================================================
@@ -216,7 +272,7 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
       // Notificaciones
       if (estado === 'completado') {
         mostrarToastCompletado(flujoActivo)
-        onFlujoCompleteCallback?.(flujoActivo.flujoId)
+        notifyFlujoComplete(flujoActivo.flujoId)
       } else {
         mostrarToastFallido(flujoActivo.flujoNombre, error)
       }

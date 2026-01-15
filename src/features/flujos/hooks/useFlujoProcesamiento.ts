@@ -30,7 +30,7 @@ import {
   selectMensajeProgreso,
   selectEstadoProcesamiento,
   selectIsPolling,
-  setOnFlujoProcesamientoComplete,
+  subscribeToFlujoComplete,
   type FlujoEnProcesamiento,
 } from '@/stores/flujoProcesamientoStore'
 import type { EstadoProcesamientoFlujo } from '@/types/flujoAsignacion'
@@ -98,15 +98,15 @@ export function useFlujoProcesamiento(
     (state) => state.limpiarFlujo
   )
 
-  // Callback de completación
+  // Suscripción al evento de completación
+  // Cada instancia del hook mantiene su propia suscripción independiente
   useEffect(() => {
     if (!onComplete) return
 
-    setOnFlujoProcesamientoComplete(onComplete)
+    // subscribeToFlujoComplete retorna la función de cleanup automáticamente
+    const unsubscribe = subscribeToFlujoComplete(onComplete)
 
-    return () => {
-      setOnFlujoProcesamientoComplete(null)
-    }
+    return unsubscribe
   }, [onComplete])
 
   // Wrapper con validación
