@@ -116,37 +116,35 @@ export function ProspectSelector({
   }, [selectedTipoId, conteoByTipoId])
 
   /**
-   * Find the majority tipo (the one with most prospects)
+   * Find the "Todos" tipo (special type for selecting all prospects)
    */
-  const getMajorityTipoId = useCallback((): number | null => {
-    if (!conteoPorTipo?.por_tipo || conteoPorTipo.por_tipo.length === 0) return null
+  const getTodosTipoId = useCallback((): number | null => {
+    if (!tiposProspecto || tiposProspecto.length === 0) return null
 
-    let maxCount = 0
-    let majorityId: number | null = null
+    const todosTipo = tiposProspecto.find(
+      (tipo) => tipo.nombre.toLowerCase() === 'todos'
+    )
 
-    conteoPorTipo.por_tipo.forEach((item) => {
-      if (item.total > maxCount) {
-        maxCount = item.total
-        majorityId = item.id
-      }
-    })
-
-    return majorityId
-  }, [conteoPorTipo])
+    return todosTipo?.id ?? null
+  }, [tiposProspecto])
 
   /**
-   * Select ALL prospects from origin (all types) - infers majority tipo
+   * Select ALL prospects from origin (all types) - uses "Todos" tipo
    */
   const handleSelectAllFromOriginAllTypes = useCallback(() => {
-    const majorityTipoId = getMajorityTipoId()
+    const todosTipoId = getTodosTipoId()
+
+    if (todosTipoId === null) {
+      console.warn('No se encontró el tipo "Todos" en la base de datos')
+    }
 
     onSelectAllFromOriginChange(true)
     onSelectionChange(new Set())
-    setSelectedTipoId(majorityTipoId)
+    setSelectedTipoId(todosTipoId)
     setIsAllTypesSelected(true) // ALL types selected
-    onTipoChange?.(majorityTipoId)
+    onTipoChange?.(todosTipoId)
     onSelectedCountChange?.(totalEnBD) // All prospects from origin
-  }, [getMajorityTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, totalEnBD])
+  }, [getTodosTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, totalEnBD])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -218,10 +216,10 @@ export function ProspectSelector({
                   )
                 })}
               </div>
-              {selectAllFromOrigin && selectedTipoNombre && (
+              {selectAllFromOrigin && selectedTipoId && (
                 <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">
                   {isAllTypesSelected ? (
-                    <>✓ Seleccionarás <strong>{totalEnBD.toLocaleString('es-CL')} prospectos (todos los tipos)</strong> automáticamente</>
+                    <>✓ Seleccionarás <strong>{totalEnBD.toLocaleString('es-CL')} prospectos</strong> (sin distinción de tipo de deuda)</>
                   ) : (
                     <>✓ Seleccionarás <strong>{selectedTipoCount.toLocaleString('es-CL')} prospectos de {selectedTipoNombre}</strong> automáticamente</>
                   )}
@@ -247,7 +245,7 @@ export function ProspectSelector({
                     </span>{' '}
                     prospectos del origen serán seleccionados
                     <span className="ml-2 text-xs text-segal-dark/60">
-                      (Tipo mayoritario: <span className="font-medium">{selectedTipoNombre}</span>)
+                      (Todos los tipos de deuda)
                     </span>
                   </>
                 ) : (
