@@ -190,31 +190,33 @@ export function ProspectSelector({
           ) : tiposProspecto && tiposProspecto.length > 0 ? (
             <>
               <div className="grid grid-cols-3 gap-3">
-                {tiposProspecto.map((tipo) => {
-                  const realCount = conteoByTipoId[tipo.id] ?? 0
-                  const isSelected = selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected
+                {tiposProspecto
+                  .filter((tipo) => tipo.nombre.toLowerCase() !== 'todos')
+                  .map((tipo) => {
+                    const realCount = conteoByTipoId[tipo.id] ?? 0
+                    const isSelected = selectedTipoId === tipo.id && selectAllFromOrigin && !isAllTypesSelected
 
-                  return (
-                    <Button
-                      key={tipo.id}
-                      size="lg"
-                      onClick={() => handleSelectAllFromOrigin(tipo)}
-                      variant={isSelected ? 'default' : 'outline'}
-                      className={
-                        isSelected
-                          ? 'bg-segal-blue text-white w-full h-auto py-3'
-                          : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full h-auto py-3'
-                      }
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-sm font-medium">{tipo.nombre}</span>
-                        <span className="text-lg font-bold">
-                          {realCount.toLocaleString('es-CL')}
-                        </span>
-                      </div>
-                    </Button>
-                  )
-                })}
+                    return (
+                      <Button
+                        key={tipo.id}
+                        size="lg"
+                        onClick={() => handleSelectAllFromOrigin(tipo)}
+                        variant={isSelected ? 'default' : 'outline'}
+                        className={
+                          isSelected
+                            ? 'bg-segal-blue text-white w-full h-auto py-3'
+                            : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 w-full h-auto py-3'
+                        }
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-sm font-medium">{tipo.nombre}</span>
+                          <span className="text-lg font-bold">
+                            {realCount.toLocaleString('es-CL')}
+                          </span>
+                        </div>
+                      </Button>
+                    )
+                  })}
               </div>
               {selectAllFromOrigin && selectedTipoId && (
                 <div className="bg-segal-green/10 border border-segal-green/30 rounded p-2 text-xs text-segal-green">
