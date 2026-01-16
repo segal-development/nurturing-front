@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { CalendarIcon } from "lucide-react"
@@ -34,11 +35,19 @@ export function DatePicker({
   fromDate,
   toDate,
 }: DatePickerProps) {
+  const [open, setOpen] = useState(false)
+  
   // Build disabled matcher for dates outside the allowed range
   const disabledMatcher = buildDisabledMatcher(fromDate, toDate)
 
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    onDateChange(selectedDate)
+    // Close the popover after selecting a date
+    setOpen(false)
+  }
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -57,7 +66,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onDateChange}
+          onSelect={handleDateSelect}
           disabled={disabledMatcher}
           defaultMonth={date || fromDate || new Date()}
           autoFocus
