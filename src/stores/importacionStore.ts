@@ -256,7 +256,8 @@ async function procesarPolling(state: ImportacionStore): Promise<void> {
   const processedDiff = (progreso.total_registros || 0) - lastProcessed
   const speed = calcularVelocidad(processedDiff, timeDiff)
   
-  const estimated = progreso.metadata?.total_estimado || importacionActiva.totalEstimado
+  const metadata = progreso.metadata as { total_estimado?: number } | null
+  const estimated = metadata?.total_estimado || importacionActiva.totalEstimado
   const tiempoRestante = calcularTiempoRestante(speed, estimated, progreso.total_registros || 0)
 
   lastProcessed = progreso.total_registros || 0
@@ -274,7 +275,8 @@ async function procesarPolling(state: ImportacionStore): Promise<void> {
   })
 
   if (progreso.estado === 'completado' || progreso.estado === 'fallido') {
-    state.finalizarImportacion(progreso.estado, progreso.metadata?.error)
+    const errorMetadata = progreso.metadata as { error?: string } | null
+    state.finalizarImportacion(progreso.estado, errorMetadata?.error)
   }
 }
 

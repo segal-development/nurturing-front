@@ -67,12 +67,12 @@ function parseImportarResponse(responseData: unknown): ImportarResponse {
 
   // La respuesta siempre debería tener estos campos
   if (data && 'mensaje' in data && 'data' in data) {
-    return data as ImportarResponse
+    return data as unknown as ImportarResponse
   }
 
   // Fallback: asumir que es la estructura correcta
   console.warn('[importacionesService] Estructura de respuesta no estándar:', data)
-  return data as ImportarResponse
+  return data as unknown as ImportarResponse
 }
 
 /**

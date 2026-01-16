@@ -9,6 +9,7 @@ import {
   Sliders,
   Mail,
   DollarSign,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ const NAVIGATION_ITEMS = [
   { name: 'Prospectos', href: '/prospectos', icon: Users },
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
   { name: 'Envíos', href: '/envios', icon: Mail },
+  { name: 'Métricas', href: '/metricas', icon: BarChart3 },
   { name: 'Plantillas', href: '/plantillas', icon: Mail },
   { name: 'Costos', href: '/costos', icon: DollarSign },
   { name: 'Configuración', href: '/configuracion', icon: Sliders },

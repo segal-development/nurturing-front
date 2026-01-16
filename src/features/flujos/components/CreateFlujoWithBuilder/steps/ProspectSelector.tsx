@@ -30,7 +30,7 @@ interface ProspectSelectorProps {
 }
 
 export function ProspectSelector({
-  prospectos,
+  prospectos: _prospectos,
   totalEnBD,
   selectedIds,
   selectAllFromOrigin,

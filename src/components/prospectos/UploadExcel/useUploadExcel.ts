@@ -84,8 +84,9 @@ export function useUploadExcel(onSuccess?: () => void) {
             description: `${(progreso.registros_exitosos ?? 0).toLocaleString('es-CL')} registros importados correctamente.`,
           })
         } else {
+          const metadata = progreso.metadata as { error?: string } | null
           toast.error('Error al procesar archivo', {
-            description: progreso.metadata?.error || 'Hubo un error durante el procesamiento.',
+            description: metadata?.error || 'Hubo un error durante el procesamiento.',
           })
         }
         return true

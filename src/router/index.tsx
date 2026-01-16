@@ -12,6 +12,7 @@ import Costos from '@/pages/Costos';
 import { ProfilePage } from '@/pages/Profile';
 import { PlantillasPage } from '@/features/plantillas/pages/PlantillasPage';
 import EnviosPage from '@/pages/Envios';
+import { MetricasPage } from '@/features/metricas';
 
 export const router = createBrowserRouter([
   {
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
       {
         path: 'costos',
         element: <Costos />,
+      },
+      {
+        path: 'metricas',
+        element: <MetricasPage />,
       },
       {
         path: 'profile',
