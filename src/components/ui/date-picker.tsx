@@ -42,8 +42,9 @@ export function DatePicker({
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     onDateChange(selectedDate)
-    // Close the popover after selecting a date
-    setOpen(false)
+    // Close the popover after selecting a date with a small delay
+    // to ensure the state update is processed
+    setTimeout(() => setOpen(false), 0)
   }
 
   return (
