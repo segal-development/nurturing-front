@@ -42,7 +42,11 @@ export function PeriodSelector({ value, onChange, className = '' }: PeriodSelect
       <SelectTrigger className={`w-[180px] ${className}`}>
         <SelectValue placeholder="Seleccionar período" />
       </SelectTrigger>
-      <SelectContent position="popper" sideOffset={4} className="z-50">
+      <SelectContent 
+        position="popper" 
+        sideOffset={4} 
+        className="z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 shadow-xl"
+      >
         {PERIOD_OPTIONS.map((option) => (
           <SelectItem key={option.value} value={option.value.toString()}>
             {option.label}
