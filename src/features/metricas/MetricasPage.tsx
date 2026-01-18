@@ -28,7 +28,7 @@ import {
 function LoadingState() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <Loader2 className="h-8 w-8 animate-spin text-segal-blue dark:text-segal-turquoise" />
       <p className="text-muted-foreground">Cargando métricas...</p>
     </div>
   );
