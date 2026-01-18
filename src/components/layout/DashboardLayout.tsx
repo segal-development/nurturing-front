@@ -32,7 +32,7 @@ const NAVIGATION_ITEMS = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Prospectos', href: '/prospectos', icon: Users },
   { name: 'Flujos', href: '/flujos', icon: GitBranch },
-  { name: 'Envíos', href: '/envios', icon: Mail },
+  { name: 'Gestión de Envíos', href: '/envios', icon: Mail },
   { name: 'Métricas', href: '/metricas', icon: BarChart3 },
   { name: 'Plantillas', href: '/plantillas', icon: Mail },
   { name: 'Costos', href: '/costos', icon: DollarSign },
