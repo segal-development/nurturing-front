@@ -63,14 +63,12 @@ export function DashboardLayout() {
         !isSidebarOpen && 'hidden'
       )}>
         {/* Logo */}
-        <div className="flex h-16 items-center border-segal-blue/10 px-6 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <img 
-              src="https://sysgal.segal.cl/defensoria/assets/img/logo_defensoria.png" 
-              alt="Defensoría del Deudor"
-              className="h-10 w-auto object-contain"
-            />
-          </div>
+        <div className="flex h-20 items-center justify-center px-6">
+          <img 
+            src="https://sysgal.segal.cl/defensoria/assets/img/logo_defensoria.png" 
+            alt="Defensoría del Deudor"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         {/* Navigation */}
