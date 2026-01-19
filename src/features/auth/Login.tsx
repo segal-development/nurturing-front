@@ -41,13 +41,10 @@ export const Login = () => {
               />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">
                 Sistema Nurturing
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Plataforma de gestión de campañas
-              </p>
             </div>
           </div>
 
