@@ -64,11 +64,12 @@ export function DashboardLayout() {
       )}>
         {/* Logo */}
         <div className="flex h-16 items-center border-segal-blue/10 px-6 dark:border-slate-700">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-segal-blue to-segal-turquoise">
-              <span className="text-sm font-bold text-white">S</span>
-            </div>
-            <h1 className="text-lg font-bold text-segal-dark dark:text-white">Nurturing</h1>
+          <div className="flex items-center gap-3">
+            <img 
+              src="https://sysgal.segal.cl/defensoria/assets/img/logo_defensoria.png" 
+              alt="Defensoría del Deudor"
+              className="h-10 w-auto object-contain"
+            />
           </div>
         </div>
 
