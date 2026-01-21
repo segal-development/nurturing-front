@@ -77,10 +77,11 @@ export function ExecuteFlowModal({
       console.log('📊 Stages:', flujo.config_structure?.stages)
       console.log('🔗 Branches:', flujo.config_structure?.branches)
 
-      const prospectoIds = flujo.prospectos_en_flujo?.map((pf) => pf.prospecto_id) || []
-
+      // NO enviamos prospectos_ids porque puede haber 350k+
+      // El backend los obtiene directamente de prospectos_en_flujo
       const payload: any = {
-        prospectos_ids: prospectoIds,
+        // Flag para indicar que use todos los prospectos del flujo
+        use_all_prospectos: true,
       }
 
       // Agregar origen_id si está disponible
