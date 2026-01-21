@@ -49,9 +49,10 @@ export function ExecuteFlowModal({
   )
 
   // Contar prospectos del flujo al abrir
+  // Prioridad: prospectos_en_flujo_count (conteo real) > length del array (puede estar limitado)
   useEffect(() => {
     if (isOpen && flujo) {
-      const count = flujo.prospectos_en_flujo?.length || 0
+      const count = flujo.prospectos_en_flujo_count ?? flujo.prospectos_en_flujo?.length ?? 0
       setProspectoCount(count)
     }
   }, [isOpen, flujo])
