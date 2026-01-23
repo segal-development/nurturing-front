@@ -114,6 +114,7 @@ export interface FlowExecutionDetail {
   error_message?: string
   prospectos_ids?: number[]
   progreso?: ExecutionProgress
+  progreso_envios?: ProgresoEnvios
   etapas: StageExecution[]
   jobs: ExecutionJob[]
   condiciones: EvaluatedCondition[]
