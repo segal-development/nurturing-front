@@ -219,6 +219,21 @@ export interface FlowExecutionVisualization {
 /**
  * Información resumida de una ejecución activa
  */
+/**
+ * Progreso detallado de envíos
+ */
+export interface ProgresoEnvios {
+  total_prospectos: number
+  procesados: number
+  exitosos: number
+  fallidos: number
+  pendientes: number
+  porcentaje: number
+  velocidad_por_hora: number
+  tiempo_restante_horas: number
+  tiempo_restante_texto: string
+}
+
 export interface ActiveExecutionInfo {
   id: number
   estado: FlowExecutionMainState
@@ -234,6 +249,7 @@ export interface ActiveExecutionInfo {
     pendientes: number
     fallidas: number
   }
+  progreso_envios?: ProgresoEnvios
 }
 
 /**

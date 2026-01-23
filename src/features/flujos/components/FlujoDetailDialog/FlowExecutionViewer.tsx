@@ -557,8 +557,34 @@ function FlowExecutionContent({
             </span>
           </div>
 
-          {/* Progreso compacto */}
-          {executionData?.progreso && (
+          {/* Progreso de envíos (más detallado) */}
+          {executionData?.progreso_envios && (
+            <div className="px-4 py-3 border-b border-segal-blue/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-segal-dark/70">Progreso</span>
+                <span className="text-xs font-semibold text-segal-blue">{executionData.progreso_envios.porcentaje}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${executionData.progreso_envios.porcentaje}%` }}
+                />
+              </div>
+              <div className="flex flex-col gap-1 mt-2 text-xs text-segal-dark/60">
+                <div className="flex justify-between">
+                  <span>✅ {executionData.progreso_envios.exitosos?.toLocaleString()} enviados</span>
+                  <span>❌ {executionData.progreso_envios.fallidos?.toLocaleString()} fallidos</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>📊 {executionData.progreso_envios.procesados?.toLocaleString()} / {executionData.progreso_envios.total_prospectos?.toLocaleString()}</span>
+                  <span>⏱️ {executionData.progreso_envios.tiempo_restante_texto}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Progreso de etapas (secundario) */}
+          {executionData?.progreso && !executionData?.progreso_envios && (
             <div className="px-4 py-3 border-b border-segal-blue/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-segal-dark/70">Progreso</span>
