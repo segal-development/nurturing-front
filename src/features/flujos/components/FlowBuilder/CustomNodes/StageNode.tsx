@@ -54,6 +54,14 @@ export function StageNode({
 }: StageNodeProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
+
+  // Sincronizar localData cuando data cambia (ej: cuando llegan estadísticas de ejecución)
+  // Solo sincronizar si NO estamos editando para no perder cambios del usuario
+  useLayoutEffect(() => {
+    if (!isEditing) {
+      setLocalData(data)
+    }
+  }, [data, isEditing])
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Use useLayoutEffect to measure and position the node

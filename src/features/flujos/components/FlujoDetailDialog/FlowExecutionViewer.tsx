@@ -235,6 +235,7 @@ function FlowExecutionContent({
         etapas: executionData.etapas?.map(e => ({
           node_id: e.node_id,
           estado: e.estado,
+          envios: e.envios, // Incluir envios en el log
         })),
         timeline: executionData.timeline?.map(t => ({
           node_id: t.node_id,
@@ -314,7 +315,7 @@ function FlowExecutionContent({
             executionState: stage.estado,
             executionDate: stage.fecha_ejecucion,
             errorMessage: stage.error_mensaje,
-            envios: stage.envios,
+            envios: stage.envios ? { ...stage.envios } : undefined, // Nueva referencia para forzar re-render
             stageId: stage.id,
             isNextNode,
             nextExecutionTime,
