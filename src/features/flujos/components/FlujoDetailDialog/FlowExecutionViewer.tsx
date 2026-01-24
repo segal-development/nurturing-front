@@ -164,6 +164,155 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
 }
 
 /**
+ * Panel inline que muestra estadísticas del nodo seleccionado
+ * Se muestra en el panel lateral cuando el usuario hace click en un nodo
+ */
+interface SelectedNodePanelProps {
+  nodeId: string | null
+  stage: StageExecution | null
+  nodeLabel: string
+  onClear: () => void
+  onViewDetail: () => void
+}
+
+function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear, onViewDetail }: SelectedNodePanelProps) {
+  if (!nodeId) return null
+
+  const getStateIcon = () => {
+    if (!stage) return <AlertCircle className="h-5 w-5 text-gray-400" />
+    switch (stage.estado) {
+      case 'completed':
+        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+      case 'executing':
+        return <Loader2 className="h-5 w-5 text-amber-600 animate-spin" />
+      case 'failed':
+        return <AlertCircle className="h-5 w-5 text-red-600" />
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-400" />
+    }
+  }
+
+  const getStateLabel = () => {
+    if (!stage) return 'Sin ejecución'
+    switch (stage.estado) {
+      case 'pending':
+        return 'Pendiente'
+      case 'executing':
+        return 'Ejecutándose'
+      case 'completed':
+        return 'Completada'
+      case 'failed':
+        return 'Falló'
+      default:
+        return 'Desconocido'
+    }
+  }
+
+  const getStateBgColor = () => {
+    if (!stage) return 'bg-gray-50 border-gray-200'
+    switch (stage.estado) {
+      case 'completed':
+        return 'bg-green-50 border-green-200'
+      case 'executing':
+        return 'bg-amber-50 border-amber-200'
+      case 'failed':
+        return 'bg-red-50 border-red-200'
+      default:
+        return 'bg-gray-50 border-gray-200'
+    }
+  }
+
+  return (
+    <div className={`rounded-lg border-2 p-4 ${getStateBgColor()} transition-all duration-200`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {getStateIcon()}
+          <div>
+            <p className="font-semibold text-segal-dark text-sm truncate max-w-[150px]" title={nodeLabel}>
+              {nodeLabel}
+            </p>
+            <p className="text-xs text-segal-dark/60">{getStateLabel()}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClear}
+          className="text-segal-dark/40 hover:text-segal-dark/70 transition-colors p-1"
+          title="Cerrar detalle"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Stats del nodo seleccionado */}
+      {stage?.envios && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-segal-dark/70 uppercase tracking-wide">Estadísticas</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
+              <span className="text-green-700">✓ Enviados</span>
+              <span className="font-bold text-green-700">{stage.envios.enviado?.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
+              <span className="text-red-700">✗ Fallidos</span>
+              <span className="font-bold text-red-700">{stage.envios.fallido?.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
+              <span className="text-amber-700">⏳ Pendientes</span>
+              <span className="font-bold text-amber-700">{stage.envios.pendiente?.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
+              <span className="text-blue-700">📧 Abiertos</span>
+              <span className="font-bold text-blue-700">{stage.envios.abierto?.toLocaleString()}</span>
+            </div>
+          </div>
+          
+          {/* Total y tasa de éxito */}
+          {stage.envios.enviado !== undefined && stage.envios.fallido !== undefined && (
+            <div className="mt-2 pt-2 border-t border-current/10">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-segal-dark/70">Total procesados:</span>
+                <span className="font-bold text-segal-dark">
+                  {((stage.envios.enviado || 0) + (stage.envios.fallido || 0)).toLocaleString()}
+                </span>
+              </div>
+              {(stage.envios.enviado || 0) + (stage.envios.fallido || 0) > 0 && (
+                <div className="flex items-center justify-between text-xs mt-1">
+                  <span className="text-segal-dark/70">Tasa de éxito:</span>
+                  <span className="font-bold text-green-700">
+                    {(((stage.envios.enviado || 0) / ((stage.envios.enviado || 0) + (stage.envios.fallido || 0))) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Si no hay stats de envío pero hay stage */}
+      {stage && !stage.envios && (
+        <p className="text-xs text-segal-dark/60 italic">Sin estadísticas de envío aún</p>
+      )}
+
+      {/* Si no hay stage (nodo no ejecutado) */}
+      {!stage && (
+        <p className="text-xs text-segal-dark/60 italic">Este nodo aún no tiene datos de ejecución</p>
+      )}
+
+      {/* Botón para ver más detalles */}
+      {stage && (
+        <button
+          onClick={onViewDetail}
+          className="w-full mt-3 px-3 py-1.5 text-xs font-medium text-segal-blue border border-segal-blue/30 rounded hover:bg-segal-blue/10 transition-colors"
+        >
+          Ver detalles completos
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
  * Componente interno que usa ReactFlow
  */
 function FlowExecutionContent({
@@ -210,6 +359,8 @@ function FlowExecutionContent({
   const [showStageDetail, setShowStageDetail] = useState(false)
   const [showInfoPanels, setShowInfoPanels] = useState(true)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  // Track selected node from clicking on the flow visualization
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
   // Auto-hide info panels after 6 seconds
   useEffect(() => {
@@ -427,10 +578,27 @@ function FlowExecutionContent({
         0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
         50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
       }
+      @keyframes pulse-selected {
+        0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.3); }
+        50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8), 0 0 40px rgba(139, 92, 246, 0.4); }
+      }
     `
 
+    // Estilo para nodo seleccionado (click del usuario)
+    if (selectedNodeId) {
+      styles += `
+        .react-flow__node[data-id="${selectedNodeId}"] {
+          border-color: #8b5cf6 !important;
+          border-width: 3px !important;
+          box-shadow: 0 0 20px rgba(139, 92, 246, 0.7), 0 0 40px rgba(139, 92, 246, 0.3) !important;
+          animation: pulse-selected 1.5s ease-in-out infinite;
+          z-index: 20 !important;
+        }
+      `
+    }
+
     return styles
-  }, [stagesByNodeId, executionPath, executionData?.nodo_actual, executionData?.proximo_nodo])
+  }, [stagesByNodeId, executionPath, executionData?.nodo_actual, executionData?.proximo_nodo, selectedNodeId])
 
   const handlePause = useCallback(() => {
     pauseExecution(
@@ -468,6 +636,23 @@ function FlowExecutionContent({
 
   const handleOpenCancelDialog = useCallback(() => {
     setShowCancelDialog(true)
+  }, [])
+
+  // Handle node click to show node-specific stats in the panel
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
+    console.log('🖱️ Node clicked:', node.id, node.type)
+    setSelectedNodeId(node.id)
+    // If the node has execution data, also set it as selected stage for detail view
+    const stage = stagesByNodeId.get(node.id)
+    if (stage) {
+      setSelectedStage(stage)
+    }
+  }, [stagesByNodeId])
+
+  // Handle clicking on the background to deselect
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null)
+    setSelectedStage(null)
   }, [])
 
   const handleConfirmCancel = useCallback(() => {
@@ -667,6 +852,20 @@ function FlowExecutionContent({
           )}
         </div>
 
+        {/* Panel de nodo seleccionado - se muestra cuando el usuario hace click en un nodo */}
+        {selectedNodeId && (
+          <SelectedNodePanel
+            nodeId={selectedNodeId}
+            stage={selectedStage}
+            nodeLabel={nodeLabelsByNodeId.get(selectedNodeId) || selectedNodeId}
+            onClear={() => {
+              setSelectedNodeId(null)
+              setSelectedStage(null)
+            }}
+            onViewDetail={() => setShowStageDetail(true)}
+          />
+        )}
+
         {/* Etapas compactas - horizontal badges */}
         {executionData?.etapas && executionData.etapas.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-3 border border-segal-blue/20 min-w-64 max-w-sm">
@@ -696,16 +895,17 @@ function FlowExecutionContent({
 
                 // Obtener el label del nodo (nombre legible)
                 const nodeLabel = nodeLabelsByNodeId.get(stage.node_id) || stage.node_id
+                const isSelected = selectedNodeId === stage.node_id
 
                 return (
                   <button
                     key={stage.id}
                     type="button"
                     onClick={() => {
+                      setSelectedNodeId(stage.node_id)
                       setSelectedStage(stage)
-                      setShowStageDetail(true)
                     }}
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border hover:opacity-80 transition-opacity ${getStatusStyle()}`}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border hover:opacity-80 transition-opacity ${getStatusStyle()} ${isSelected ? 'ring-2 ring-segal-blue ring-offset-1' : ''}`}
                     title={`${nodeLabel} - ${stage.estado}`}
                   >
                     <span>{getStatusIcon()}</span>
@@ -719,7 +919,15 @@ function FlowExecutionContent({
       </div>
 
       {/* Flow visualization */}
-      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} fitView>
+      <ReactFlow 
+        nodes={nodes} 
+        edges={edges} 
+        nodeTypes={nodeTypes} 
+        edgeTypes={edgeTypes} 
+        onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        fitView
+      >
         <Background />
         <Controls showInteractive={false} />
       </ReactFlow>
