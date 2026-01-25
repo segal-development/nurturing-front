@@ -264,7 +264,7 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, defaultExpand
       {isExpanded && (
         <ExpandedContent
           duracion={duracion}
-          prospectosCount={ejecucion.prospectos_ids?.length}
+          prospectosCount={ejecucion.prospectos_count ?? ejecucion.prospectos_ids?.length}
           etapasOrdenadas={etapasOrdenadas}
           nodeLabelMap={nodeLabelMap}
         />

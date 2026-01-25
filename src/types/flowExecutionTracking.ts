@@ -112,7 +112,8 @@ export interface FlowExecutionDetail {
   fecha_inicio_real?: string
   fecha_fin?: string
   error_message?: string
-  prospectos_ids?: number[]
+  prospectos_ids?: number[] // DEPRECATED: Backend now sends prospectos_count instead
+  prospectos_count?: number
   progreso?: ExecutionProgress
   progreso_envios?: ProgresoEnvios
   etapas: StageExecution[]
@@ -291,7 +292,8 @@ export interface ExecutionListItem {
   etapas?: ExecutionStageItem[]
   // Campos adicionales que puede traer el backend
   origen_id?: string
-  prospectos_ids?: number[]
+  prospectos_ids?: number[] // DEPRECATED: Backend now sends prospectos_count instead
+  prospectos_count?: number
   error_message?: string
 }
 
