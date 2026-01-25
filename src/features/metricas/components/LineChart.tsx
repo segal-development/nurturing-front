@@ -87,6 +87,18 @@ export function LineChart<T extends { fecha: string }>({
 }: LineChartProps<T>) {
   const hasData = data.length > 0;
 
+  // Normalize data: convert string values to numbers (backend sometimes sends strings)
+  const normalizedData = data.map((item) => {
+    const normalized = { ...item } as Record<string, unknown>;
+    for (const line of lines) {
+      const value = normalized[line.key];
+      if (typeof value === 'string') {
+        normalized[line.key] = parseFloat(value) || 0;
+      }
+    }
+    return normalized as T;
+  });
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -100,7 +112,7 @@ export function LineChart<T extends { fecha: string }>({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={height}>
-            <RechartsLineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+            <RechartsLineChart data={normalizedData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis
                 dataKey="fecha"
