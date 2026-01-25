@@ -52,10 +52,14 @@ export function formatCompactNumber(value: number | null | undefined): string {
  * formatPercentage(45.678) // "45,68%"
  * formatPercentage(100) // "100%"
  */
-export function formatPercentage(value: number | null | undefined): string {
+export function formatPercentage(value: number | string | null | undefined): string {
   if (value === null || value === undefined) return '-';
 
-  return `${value.toFixed(value % 1 === 0 ? 0 : 2).replace('.', ',')}%`;
+  // Coerce to number in case backend sends string
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '-';
+
+  return `${numValue.toFixed(numValue % 1 === 0 ? 0 : 2).replace('.', ',')}%`;
 }
 
 /**
@@ -65,11 +69,15 @@ export function formatPercentage(value: number | null | undefined): string {
  * formatChangePercentage(15.5) // "+15,5%"
  * formatChangePercentage(-8.2) // "-8,2%"
  */
-export function formatChangePercentage(value: number | null | undefined): string {
+export function formatChangePercentage(value: number | string | null | undefined): string {
   if (value === null || value === undefined) return '-';
 
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(1).replace('.', ',')}%`;
+  // Coerce to number in case backend sends string
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '-';
+
+  const sign = numValue > 0 ? '+' : '';
+  return `${sign}${numValue.toFixed(1).replace('.', ',')}%`;
 }
 
 // ============================================================
