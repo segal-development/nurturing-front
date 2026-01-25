@@ -21,9 +21,9 @@ interface EnviosChartProps {
 // ============================================================
 
 const LINE_CONFIG = [
-  { key: 'exitosos', label: 'Exitosos', color: 'hsl(var(--chart-1))' },
-  { key: 'fallidos', label: 'Fallidos', color: 'hsl(var(--chart-2))' },
-  { key: 'pendientes', label: 'Pendientes', color: 'hsl(var(--chart-3))' },
+  { key: 'exitosos', label: 'Exitosos', color: '#22c55e' },    // green-500
+  { key: 'fallidos', label: 'Fallidos', color: '#ef4444' },    // red-500
+  { key: 'pendientes', label: 'Pendientes', color: '#f59e0b' }, // amber-500
 ];
 
 // ============================================================

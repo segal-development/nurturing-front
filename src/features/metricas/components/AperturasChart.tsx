@@ -21,8 +21,8 @@ interface AperturasChartProps {
 // ============================================================
 
 const LINE_CONFIG = [
-  { key: 'total', label: 'Total Aperturas', color: 'hsl(var(--chart-1))' },
-  { key: 'unicos', label: 'Aperturas Únicas', color: 'hsl(var(--chart-4))' },
+  { key: 'total', label: 'Total Aperturas', color: '#3b82f6' },    // blue-500
+  { key: 'unicos', label: 'Aperturas Únicas', color: '#8b5cf6' },  // violet-500
 ];
 
 // ============================================================
