@@ -608,30 +608,33 @@ export function FlujoDetailDialog({
             </Button>
 
             {onEdit && (
-              <Button
-                onClick={() => {
-                  onEdit()
-                  onOpenChange(false)
-                }}
-                className="bg-segal-blue hover:bg-segal-blue/90 text-white"
-                disabled={showDeleteConfirm}
-              >
-                Editar
-              </Button>
+              <div className="relative group">
+                <Button
+                  onClick={() => {
+                    onEdit()
+                    onOpenChange(false)
+                  }}
+                  className="bg-segal-blue hover:bg-segal-blue/90 text-white"
+                  disabled={showDeleteConfirm || hasActiveExecution}
+                >
+                  Editar
+                </Button>
+                {/* Tooltip cuando está deshabilitado por ejecución activa */}
+                {hasActiveExecution && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                    No se puede editar durante una ejecución
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Botón de Ejecutar o Estado de Ejecución */}
             {hasActiveExecution && activeExecution ? (
-              // Ejecución activa (in_progress o paused)
+              // Ejecución activa (in_progress o paused) - Solo informativo, no clickeable
               <Button
-                onClick={() => {
-                  setActiveTab('estructura')
-                  if (onExecutionStart) {
-                    onExecutionStart(activeExecution.id)
-                  }
-                }}
-                className="bg-amber-500 hover:bg-amber-600 text-white"
-                disabled={showDeleteConfirm}
+                className="bg-amber-500 text-white cursor-default pointer-events-none opacity-90"
+                disabled
               >
                 {activeExecution.estado === 'in_progress' ? (
                   <>
