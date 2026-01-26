@@ -485,4 +485,63 @@ export const flujosService = {
       throw error
     }
   },
+
+  // ============================================================================
+  // Agregar Prospectos a Flujo Existente
+  // ============================================================================
+
+  /**
+   * Agregar prospectos a un flujo existente.
+   * 
+   * Supports multiple modes:
+   * 1. By prospecto_ids: Specific list of prospect IDs
+   * 2. By select_all_from_origin: All prospects from a given origin
+   * 
+   * For large volumes (>100), uses async processing.
+   * 
+   * @param flujoId - ID del flujo
+   * @param payload - Criterios de selección de prospectos
+   * @returns Resumen de prospectos agregados
+   */
+  async agregarProspectos(
+    flujoId: number,
+    payload: {
+      prospecto_ids?: number[]
+      origen?: string
+      tipo_prospecto_id?: number | null
+      select_all_from_origin?: boolean
+      canal_asignado?: 'email' | 'sms'
+    }
+  ): Promise<{
+    mensaje: string
+    resumen: {
+      total_encontrados?: number
+      total_estimado?: number
+      agregados?: number
+      ya_existentes?: number
+      procesamiento_async?: boolean
+    }
+  }> {
+    try {
+      console.log(`📤 flujosService.agregarProspectos(${flujoId}) - Agregando prospectos`)
+      console.log('   Payload:', payload)
+
+      const { data } = await apiClient.post<{
+        mensaje: string
+        resumen: {
+          total_encontrados?: number
+          total_estimado?: number
+          agregados?: number
+          ya_existentes?: number
+          procesamiento_async?: boolean
+        }
+      }>(`/flujos/${flujoId}/agregar-prospectos`, payload)
+
+      console.log(`✅ flujosService.agregarProspectos(${flujoId}) - Resultado:`, data)
+      return data
+    } catch (error) {
+      console.error(`❌ flujosService.agregarProspectos(${flujoId}) - Error:`, getApiErrorMessage(error))
+      throw error
+    }
+  },
 }

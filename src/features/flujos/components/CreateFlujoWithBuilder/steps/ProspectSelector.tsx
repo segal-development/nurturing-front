@@ -23,6 +23,7 @@ interface ProspectSelectorProps {
   onTipoChange?: (tipoId: number | null) => void
   onSelectedCountChange?: (count: number) => void
   onContinue: () => void
+  onContinueWithoutProspects?: () => void // New: allow skipping prospect selection
   originId: string
   originName: string
   onBack: () => void
@@ -39,6 +40,7 @@ export function ProspectSelector({
   onTipoChange,
   onSelectedCountChange,
   onContinue,
+  onContinueWithoutProspects,
   originId,
   originName,
   onBack,
@@ -308,13 +310,25 @@ export function ProspectSelector({
             Cancelar
           </Button>
         </div>
-        <Button
-          onClick={onContinue}
-          disabled={(selectedIds.size === 0 && !selectAllFromOrigin) || !selectedTipoId}
-          className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
-        >
-          Continuar al Constructor
-        </Button>
+        <div className="flex gap-3">
+          {/* Option to skip prospect selection and add them later */}
+          {onContinueWithoutProspects && (
+            <Button
+              variant="outline"
+              onClick={onContinueWithoutProspects}
+              className="border-amber-500/30 text-amber-600 hover:bg-amber-50"
+            >
+              Crear sin prospectos
+            </Button>
+          )}
+          <Button
+            onClick={onContinue}
+            disabled={(selectedIds.size === 0 && !selectAllFromOrigin) || !selectedTipoId}
+            className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
+          >
+            Continuar con prospectos
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -28,6 +28,7 @@ import {
   Play,
   Activity,
   Pause,
+  UserPlus,
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
 import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail } from '@/features/flujos/hooks/useFlowExecutionTracking'
@@ -37,6 +38,7 @@ import { FlowStructurePanel } from './FlowStructurePanel'
 import { ExecutionHistoryPanel } from './ExecutionHistoryPanel'
 import { ExecuteFlowModal } from './ExecuteFlowModal'
 import { FlowExecutionViewer } from './FlowExecutionViewer'
+import { AddProspectsModal } from './AddProspectsModal'
 import type { FlujoNurturing, EtapaFlujo } from '@/types/flujo'
 import { getCanalEnvioReal, getCanalEnvioLabel, getCanalEnvioIcon } from '@/types/flujo'
 
@@ -73,6 +75,7 @@ export function FlujoDetailDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isExecuteModalOpen, setIsExecuteModalOpen] = useState(false)
+  const [isAddProspectsModalOpen, setIsAddProspectsModalOpen] = useState(false)
 
   // Obtener flujo detallado del backend si está disponible
   const { data: detailedFlujo, isLoading } = useFlujosDetail(initialFlujo?.id || null, {
@@ -164,6 +167,10 @@ export function FlujoDetailDialog({
   const hasCompletedExecution = latestExecution?.estado === 'completed'
   const hasFailedExecution = latestExecution?.estado === 'failed'
   const hasCancelledExecution = latestExecution?.estado === 'cancelled'
+
+  // Determinar si el flujo tiene prospectos
+  const prospectoCount = flujo?.prospectos_en_flujo_count ?? flujo?.prospectos_en_flujo?.length ?? 0
+  const hasProspects = prospectoCount > 0
 
   // DEBUG: Ver qué responde el backend
   useEffect(() => {
@@ -351,7 +358,40 @@ export function FlujoDetailDialog({
                         {getCanalEnvioIcon(getCanalEnvioReal(flujo))} {getCanalEnvioLabel(getCanalEnvioReal(flujo))}
                       </p>
                     </div>
+
+                    {/* Prospectos count */}
+                    <div className={`rounded-lg p-4 border ${hasProspects ? 'bg-segal-blue/5 border-segal-blue/10' : 'bg-amber-50 border-amber-200'}`}>
+                      <p className="text-sm text-segal-dark/60 font-semibold mb-1 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Prospectos
+                      </p>
+                      <p className={`text-lg font-bold ${hasProspects ? 'text-segal-dark' : 'text-amber-600'}`}>
+                        {prospectoCount.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Alert: No prospects */}
+                  {!hasProspects && (
+                    <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-amber-900">Este flujo no tiene prospectos</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Agrega prospectos para poder ejecutar el flujo. Puedes hacerlo desde el botón "Agregar Prospectos" en la parte inferior.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsAddProspectsModalOpen(true)}
+                          className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Agregar Prospectos
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Descripción */}
                   {flujo.descripcion && (
@@ -665,14 +705,29 @@ export function FlujoDetailDialog({
               </Button>
             ) : (
               // Flujo disponible para ejecutar (nunca ejecutado, fallido o cancelado)
-              <Button
-                onClick={() => setIsExecuteModalOpen(true)}
-                className="bg-segal-green hover:bg-segal-green/90 text-white"
-                disabled={showDeleteConfirm || isLoadingActiveExecution}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                {hasFailedExecution || hasCancelledExecution ? 'Re-ejecutar Flujo' : 'Ejecutar Flujo'}
-              </Button>
+              <>
+                {/* Botón para agregar prospectos si no tiene */}
+                {!hasProspects && !hasActiveExecution && (
+                  <Button
+                    onClick={() => setIsAddProspectsModalOpen(true)}
+                    variant="outline"
+                    className="border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5"
+                    disabled={showDeleteConfirm}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Agregar Prospectos
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setIsExecuteModalOpen(true)}
+                  className="bg-segal-green hover:bg-segal-green/90 text-white"
+                  disabled={showDeleteConfirm || isLoadingActiveExecution || !hasProspects}
+                  title={!hasProspects ? 'Agrega prospectos antes de ejecutar' : undefined}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  {hasFailedExecution || hasCancelledExecution ? 'Re-ejecutar Flujo' : 'Ejecutar Flujo'}
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -685,6 +740,17 @@ export function FlujoDetailDialog({
           onExecuteSuccess={(ejecucionId) => {
             setIsExecuteModalOpen(false)
             onExecutionStart?.(ejecucionId)
+          }}
+        />
+
+        {/* Add Prospects Modal */}
+        <AddProspectsModal
+          flujo={flujo}
+          isOpen={isAddProspectsModalOpen}
+          onClose={() => setIsAddProspectsModalOpen(false)}
+          onSuccess={() => {
+            // Invalidate queries to refresh prospect count
+            // This will be handled by the parent component refreshing the flujo data
           }}
         />
       </DialogContent>

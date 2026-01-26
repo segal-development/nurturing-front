@@ -248,7 +248,7 @@ export function CreateFlujoWithBuilder({
   }, [open, initialOriginId, handleOriginSelect])
 
   /**
-   * Valida y avanza a step de builder
+   * Valida y avanza a step de builder CON prospectos
    * Usa early returns para validaciones
    */
   const handleProspectsSelect = () => {
@@ -265,6 +265,20 @@ export function CreateFlujoWithBuilder({
     }
 
     // Validaciones pasadas
+    setError(null)
+    setCurrentStep('builder')
+  }
+
+  /**
+   * Avanza a step de builder SIN prospectos (flujo vacío/template)
+   * Los prospectos se agregarán después desde el detalle del flujo
+   */
+  const handleContinueWithoutProspects = () => {
+    // Clear any prospect selection
+    setSelectedProspectoIds(new Set())
+    setSelectAllFromOrigin(false)
+    setSelectedCount(0)
+    // Don't require tipo_prospecto for empty flows
     setError(null)
     setCurrentStep('builder')
   }
@@ -298,25 +312,37 @@ export function CreateFlujoWithBuilder({
    * Construye payload para crear flujo en backend
    * IMPORTANTE: El backend espera 'tipo_prospecto' (no 'tipo_prospecto_id')
    * y acepta tanto ID numérico como nombre string
+   * 
+   * Soporta flujos con y sin prospectos (templates/vacíos)
    */
   const buildFlowPayload = (config: any) => {
+    const hasProspects = selectedCount > 0 || selectedProspectoIds.size > 0 || selectAllFromOrigin
+
     return {
       flujo: {
         nombre: config.nombre,
         descripcion: config.descripcion,
-        // Backend busca por ID, nombre o slug - enviar el ID es lo más confiable
+        // Backend busca por ID, nombre o slug - enviar el ID si existe
         tipo_prospecto: selectedTipoProspectoId,
         activo: true,
       },
       origen_id: selectedOriginId,
       origen_nombre: selectedOriginName,
-      prospectos: {
+      // Only include prospectos if user selected some
+      prospectos: hasProspects ? {
         // Use selectedCount which reflects the actual count (all types OR specific tipo)
         total_seleccionados: selectedCount || selectedProspectoIds.size,
         ids_seleccionados: selectAllFromOrigin ? [] : Array.from(selectedProspectoIds),
         total_disponibles: totalProspectosEnBD,
         tipo_prospecto_id: selectedTipoProspectoId,
         select_all_from_origin: selectAllFromOrigin,
+      } : {
+        // Empty flow - no prospects yet
+        total_seleccionados: 0,
+        ids_seleccionados: [],
+        total_disponibles: totalProspectosEnBD,
+        tipo_prospecto_id: null,
+        select_all_from_origin: false,
       },
       visual: config.visual,
       structure: config.structure,
@@ -324,6 +350,7 @@ export function CreateFlujoWithBuilder({
       metadata: {
         fecha_creacion: new Date().toISOString(),
         navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        created_without_prospects: !hasProspects,
       },
     }
   }
@@ -479,6 +506,7 @@ export function CreateFlujoWithBuilder({
               onTipoChange={setSelectedTipoProspectoId}
               onSelectedCountChange={setSelectedCount}
               onContinue={handleProspectsSelect}
+              onContinueWithoutProspects={handleContinueWithoutProspects}
               originId={selectedOriginId || ''}
               originName={selectedOriginName || ''}
               onBack={handleBack}
