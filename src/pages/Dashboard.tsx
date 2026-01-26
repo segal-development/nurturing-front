@@ -6,6 +6,7 @@ import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveLine } from '@nivo/line';
 import { dashboardService } from '@/api/dashboard.service';
 import { useTheme } from '@/hooks/useTheme';
+import { EmailQualityCard } from '@/components/dashboard/EmailQualityCard';
 
 
 // Transform data for nivo Pie chart
@@ -175,6 +176,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Quality Card */}
+      <EmailQualityCard data={stats?.calidad_emails} />
 
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
