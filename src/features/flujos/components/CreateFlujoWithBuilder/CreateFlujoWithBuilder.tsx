@@ -284,6 +284,24 @@ export function CreateFlujoWithBuilder({
   }
 
   /**
+   * Salta directamente al builder desde el origin selector (flujo completamente vacío)
+   * No tiene origen ni prospectos - es un template puro
+   */
+  const handleSkipToBuilder = () => {
+    // Clear all selection state
+    setSelectedOriginId(null)
+    setSelectedOriginName(null)
+    setProspectos([])
+    setTotalProspectosEnBD(0)
+    setSelectedProspectoIds(new Set())
+    setSelectedTipoProspectoId(null)
+    setSelectAllFromOrigin(false)
+    setSelectedCount(0)
+    setError(null)
+    setCurrentStep('builder')
+  }
+
+  /**
    * Retrocede al paso anterior
    * Limpia el estado relacionado para permitir re-selección
    */
@@ -303,7 +321,13 @@ export function CreateFlujoWithBuilder({
     }
 
     if (currentStep === 'builder') {
-      setCurrentStep('prospects')
+      // If we came from origin (skipped prospects), go back to origin
+      // If we came from prospects, go back to prospects
+      if (selectedOriginId) {
+        setCurrentStep('prospects')
+      } else {
+        setCurrentStep('origin')
+      }
       return
     }
   }
@@ -490,6 +514,7 @@ export function CreateFlujoWithBuilder({
             <OriginSelector
               opciones={opciones}
               onSelect={handleOriginSelect}
+              onSkipToBuilder={handleSkipToBuilder}
               loading={loadingProspectos}
               onClose={handleClose}
             />

@@ -263,8 +263,7 @@ export function Flujos() {
         </div>
         <Button
           onClick={handleCreateFlujo}
-          disabled={!filtros.origenId}
-          className="bg-segal-blue hover:bg-segal-blue/90 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+          className="bg-segal-blue hover:bg-segal-blue/90 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200"
         >
           Crear Nuevo Flujo
         </Button>

@@ -10,6 +10,7 @@ import type { OpcionesFlujos } from '@/api/flujos.service'
 interface OriginSelectorProps {
   opciones?: OpcionesFlujos
   onSelect: (originId: string) => void
+  onSkipToBuilder?: () => void  // Skip origin and prospects, go directly to builder
   loading: boolean
   onClose: () => void
 }
@@ -17,6 +18,7 @@ interface OriginSelectorProps {
 export function OriginSelector({
   opciones,
   onSelect,
+  onSkipToBuilder,
   loading,
   onClose,
 }: OriginSelectorProps) {
@@ -84,7 +86,7 @@ export function OriginSelector({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-segal-blue/10 bg-white p-6 flex justify-end gap-3">
+      <div className="border-t border-segal-blue/10 bg-white p-6 flex justify-between gap-3">
         <Button
           variant="outline"
           onClick={onClose}
@@ -92,6 +94,17 @@ export function OriginSelector({
         >
           Cancelar
         </Button>
+        
+        {/* Option to create empty flow (template) */}
+        {onSkipToBuilder && (
+          <Button
+            variant="outline"
+            onClick={onSkipToBuilder}
+            className="border-amber-500/30 text-amber-600 hover:bg-amber-50"
+          >
+            Crear flujo vacío (sin prospectos)
+          </Button>
+        )}
       </div>
     </div>
   )
