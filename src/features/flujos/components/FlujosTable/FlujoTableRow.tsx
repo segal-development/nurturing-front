@@ -106,7 +106,19 @@ function StagesCell({ count }: { count: number }) {
  * Renders the progress cell with execution state
  */
 function ProgressCell({ flujoId }: { flujoId: number }) {
-  const { displayExecution } = useFlujoExecutionState(flujoId)
+  const { displayExecution, isLoading } = useFlujoExecutionState(flujoId)
+
+  // Show spinner while loading
+  if (isLoading) {
+    return (
+      <TableCell className="min-w-[150px]">
+        <div className="flex items-center gap-2 text-segal-dark/40">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-xs">Cargando...</span>
+        </div>
+      </TableCell>
+    )
+  }
 
   // Early return: no execution to display
   if (!displayExecution) {
@@ -128,7 +140,16 @@ function ProgressCell({ flujoId }: { flujoId: number }) {
  * Renders the cost cell from latest execution
  */
 function CostoCell({ flujoId }: { flujoId: number }) {
-  const { displayExecution } = useFlujoExecutionState(flujoId)
+  const { displayExecution, isLoading } = useFlujoExecutionState(flujoId)
+
+  // Show spinner while loading
+  if (isLoading) {
+    return (
+      <TableCell>
+        <Loader2 className="h-4 w-4 animate-spin text-segal-dark/40" />
+      </TableCell>
+    )
+  }
 
   // Early return: no execution
   if (!displayExecution) {
