@@ -295,6 +295,13 @@ export interface ExecutionListItem {
   prospectos_ids?: number[] // DEPRECATED: Backend now sends prospectos_count instead
   prospectos_count?: number
   error_message?: string
+  // Campos de costo
+  costo_estimado?: number | null
+  costo_real?: number | null
+  costo_emails?: number | null
+  costo_sms?: number | null
+  total_emails_enviados?: number | null
+  total_sms_enviados?: number | null
 }
 
 /**

@@ -89,7 +89,7 @@ export function FlujoDetailDialog({
   )
 
   // Obtener todas las ejecuciones del flujo para la pestaña "Ejecuciones"
-  const { data: executionsData, isLoading: isLoadingExecutions, error: executionsError, isError: isExecutionsError } = useFlowExecutions(
+  const { data: executionsData, isLoading: isLoadingExecutions, error: executionsError, isError: isExecutionsError, refetch: refetchExecutions } = useFlowExecutions(
     initialFlujo?.id || 0,
     50, // Últimas 50 ejecuciones
   )
@@ -546,6 +546,7 @@ export function FlujoDetailDialog({
                       onExecutionStart(ejecucionId)
                     }
                   }}
+                  onRefresh={() => refetchExecutions()}
                 />
               )}
 

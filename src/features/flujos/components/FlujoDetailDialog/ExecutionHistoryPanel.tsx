@@ -14,20 +14,24 @@
  */
 
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 import { 
   CheckCircle2, 
   ChevronDown,
   ChevronRight,
   Clock, 
+  DollarSign,
   Eye, 
   GitBranch,
   Loader2,
   Mail,
   MessageSquare,
+  RefreshCw,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { formatCurrency, useRecalcularCosto } from '@/features/costos/hooks'
 import type { ExecutionListItem, ExecutionStageItem } from '@/types/flowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
 
@@ -48,6 +52,7 @@ interface ExecutionHistoryPanelProps {
   ejecuciones: ExecutionListItem[] | undefined
   isLoading?: boolean
   onViewExecution?: (ejecucionId: number) => void
+  onRefresh?: () => void
   configVisual?: ConfigVisual
 }
 
@@ -61,6 +66,7 @@ interface ExecutionCardProps {
   ejecucion: ExecutionListItem
   nodeLabelMap: Map<string, string>
   onViewExecution?: (ejecucionId: number) => void
+  onCostRecalculated?: () => void
   defaultExpanded?: boolean
 }
 
@@ -174,8 +180,9 @@ function StageItem({ stage, nodeLabel, isLast }: StageItemProps) {
   )
 }
 
-function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, defaultExpanded = false }: ExecutionCardProps) {
+function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalculated, defaultExpanded = false }: ExecutionCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  const recalcularCosto = useRecalcularCosto()
   
   const colorClass = getExecutionStateColor(ejecucion.estado)
   const fechaInicio = ejecucion.fecha_inicio_real ?? ejecucion.fecha_inicio_programada ?? ejecucion.created_at
@@ -197,6 +204,26 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, defaultExpand
     e.stopPropagation()
     onViewExecution?.(ejecucion.id)
   }
+
+  const handleRecalcularCosto = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    recalcularCosto.mutate(ejecucion.id, {
+      onSuccess: (data) => {
+        toast.success('Costo recalculado correctamente', {
+          description: `Nuevo costo: ${formatCurrency(data.costo_total)}`,
+        })
+        onCostRecalculated?.()
+      },
+      onError: (error: Error) => {
+        toast.error('Error al recalcular el costo', {
+          description: error.message,
+        })
+      },
+    })
+  }
+
+  // Show recalculate button only for completed executions
+  const canRecalculate = ejecucion.estado === 'completed'
   
   return (
     <div className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors">
@@ -267,6 +294,13 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, defaultExpand
           prospectosCount={ejecucion.prospectos_count ?? ejecucion.prospectos_ids?.length}
           etapasOrdenadas={etapasOrdenadas}
           nodeLabelMap={nodeLabelMap}
+          costoReal={ejecucion.costo_real}
+          costoEstimado={ejecucion.costo_estimado}
+          totalEmailsEnviados={ejecucion.total_emails_enviados}
+          totalSmsEnviados={ejecucion.total_sms_enviados}
+          canRecalculate={canRecalculate}
+          isRecalculating={recalcularCosto.isPending}
+          onRecalculate={handleRecalcularCosto}
         />
       )}
     </div>
@@ -278,20 +312,82 @@ interface ExpandedContentProps {
   prospectosCount?: number
   etapasOrdenadas: ExecutionStageItem[]
   nodeLabelMap: Map<string, string>
+  costoReal?: number | null
+  costoEstimado?: number | null
+  totalEmailsEnviados?: number | null
+  totalSmsEnviados?: number | null
+  canRecalculate?: boolean
+  isRecalculating?: boolean
+  onRecalculate?: (e: React.MouseEvent) => void
 }
 
-function ExpandedContent({ duracion, prospectosCount, etapasOrdenadas, nodeLabelMap }: ExpandedContentProps) {
+function ExpandedContent({ 
+  duracion, 
+  prospectosCount, 
+  etapasOrdenadas, 
+  nodeLabelMap,
+  costoReal,
+  costoEstimado,
+  totalEmailsEnviados,
+  totalSmsEnviados,
+  canRecalculate,
+  isRecalculating,
+  onRecalculate,
+}: ExpandedContentProps) {
+  const costo = costoReal ?? costoEstimado
+  const isEstimado = costoReal === null && costoEstimado !== null
+
   return (
     <div className="border-t border-segal-blue/10 p-4 bg-segal-blue/5">
       {/* General info */}
-      <div className="flex items-center gap-4 mb-4 text-sm text-segal-dark/70">
-        <span>
-          <span className="font-medium">Duracion:</span> {duracion}
-        </span>
-        {prospectosCount !== undefined && (
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-4 text-sm text-segal-dark/70">
           <span>
-            <span className="font-medium">Prospectos:</span> {prospectosCount}
+            <span className="font-medium">Duracion:</span> {duracion}
           </span>
+          {prospectosCount !== undefined && (
+            <span>
+              <span className="font-medium">Prospectos:</span> {prospectosCount.toLocaleString()}
+            </span>
+          )}
+        </div>
+        
+        {/* Cost info with recalculate button */}
+        {(costo !== null && costo !== undefined) && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-segal-blue/10">
+              <DollarSign className="h-4 w-4 text-emerald-600" />
+              <span className={`font-semibold ${isEstimado ? 'text-emerald-600/70' : 'text-emerald-700'}`}>
+                {formatCurrency(costo)}
+              </span>
+              {isEstimado && (
+                <span className="text-xs text-segal-dark/50">(estimado)</span>
+              )}
+              {!isEstimado && totalEmailsEnviados !== null && totalEmailsEnviados !== undefined && totalEmailsEnviados > 0 && (
+                <span className="text-xs text-segal-dark/50">
+                  ({totalEmailsEnviados.toLocaleString()} emails)
+                </span>
+              )}
+            </div>
+            
+            {canRecalculate && onRecalculate && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRecalculate}
+                disabled={isRecalculating}
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                title="Recalcular costo basado en los envíos reales"
+              >
+                {isRecalculating ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                <span className="ml-1.5 hidden sm:inline">Recalcular</span>
+              </Button>
+            )}
+          </div>
         )}
       </div>
       
@@ -352,6 +448,7 @@ export function ExecutionHistoryPanel({
   ejecuciones, 
   isLoading, 
   onViewExecution,
+  onRefresh,
   configVisual 
 }: ExecutionHistoryPanelProps) {
   const nodeLabelMap = useNodeLabelMap(configVisual)
@@ -383,6 +480,7 @@ export function ExecutionHistoryPanel({
             ejecucion={ejecucion}
             nodeLabelMap={nodeLabelMap}
             onViewExecution={onViewExecution}
+            onCostRecalculated={onRefresh}
             defaultExpanded={index === 0}
           />
         ))}
