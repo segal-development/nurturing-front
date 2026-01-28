@@ -38,7 +38,7 @@ import {
 } from '@/lib/constants'
 import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
-import { MoreHorizontal, ArrowUpDown, FileText, Trash2, Eye } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, FileText, Trash2, Eye, Loader2 } from 'lucide-react'
 
 /**
  * Componente reutilizable para headers de columnas sortables
@@ -107,6 +107,20 @@ const getViewProspectoCallback = (table: Table<Prospecto>): ((id: number) => voi
  */
 const getDeleteProspectoCallback = (table: Table<Prospecto>): ((id: number) => void) | undefined => {
   return (table.options.meta as any)?.onDeleteProspecto
+}
+
+/**
+ * Obtiene el estado de eliminación del metadata de la tabla
+ */
+const getIsDeleting = (table: Table<Prospecto>): boolean => {
+  return (table.options.meta as any)?.isDeleting ?? false
+}
+
+/**
+ * Obtiene el ID del prospecto que se está eliminando
+ */
+const getDeletingId = (table: Table<Prospecto>): number | null => {
+  return (table.options.meta as any)?.deletingId ?? null
 }
 
 /**
@@ -325,7 +339,21 @@ export const columns: ColumnDef<Prospecto>[] = [
     cell: ({ row, table }) => {
       const onViewProspecto = getViewProspectoCallback(table)
       const onDeleteProspecto = getDeleteProspectoCallback(table)
+      const isDeleting = getIsDeleting(table)
+      const deletingId = getDeletingId(table)
       const prospecto = row.original
+      
+      const isThisDeleting = isDeleting && deletingId === prospecto.id
+
+      // Si este prospecto se está eliminando, mostrar spinner
+      if (isThisDeleting) {
+        return (
+          <div className="flex items-center justify-end gap-2 text-red-600">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-xs">Eliminando...</span>
+          </div>
+        )
+      }
 
       return (
         <div className="text-right">

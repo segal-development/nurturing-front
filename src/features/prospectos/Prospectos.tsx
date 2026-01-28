@@ -39,6 +39,7 @@ export function Prospectos() {
   // ============================================================
   const [searchTerm, setSearchTerm] = useState('')
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   // ============================================================
   // DEPENDENCIAS EXTERNAS
@@ -249,7 +250,14 @@ export function Prospectos() {
           <ProspectosTable
             prospectos={filteredProspectos}
             onViewProspecto={(id) => console.log('Ver prospecto:', id)}
-            onDeleteProspecto={(id) => deleteProspecto.mutate(id)}
+            onDeleteProspecto={(id) => {
+              setDeletingId(id)
+              deleteProspecto.mutate(id, {
+                onSettled: () => setDeletingId(null),
+              })
+            }}
+            isDeleting={deleteProspecto.isPending}
+            deletingId={deletingId}
           />
 
           {prospectos.length > 0 && totalPages > 1 && (
