@@ -211,4 +211,14 @@ export const prospectosService = {
     )
     return data.data
   },
+
+  /**
+   * Eliminar un lote y todos sus datos relacionados
+   */
+  async deleteLote(loteId: number): Promise<{ mensaje: string; prospectos_eliminados: number }> {
+    const { data } = await apiClient.delete<{ mensaje: string; prospectos_eliminados: number }>(
+      `/lotes/${loteId}`
+    )
+    return data
+  },
 }

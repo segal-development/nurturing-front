@@ -19,6 +19,7 @@ import { useProspectosOpciones } from './hooks/useProspectosOpciones'
 import { useProspectos } from './hooks/useProspectos'
 import { useProspectosFilters } from './hooks/useProspectosFilters'
 import { useDeleteProspecto } from './hooks/useDeleteProspecto'
+import { useDeleteLote } from './hooks/useDeleteLote'
 import { usePagination } from '@/hooks/usePagination'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,7 @@ export function Prospectos() {
   const { filtros, setLoteId, setImportacionId, setEstado, setTipo } = useProspectosFilters()
   const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
   const deleteProspecto = useDeleteProspecto()
+  const deleteLote = useDeleteLote()
 
   // ============================================================
   // REGISTRO DE CALLBACK PARA LOTES COMPLETADOS
@@ -192,6 +194,17 @@ export function Prospectos() {
         onFiltrosChange={handleFiltrosChange}
         onSearchChange={handleSearchChange}
         isSearchDisabled={isLoadingProspectos}
+        onDeleteLote={(loteId) => {
+          deleteLote.mutate(loteId, {
+            onSuccess: () => {
+              // Limpiar filtros cuando se elimina el lote seleccionado
+              if (filtros.loteId === loteId) {
+                handleFiltrosChange({ ...filtros, loteId: null, importacionId: null })
+              }
+            },
+          })
+        }}
+        isDeletingLote={deleteLote.isPending}
       />
 
       {/* Loading prospectos */}

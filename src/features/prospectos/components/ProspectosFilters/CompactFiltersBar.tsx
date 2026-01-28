@@ -10,8 +10,8 @@
  * Un lote agrupa múltiples archivos de una misma carga
  */
 
-import { Search, FileStack, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
-import { useCallback } from 'react'
+import { Search, FileStack, CheckCircle2, Loader2, AlertCircle, Trash2 } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -19,7 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import type { OpcionesFiltrado, FiltrosState, LoteOpcion } from '../../types/prospectos'
 
 /**
@@ -32,6 +44,8 @@ interface CompactFiltersBarProps {
   onFiltrosChange: (filtros: FiltrosState) => void
   onSearchChange: (value: string) => void
   isSearchDisabled?: boolean
+  onDeleteLote?: (loteId: number) => void
+  isDeletingLote?: boolean
 }
 
 /**
@@ -91,7 +105,10 @@ export function CompactFiltersBar({
   onFiltrosChange,
   onSearchChange,
   isSearchDisabled = false,
+  onDeleteLote,
+  isDeletingLote = false,
 }: CompactFiltersBarProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   // ============================================================
   // MANEJADORES DE FILTROS CON EARLY RETURNS
   // ============================================================
@@ -205,39 +222,92 @@ export function CompactFiltersBar({
 
       {/* Info del lote seleccionado */}
       {loteSeleccionado && (
-        <div className="flex items-center gap-4 text-xs text-segal-dark/70 dark:text-gray-400 bg-segal-blue/5 px-3 py-2 rounded-md">
-          <div className="flex items-center gap-1.5">
-            <FileStack className="h-3.5 w-3.5" />
-            <span>{loteSeleccionado.total_archivos} {loteSeleccionado.total_archivos === 1 ? 'archivo' : 'archivos'}</span>
+        <div className="flex items-center justify-between gap-4 text-xs text-segal-dark/70 dark:text-gray-400 bg-segal-blue/5 px-3 py-2 rounded-md">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <FileStack className="h-3.5 w-3.5" />
+              <span>{loteSeleccionado.total_archivos} {loteSeleccionado.total_archivos === 1 ? 'archivo' : 'archivos'}</span>
+            </div>
+            <div className="h-3 w-px bg-segal-dark/20"></div>
+            <div>
+              <span className="font-medium text-segal-blue">{formatNumber(loteSeleccionado.total_prospectos)}</span> prospectos cargados
+            </div>
+            <div className="h-3 w-px bg-segal-dark/20"></div>
+            {loteSeleccionado.estado === 'procesando' && (
+              <div className="flex items-center gap-1.5 text-blue-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Procesando...</span>
+              </div>
+            )}
+            {loteSeleccionado.estado === 'abierto' && (
+              <div className="flex items-center gap-1.5 text-amber-600">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Importando...</span>
+              </div>
+            )}
+            {loteSeleccionado.estado === 'completado' && (
+              <div className="flex items-center gap-1.5 text-green-600">
+                <CheckCircle2 className="h-3 w-3" />
+                <span>Completado</span>
+              </div>
+            )}
+            {loteSeleccionado.estado === 'fallido' && (
+              <div className="flex items-center gap-1.5 text-red-600">
+                <AlertCircle className="h-3 w-3" />
+                <span>Error</span>
+              </div>
+            )}
           </div>
-          <div className="h-3 w-px bg-segal-dark/20"></div>
-          <div>
-            <span className="font-medium text-segal-blue">{formatNumber(loteSeleccionado.total_prospectos)}</span> prospectos cargados
-          </div>
-          <div className="h-3 w-px bg-segal-dark/20"></div>
-          {loteSeleccionado.estado === 'procesando' && (
-            <div className="flex items-center gap-1.5 text-blue-600">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Procesando...</span>
-            </div>
-          )}
-          {loteSeleccionado.estado === 'abierto' && (
-            <div className="flex items-center gap-1.5 text-amber-600">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Importando...</span>
-            </div>
-          )}
-          {loteSeleccionado.estado === 'completado' && (
-            <div className="flex items-center gap-1.5 text-green-600">
-              <CheckCircle2 className="h-3 w-3" />
-              <span>Completado</span>
-            </div>
-          )}
-          {loteSeleccionado.estado === 'fallido' && (
-            <div className="flex items-center gap-1.5 text-red-600">
-              <AlertCircle className="h-3 w-3" />
-              <span>Error</span>
-            </div>
+          
+          {/* Botón eliminar carga */}
+          {onDeleteLote && loteSeleccionado.estado !== 'procesando' && loteSeleccionado.estado !== 'abierto' && (
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  disabled={isDeletingLote}
+                >
+                  {isDeletingLote ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5" />
+                  )}
+                  <span className="ml-1.5">Eliminar carga</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-white dark:bg-slate-900">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-segal-dark dark:text-white">
+                    ¿Eliminar carga?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-segal-dark/70 dark:text-white/70">
+                    Estás por eliminar la carga <span className="font-semibold">"{loteSeleccionado.nombre}"</span>.
+                    {loteSeleccionado.total_prospectos > 0 && (
+                      <span className="block mt-2 text-red-600">
+                        Se eliminarán {formatNumber(loteSeleccionado.total_prospectos)} prospectos.
+                      </span>
+                    )}
+                    <span className="block mt-2">Esta acción no se puede deshacer.</span>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      onDeleteLote(loteSeleccionado.id)
+                      setDeleteDialogOpen(false)
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Eliminar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
       )}
