@@ -7,12 +7,17 @@ import { DataTable } from './DataTable'
 import { columns } from './columns'
 import type { ProspectosTableProps } from '../../types/prospectos'
 
-export function ProspectosTable({ prospectos, onViewProspecto }: Omit<ProspectosTableProps, 'isLoading'>) {
+interface ProspectosTableComponentProps extends Omit<ProspectosTableProps, 'isLoading'> {
+  onDeleteProspecto?: (id: number) => void
+}
+
+export function ProspectosTable({ prospectos, onViewProspecto, onDeleteProspecto }: ProspectosTableComponentProps) {
   return (
     <DataTable
       columns={columns}
       data={prospectos}
       onViewProspecto={onViewProspecto}
+      onDeleteProspecto={onDeleteProspecto}
     />
   )
 }

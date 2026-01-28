@@ -20,6 +20,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
   ESTADO_PROSPECTO_OPTIONS,
   ESTADO_PROSPECTO_COLORS,
   TIPO_DEUDA_OPTIONS,
@@ -27,7 +38,7 @@ import {
 } from '@/lib/constants'
 import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
-import { MoreHorizontal, ArrowUpDown, FileText } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, FileText, Trash2, Eye } from 'lucide-react'
 
 /**
  * Componente reutilizable para headers de columnas sortables
@@ -89,6 +100,13 @@ const getTipoDeudaBadge = (monto: number) => {
  */
 const getViewProspectoCallback = (table: Table<Prospecto>): ((id: number) => void) | undefined => {
   return (table.options.meta as any)?.onViewProspecto
+}
+
+/**
+ * Obtiene el callback onDeleteProspecto del metadata de la tabla
+ */
+const getDeleteProspectoCallback = (table: Table<Prospecto>): ((id: number) => void) | undefined => {
+  return (table.options.meta as any)?.onDeleteProspecto
 }
 
 /**
@@ -306,29 +324,72 @@ export const columns: ColumnDef<Prospecto>[] = [
     ),
     cell: ({ row, table }) => {
       const onViewProspecto = getViewProspectoCallback(table)
+      const onDeleteProspecto = getDeleteProspectoCallback(table)
       const prospecto = row.original
-
-      if (!onViewProspecto) {
-        return null
-      }
 
       return (
         <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Abrir menú</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="dark:bg-slate-900 dark:border-slate-700">
-              <DropdownMenuLabel className="dark:text-white">Acciones</DropdownMenuLabel>
-              <DropdownMenuSeparator className="dark:bg-slate-700" />
-              <DropdownMenuItem className="dark:text-white dark:focus:bg-slate-800" onClick={() => onViewProspecto(prospecto.id)}>
-                Ver prospecto
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-segal-blue/10">
+                  <span className="sr-only">Abrir menú</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 dark:border-slate-700">
+                <DropdownMenuLabel className="dark:text-white">Acciones</DropdownMenuLabel>
+                <DropdownMenuSeparator className="dark:bg-slate-700" />
+                {onViewProspecto && (
+                  <DropdownMenuItem 
+                    className="cursor-pointer dark:text-white dark:focus:bg-slate-800" 
+                    onClick={() => onViewProspecto(prospecto.id)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver prospecto
+                  </DropdownMenuItem>
+                )}
+                {onDeleteProspecto && (
+                  <>
+                    <DropdownMenuSeparator className="dark:bg-slate-700" />
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem 
+                        className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:text-red-400 dark:focus:bg-red-950"
+                        onSelect={(e) => e.preventDefault()}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Diálogo de confirmación para eliminar */}
+            <AlertDialogContent className="bg-white dark:bg-slate-900">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-segal-dark dark:text-white">
+                  ¿Eliminar prospecto?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-segal-dark/70 dark:text-white/70">
+                  Estás por eliminar a <span className="font-semibold">{prospecto.nombre}</span>.
+                  Esta acción no se puede deshacer.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDeleteProspecto?.(prospecto.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Eliminar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )
     },

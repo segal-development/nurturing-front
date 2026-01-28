@@ -18,6 +18,7 @@ import { ProspectosUploadDialog } from './components/ProspectosUploadDialog/Pros
 import { useProspectosOpciones } from './hooks/useProspectosOpciones'
 import { useProspectos } from './hooks/useProspectos'
 import { useProspectosFilters } from './hooks/useProspectosFilters'
+import { useDeleteProspecto } from './hooks/useDeleteProspecto'
 import { usePagination } from '@/hooks/usePagination'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,7 @@ export function Prospectos() {
   const { data: opciones, isLoading: isLoadingOpciones, isError: isErrorOpciones } = useProspectosOpciones()
   const { filtros, setLoteId, setImportacionId, setEstado, setTipo } = useProspectosFilters()
   const { currentPage, goToNextPage, goToPreviousPage, goToPage, resetPage } = usePagination()
+  const deleteProspecto = useDeleteProspecto()
 
   // ============================================================
   // REGISTRO DE CALLBACK PARA LOTES COMPLETADOS
@@ -247,6 +249,7 @@ export function Prospectos() {
           <ProspectosTable
             prospectos={filteredProspectos}
             onViewProspecto={(id) => console.log('Ver prospecto:', id)}
+            onDeleteProspecto={(id) => deleteProspecto.mutate(id)}
           />
 
           {prospectos.length > 0 && totalPages > 1 && (

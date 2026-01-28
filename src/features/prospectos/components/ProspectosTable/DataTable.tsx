@@ -45,6 +45,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onViewProspecto?: (id: number) => void
+  onDeleteProspecto?: (id: number) => void
 }
 
 /**
@@ -70,6 +71,7 @@ export function DataTable<TData extends Prospecto, TValue>({
   columns,
   data,
   onViewProspecto,
+  onDeleteProspecto,
 }: DataTableProps<TData, TValue>) {
   // ============================================================
   // ESTADO DE LA TABLA
@@ -97,6 +99,7 @@ export function DataTable<TData extends Prospecto, TValue>({
     },
     meta: {
       onViewProspecto,
+      onDeleteProspecto,
     },
   })
 
