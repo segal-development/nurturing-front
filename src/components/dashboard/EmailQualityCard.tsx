@@ -68,8 +68,8 @@ function formatNumber(value: number): string {
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('es-CL', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
+    currency: 'CLP',
+    minimumFractionDigits: 0,
   }).format(value)
 }
 
