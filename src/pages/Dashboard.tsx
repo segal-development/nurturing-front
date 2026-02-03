@@ -1,49 +1,19 @@
+/**
+ * Dashboard - Container component
+ *
+ * Responsibilities: data fetching, loading/error states, composition.
+ * All presentational logic is delegated to child components.
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import { Users, Send, Calendar, Tag, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatNumber, formatPercentage } from '@/lib/utils';
-import { ResponsivePie } from '@nivo/pie';
-import { ResponsiveLine } from '@nivo/line';
 import { dashboardService } from '@/api/dashboard.service';
 import { useTheme } from '@/hooks/useTheme';
+import { StatCard } from '@/components/dashboard/StatCard';
 import { EmailQualityCard } from '@/components/dashboard/EmailQualityCard';
-
-
-// Transform data for nivo Pie chart
-// From: { flujo: string, cantidad: number }[]
-// To: { id: string, value: number }[]
-function transformPieChartData(
-  data: Array<{ flujo: string; cantidad: number }>
-) {
-  return data.map((item) => ({
-    id: item.flujo,
-    value: item.cantidad,
-  }));
-}
-
-// Transform data for nivo Line chart
-// From: { fecha: string, exitosos: number, fallidos: number }[]
-// To: [{ id: string, data: { x: string, y: number }[] }]
-function transformLineChartData(
-  data: Array<{ fecha: string; exitosos: number; fallidos: number }>
-) {
-  return [
-    {
-      id: 'Exitosos',
-      data: data.map((item) => ({
-        x: item.fecha,
-        y: item.exitosos,
-      })),
-    },
-    {
-      id: 'Fallidos',
-      data: data.map((item) => ({
-        x: item.fecha,
-        y: item.fallidos,
-      })),
-    },
-  ];
-}
+import { EnviosPorDiaChart } from '@/components/dashboard/EnviosPorDiaChart';
+import { ProspectosPorFlujoChart } from '@/components/dashboard/ProspectosPorFlujoChart';
 
 export default function Dashboard() {
   const { theme } = useTheme();
@@ -93,88 +63,46 @@ export default function Dashboard() {
 
       {/* Stats cards - Segal Corporate Colors */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-blue/30 dark:hover:border-segal-blue/50 hover:shadow-md transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-segal-dark/70 dark:text-gray-400">
-              Total Prospectos
-            </CardTitle>
-            <Users className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-segal-dark dark:text-white">
-              {formatNumber(stats?.total_prospectos || 0)}
-            </div>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-500">
-              En el sistema
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-segal-turquoise/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-turquoise/30 dark:hover:border-segal-turquoise/50 hover:shadow-md transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-segal-dark/70 dark:text-gray-400">Envíos Hoy</CardTitle>
-            <Send className="h-4 w-4 text-segal-turquoise" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-segal-dark dark:text-white">
-              {formatNumber(stats?.envios_hoy || 0)}
-            </div>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-500">
-              Mensajes enviados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-segal-orange/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-orange/30 dark:hover:border-orange-500/50 hover:shadow-md transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-segal-dark/70 dark:text-gray-400">
-              Envíos Programados
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-segal-orange dark:text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-segal-dark dark:text-white">
-              {formatNumber(stats?.envios_programados || 0)}
-            </div>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-500">
-              Próximos envíos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-segal-green/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-green/30 dark:hover:border-green-500/50 hover:shadow-md transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-segal-dark/70 dark:text-gray-400">
-              Ofertas Activas
-            </CardTitle>
-            <Tag className="h-4 w-4 text-segal-green dark:text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-segal-dark dark:text-white">
-              {stats?.ofertas_activas || 0}
-            </div>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-500">
-              Ofertas Infocom
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-blue/30 dark:hover:border-segal-blue/50 hover:shadow-md transition-all duration-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-segal-dark/70 dark:text-gray-400">
-              Tasa de Entrega
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-segal-blue dark:text-segal-turquoise" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-segal-dark dark:text-white">
-              {formatPercentage(stats?.tasa_entrega || 0)}
-            </div>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-500">
-              Últimos 30 días
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Prospectos"
+          value={formatNumber(stats?.total_prospectos || 0)}
+          subtitle="En el sistema"
+          icon={Users}
+          cardClassName="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-blue/30 dark:hover:border-segal-blue/50 hover:shadow-md transition-all duration-200"
+          iconClassName="text-segal-blue dark:text-segal-turquoise"
+        />
+        <StatCard
+          title="Envíos Hoy"
+          value={formatNumber(stats?.envios_hoy || 0)}
+          subtitle="Mensajes enviados"
+          icon={Send}
+          cardClassName="border-segal-turquoise/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-turquoise/30 dark:hover:border-segal-turquoise/50 hover:shadow-md transition-all duration-200"
+          iconClassName="text-segal-turquoise"
+        />
+        <StatCard
+          title="Envíos Programados"
+          value={formatNumber(stats?.envios_programados || 0)}
+          subtitle="Próximos envíos"
+          icon={Calendar}
+          cardClassName="border-segal-orange/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-orange/30 dark:hover:border-orange-500/50 hover:shadow-md transition-all duration-200"
+          iconClassName="text-segal-orange dark:text-orange-400"
+        />
+        <StatCard
+          title="Ofertas Activas"
+          value={stats?.ofertas_activas || 0}
+          subtitle="Ofertas Infocom"
+          icon={Tag}
+          cardClassName="border-segal-green/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-green/30 dark:hover:border-green-500/50 hover:shadow-md transition-all duration-200"
+          iconClassName="text-segal-green dark:text-green-400"
+        />
+        <StatCard
+          title="Tasa de Entrega"
+          value={formatPercentage(stats?.tasa_entrega || 0)}
+          subtitle="Últimos 30 días"
+          icon={TrendingUp}
+          cardClassName="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900 hover:border-segal-blue/30 dark:hover:border-segal-blue/50 hover:shadow-md transition-all duration-200"
+          iconClassName="text-segal-blue dark:text-segal-turquoise"
+        />
       </div>
 
       {/* Email Quality Card */}
@@ -182,163 +110,9 @@ export default function Dashboard() {
 
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Line chart - Envíos por día */}
-        <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900">
-          <CardHeader>
-            <CardTitle className="text-segal-dark dark:text-white">Envíos por Día</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div style={{ height: '300px' }}>
-              <ResponsiveLine
-                data={transformLineChartData(stats?.envios_por_dia || [])}
-                margin={{ top: 10, right: 30, left: 60, bottom: 40 }}
-                xScale={{ type: 'point' }}
-                yScale={{
-                  type: 'linear',
-                  min: 0,
-                  max: 'auto',
-                }}
-                theme={{
-                  text: { fill: isDark ? '#e5e7eb' : '#333333' },
-                  axis: {
-                    ticks: { text: { fill: isDark ? '#9ca3af' : '#666666' } },
-                    legend: { text: { fill: isDark ? '#e5e7eb' : '#333333' } },
-                  },
-                  grid: { line: { stroke: isDark ? '#374151' : '#e0e0e0' } },
-                  crosshair: { line: { stroke: isDark ? '#9ca3af' : '#666666' } },
-                }}
-                axisBottom={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: 'Fecha',
-                  legendOffset: 36,
-                  legendPosition: 'middle',
-                }}
-                axisLeft={{
-                  tickSize: 5,
-                  tickPadding: 5,
-                  tickRotation: 0,
-                  legend: 'Cantidad',
-                  legendOffset: -46,
-                  legendPosition: 'middle',
-                }}
-                colors={{ scheme: 'set2' }}
-                pointSize={6}
-                pointColor={{ from: 'color', modifiers: [['darker', 0.5]] }}
-                useMesh={true}
-                tooltip={({ point }: any) => (
-                  <div
-                    style={{
-                      background: isDark ? '#1f2937' : 'white',
-                      color: isDark ? '#e5e7eb' : '#333333',
-                      padding: '8px 12px',
-                      border: `1px solid ${isDark ? '#374151' : '#ccc'}`,
-                      borderRadius: '4px',
-                      fontSize: '12px'
-                    }}
-                  >
-                    <strong>{point.data.x}</strong>
-                    <div>{point.serieId}: {point.data.y}</div>
-                  </div>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pie chart - Prospectos por flujo */}
-        <Card className="border-segal-turquoise/10 dark:border-gray-700 dark:bg-gray-900">
-          <CardHeader>
-            <CardTitle className="text-segal-dark dark:text-white">Distribución de Prospectos por Flujo</CardTitle>
-            <p className="text-xs text-segal-dark/60 dark:text-gray-400 mt-1">
-              Cantidad total de prospectos en cada flujo de nurturing
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div style={{ height: '350px' }}>
-              <ResponsivePie
-                data={transformPieChartData(stats?.prospectos_por_flujo || [])}
-                margin={{ top: 20, right: 100, bottom: 60, left: 100 }}
-                innerRadius={0.5}
-                padAngle={1.2}
-                cornerRadius={4}
-                colors={['#086DBD', '#32BFD0', '#78B52E', '#F8991D', '#E74C3C', '#9B59B6']}
-                borderWidth={2}
-                borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
-                arcLabelsSkipAngle={5}
-                arcLabelsTextColor="#ffffff"
-                arcLabelsRadiusOffset={0.6}
-                enableArcLinkLabels={true}
-                arcLinkLabelsSkipAngle={5}
-                arcLinkLabelsTextColor={isDark ? '#e5e7eb' : '#333333'}
-                arcLinkLabelsThickness={2}
-                arcLinkLabelsColor={{ from: 'color' }}
-                theme={{
-                  text: { fill: isDark ? '#e5e7eb' : '#333333' },
-                  labels: { text: { fill: isDark ? '#e5e7eb' : '#333333' } },
-                }}
-                tooltip={({ datum }: any) => {
-                  const total = (stats?.prospectos_por_flujo || []).reduce(
-                    (sum: number, item: any) => sum + item.cantidad,
-                    0
-                  );
-                  const percentage = ((datum.value / total) * 100).toFixed(1);
-                  return (
-                    <div
-                      style={{
-                        background: isDark ? '#1f2937' : 'white',
-                        padding: '12px 16px',
-                        border: `2px solid ${isDark ? '#32BFD0' : '#086DBD'}`,
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                      }}
-                    >
-                      <div style={{ fontWeight: 'bold', color: isDark ? '#32BFD0' : '#086DBD', marginBottom: '4px' }}>
-                        {datum.label}
-                      </div>
-                      <div style={{ color: isDark ? '#e5e7eb' : '#333' }}>
-                        Cantidad: <strong>{datum.value.toLocaleString()}</strong>
-                      </div>
-                      <div style={{ color: isDark ? '#9ca3af' : '#666', fontSize: '12px', marginTop: '4px' }}>
-                        {percentage}% del total
-                      </div>
-                    </div>
-                  );
-                }}
-                legends={[
-                  {
-                    anchor: 'bottom',
-                    direction: 'row',
-                    justify: false,
-                    translateX: 0,
-                    translateY: 80,
-                    itemsSpacing: 15,
-                    itemWidth: 120,
-                    itemHeight: 18,
-                    itemTextColor: isDark ? '#e5e7eb' : '#333333',
-                    itemDirection: 'left-to-right',
-                    symbolSize: 16,
-                    symbolShape: 'circle',
-                    effects: [
-                      {
-                        on: 'hover',
-                        style: {
-                          itemTextColor: isDark ? '#32BFD0' : '#086DBD',
-                          itemOpacity: 1,
-                        },
-                      },
-                    ],
-                  },
-                ]}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <EnviosPorDiaChart data={stats?.envios_por_dia || []} isDark={isDark} />
+        <ProspectosPorFlujoChart data={stats?.prospectos_por_flujo || []} isDark={isDark} />
       </div>
     </div>
   );
 }
-
-

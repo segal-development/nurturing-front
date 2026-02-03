@@ -1,4 +1,4 @@
-import { createContext, useCallback, useState } from 'react'
+import { createContext, useState } from 'react'
 
 interface SidebarContextType {
   isOpen: boolean
@@ -29,23 +29,23 @@ interface SidebarProviderProps {
 export function SidebarProvider({ children }: SidebarProviderProps) {
   const [isOpen, setIsOpen] = useState(getSavedSidebarState())
 
-  const open = useCallback(() => {
+  const open = () => {
     setIsOpen(true)
     persistSidebarState(true)
-  }, [])
+  }
 
-  const close = useCallback(() => {
+  const close = () => {
     setIsOpen(false)
     persistSidebarState(false)
-  }, [])
+  }
 
-  const toggle = useCallback(() => {
+  const toggle = () => {
     setIsOpen((prev) => {
       const newState = !prev
       persistSidebarState(newState)
       return newState
     })
-  }, [])
+  }
 
   const value: SidebarContextType = {
     isOpen,

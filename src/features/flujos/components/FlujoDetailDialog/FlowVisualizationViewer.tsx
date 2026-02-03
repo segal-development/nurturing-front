@@ -4,7 +4,7 @@
  * Reconstruye el flujo desde config_visual (nodes y edges)
  */
 
-import { useCallback, useMemo } from 'react'
+
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -78,7 +78,7 @@ const handleStyles = `
  */
 function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps) {
   // Preparar nodes y edges desde config_visual
-  const initialNodes = useMemo(() => {
+  const initialNodes = (() => {
     if (!configVisual?.nodes || !Array.isArray(configVisual.nodes)) {
       return []
     }
@@ -133,30 +133,28 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
 
     logger.log('Nodes enriquecidos (completo):', enrichedNodes)
     return enrichedNodes
-  }, [configVisual?.nodes])
+  })()
 
-  const initialEdges = useMemo(() => {
+  const initialEdges = (() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
       return []
     }
     logger.log('Edges cargados:', configVisual.edges)
     return configVisual.edges as Edge[]
-  }, [configVisual?.edges])
+  })()
 
   // Estado de ReactFlow - permite mover nodos pero no editar
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
 
   // Manejar cambios de nodos (permite arrastrar/mover)
-  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+  const handleNodesChange = (changes: NodeChange[]) => {
     setNodes((nds) => applyNodeChanges(changes, nds))
-  }, [setNodes])
+  }
 
   // Log para debugging
-  useMemo(() => {
-    logger.log('FlowVisualizationContent - nodes:', nodes)
-    logger.log('FlowVisualizationContent - edges:', edges)
-  }, [nodes, edges])
+  logger.log('FlowVisualizationContent - nodes:', nodes)
+  logger.log('FlowVisualizationContent - edges:', edges)
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (

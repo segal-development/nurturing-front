@@ -4,7 +4,7 @@
  * Supports editing inline with real-time updates
  */
 
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import {
   AlertCircle,
@@ -71,24 +71,24 @@ export function StageNode({
     }
   }, [id, isEditing])
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = () => {
     setIsEditing(true)
-  }, [])
+  }
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     onUpdate?.(id, localData)
     setIsEditing(false)
-  }, [id, localData, onUpdate])
+  }
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     setLocalData(data)
     setIsEditing(false)
-  }, [data])
+  }
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = () => {
     // Eliminar directamente sin confirmación (estilo n8n)
     onDelete?.(id)
-  }, [id, onDelete])
+  }
 
   const getMessageIcon = (tipo: string) => {
     switch (tipo) {

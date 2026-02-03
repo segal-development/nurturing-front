@@ -7,7 +7,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import type { EnviosFilterOptions } from '@/types/envios'
 import { enviosService } from '@/api/envios.service'
 
@@ -85,32 +85,32 @@ export function useEnviosList(filters: EnviosFilterOptions = DEFAULT_FILTERS) {
 export function useEnviosFilters() {
   const [filters, setFiltersState] = useState<EnviosFilterOptions>(DEFAULT_FILTERS)
 
-  const setFilters = useCallback((newFilters: Partial<EnviosFilterOptions>) => {
+  const setFilters = (newFilters: Partial<EnviosFilterOptions>) => {
     setFiltersState((prevFilters) => ({
       ...prevFilters,
       ...newFilters,
-      pagina: 1, // Reset to first page when filters change
+      pagina: 1,
     }))
-  }, [])
+  }
 
-  const resetFilters = useCallback(() => {
+  const resetFilters = () => {
     setFiltersState(DEFAULT_FILTERS)
-  }, [])
+  }
 
-  const setPage = useCallback((pagina: number) => {
+  const setPage = (pagina: number) => {
     setFiltersState((prevFilters) => ({
       ...prevFilters,
       pagina,
     }))
-  }, [])
+  }
 
-  const setPageSize = useCallback((por_pagina: number) => {
+  const setPageSize = (por_pagina: number) => {
     setFiltersState((prevFilters) => ({
       ...prevFilters,
       por_pagina,
-      pagina: 1, // Reset to first page
+      pagina: 1,
     }))
-  }, [])
+  }
 
   return {
     filters,

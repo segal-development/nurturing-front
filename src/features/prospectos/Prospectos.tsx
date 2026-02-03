@@ -8,7 +8,7 @@
  * - Separation of Concerns: Business logic in hooks, UI in components
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -91,40 +91,37 @@ export function Prospectos() {
   // ============================================================
   // DATOS DERIVADOS
   // ============================================================
-  const filteredProspectos = useMemo(
-    () => searchProspectos(prospectos, searchTerm),
-    [prospectos, searchTerm]
-  )
+  const filteredProspectos = searchProspectos(prospectos, searchTerm)
 
   const totalPages = calculateTotalPages(total, ITEMS_PER_PAGE)
 
   // ============================================================
   // MANEJADORES DE EVENTOS
   // ============================================================
-  const handleFiltrosChange = useCallback((newFiltros: typeof filtros) => {
+  const handleFiltrosChange = (newFiltros: typeof filtros) => {
     setLoteId(newFiltros.loteId)
     setImportacionId(newFiltros.importacionId)
     setEstado(newFiltros.estado)
     setTipo(newFiltros.tipoProspectoId)
     resetPage()
     setSearchTerm('')
-  }, [setLoteId, setImportacionId, setEstado, setTipo, resetPage])
+  }
 
-  const handleSearchChange = useCallback((value: string) => {
+  const handleSearchChange = (value: string) => {
     setSearchTerm(value)
     resetPage()
-  }, [resetPage])
+  }
 
-  const handleExport = useCallback(() => {
+  const handleExport = () => {
     logger.log('Exportar prospectos filtrados:', filteredProspectos)
-  }, [filteredProspectos])
+  }
 
-  const handleUploadSuccess = useCallback(() => {
+  const handleUploadSuccess = () => {
     setUploadDialogOpen(false)
     queryClient.invalidateQueries({ queryKey: ['prospectos-opciones-filtrado'] })
-  }, [queryClient])
+  }
 
-  const handlePageChange = useCallback((newPage: number) => {
+  const handlePageChange = (newPage: number) => {
     const isNextPage = newPage === currentPage + 1
     const isPreviousPage = newPage === currentPage - 1
 
@@ -135,7 +132,7 @@ export function Prospectos() {
     } else {
       goToPage(newPage)
     }
-  }, [currentPage, totalPages, goToNextPage, goToPreviousPage, goToPage])
+  }
 
   // ============================================================
   // EARLY RETURNS: ESTADOS DE CARGA Y ERROR

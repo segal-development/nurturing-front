@@ -4,7 +4,7 @@
  * Creates two outgoing paths: yes/true and no/false
  */
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
 import { GitBranch, Settings2, Trash2 } from 'lucide-react'
@@ -34,24 +34,24 @@ export function ConditionalNode({
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = () => {
     setIsEditing(true)
-  }, [])
+  }
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     onUpdate?.(id, localData)
     setIsEditing(false)
-  }, [id, localData, onUpdate])
+  }
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     setLocalData(data)
     setIsEditing(false)
-  }, [data])
+  }
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = () => {
     // Eliminar directamente sin confirmación (estilo n8n)
     onDelete?.(id)
-  }, [id, onDelete])
+  }
 
   return (
     <>

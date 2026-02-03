@@ -3,7 +3,7 @@
  * Permite ver, crear, editar y eliminar plantillas de SMS y Email
  */
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Plus, Mail, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
@@ -37,54 +37,51 @@ export function PlantillasPage() {
   }
 
   // Abrir diálogo de detalles
-  const handleVer = useCallback((plantilla: AnyPlantilla) => {
+  const handleVer = (plantilla: AnyPlantilla) => {
     setPlantillaSeleccionada(plantilla)
     setDetailDialogOpen(true)
-  }, [])
+  }
 
   // Abrir diálogo de edición
-  const handleEditar = useCallback((plantilla: AnyPlantilla) => {
+  const handleEditar = (plantilla: AnyPlantilla) => {
     setPlantillaSeleccionada(plantilla)
     setEditarDialogOpen(true)
-  }, [])
+  }
 
   // Copiar/Duplicar plantilla
-  const handleCopiar = useCallback((plantilla: AnyPlantilla) => {
+  const handleCopiar = (plantilla: AnyPlantilla) => {
     setTipoNuevo(plantilla.tipo)
     setCrearDialogOpen(true)
     toast.info('Completa los detalles para crear la duplicada')
-  }, [])
+  }
 
   // Abrir diálogo de eliminación
-  const handleEliminar = useCallback((plantilla: AnyPlantilla) => {
+  const handleEliminar = (plantilla: AnyPlantilla) => {
     setPlantillaSeleccionada(plantilla)
     setEliminarDialogOpen(true)
-  }, [])
+  }
 
   // Toggle estado activo/inactivo
-  const handleToggleEstado = useCallback(
-    async (plantilla: AnyPlantilla) => {
-      try {
-        const nuevoEstado = !plantilla.activo
-        await plantillasService.actualizar(plantilla.id!, {
-          ...plantilla,
-          activo: nuevoEstado,
-        })
+  const handleToggleEstado = async (plantilla: AnyPlantilla) => {
+    try {
+      const nuevoEstado = !plantilla.activo
+      await plantillasService.actualizar(plantilla.id!, {
+        ...plantilla,
+        activo: nuevoEstado,
+      })
 
-        // Invalidar cache
-        queryClient.invalidateQueries({ queryKey: ['plantillas'] })
+      // Invalidar cache
+      queryClient.invalidateQueries({ queryKey: ['plantillas'] })
 
-        toast.success(
-          `Plantilla ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`
-        )
-      } catch (error: any) {
-        logger.error('Error toggling estado:', error)
-        const mensaje = error.response?.data?.message || 'Error al cambiar estado'
-        toast.error(mensaje)
-      }
-    },
-    [queryClient]
-  )
+      toast.success(
+        `Plantilla ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`
+      )
+    } catch (error: any) {
+      logger.error('Error toggling estado:', error)
+      const mensaje = error.response?.data?.message || 'Error al cambiar estado'
+      toast.error(mensaje)
+    }
+  }
 
   return (
     <div className="space-y-6">

@@ -12,7 +12,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+
 import { logger } from '@/lib/logger'
 import type { StageProgressStats, StageExecutionState } from '@/types/flowExecutionTracking'
 import { flowExecutionTrackingService } from '@/api/flowExecutionTracking.service'
@@ -154,25 +154,23 @@ export function useStageProgressStats(
 ): StageProgressStats | undefined {
   const { data } = useFlowExecutionDetail(flujoId, ejecucionId)
 
-  return useMemo(() => {
-    if (!data?.data?.etapas) return undefined
+  if (!data?.data?.etapas) return undefined
 
-    const etapas = data.data.etapas
-    const total = etapas.length
-    const completadas = etapas.filter(e => e.estado === 'completed').length
-    const ejecutando = etapas.filter(e => e.estado === 'executing').length
-    const pendientes = etapas.filter(e => e.estado === 'pending').length
-    const fallidas = etapas.filter(e => e.estado === 'failed').length
+  const etapas = data.data.etapas
+  const total = etapas.length
+  const completadas = etapas.filter(e => e.estado === 'completed').length
+  const ejecutando = etapas.filter(e => e.estado === 'executing').length
+  const pendientes = etapas.filter(e => e.estado === 'pending').length
+  const fallidas = etapas.filter(e => e.estado === 'failed').length
 
-    return {
-      total_etapas: total,
-      etapas_completadas: completadas,
-      etapas_ejecutando: ejecutando,
-      etapas_pendientes: pendientes,
-      etapas_fallidas: fallidas,
-      porcentaje_completado: total > 0 ? Math.round((completadas / total) * 100) : 0,
-    }
-  }, [data?.data?.etapas])
+  return {
+    total_etapas: total,
+    etapas_completadas: completadas,
+    etapas_ejecutando: ejecutando,
+    etapas_pendientes: pendientes,
+    etapas_fallidas: fallidas,
+    porcentaje_completado: total > 0 ? Math.round((completadas / total) * 100) : 0,
+  }
 }
 
 /**
@@ -194,11 +192,9 @@ export function useStageExecutionState(
 ): StageExecutionState | undefined {
   const { data } = useFlowExecutionDetail(flujoId, ejecucionId)
 
-  return useMemo(() => {
-    if (!data?.data?.etapas) return undefined
-    const stage = data.data.etapas.find(e => e.node_id === nodeId)
-    return stage?.estado
-  }, [data?.data?.etapas, nodeId])
+  if (!data?.data?.etapas) return undefined
+  const stage = data.data.etapas.find(e => e.node_id === nodeId)
+  return stage?.estado
 }
 
 /**

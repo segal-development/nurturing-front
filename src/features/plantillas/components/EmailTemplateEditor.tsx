@@ -4,7 +4,7 @@
  * Con edición visual y preview en tiempo real
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Eye,
@@ -49,150 +49,99 @@ export function EmailTemplateEditor({
   }, [plantilla, onDataChange])
 
   // Validar plantilla
-  const validacion = useMemo(() => validarPlantillaEmail(plantilla), [plantilla])
+  const validacion = validarPlantillaEmail(plantilla)
 
-  const handleNombreChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPlantilla({
-        ...plantilla,
-        nombre: e.target.value,
-      })
-    },
-    [plantilla]
-  )
+  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlantilla({ ...plantilla, nombre: e.target.value })
+  }
 
-  const handleDescripcionChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setPlantilla({
-        ...plantilla,
-        descripcion: e.target.value,
-      })
-    },
-    [plantilla]
-  )
+  const handleDescripcionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPlantilla({ ...plantilla, descripcion: e.target.value })
+  }
 
-  const handleAsuntoChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPlantilla({
-        ...plantilla,
-        asunto: e.target.value,
-      })
-    },
-    [plantilla]
-  )
+  const handleAsuntoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlantilla({ ...plantilla, asunto: e.target.value })
+  }
 
-  const handleActivoChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPlantilla({
-        ...plantilla,
-        activo: e.target.checked,
-      })
-    },
-    [plantilla]
-  )
+  const handleActivoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlantilla({ ...plantilla, activo: e.target.checked })
+  }
 
   /**
    * Agrega un nuevo componente a la plantilla
    */
-  const agregarComponente = useCallback(
-    (tipo: EmailComponentFormData['tipo']) => {
-      const nuevoComponente: EmailComponentFormData = {
-        id: `comp-${Date.now()}`,
-        tipo: tipo as any,
-        orden: plantilla.componentes.length,
-        contenido: obtenerContenidoInicial(tipo),
-      } as EmailComponentFormData
+  const agregarComponente = (tipo: EmailComponentFormData['tipo']) => {
+    const nuevoComponente: EmailComponentFormData = {
+      id: `comp-${Date.now()}`,
+      tipo: tipo as any,
+      orden: plantilla.componentes.length,
+      contenido: obtenerContenidoInicial(tipo),
+    } as EmailComponentFormData
 
-      setPlantilla({
-        ...plantilla,
-        componentes: [...plantilla.componentes, nuevoComponente],
-      })
+    setPlantilla({
+      ...plantilla,
+      componentes: [...plantilla.componentes, nuevoComponente],
+    })
 
-      setComponenteSeleccionado(nuevoComponente.id)
-    },
-    [plantilla]
-  )
+    setComponenteSeleccionado(nuevoComponente.id)
+  }
 
   /**
    * Actualiza un componente existente
    */
-  const actualizarComponente = useCallback(
-    (componente: EmailComponentFormData) => {
-      setPlantilla({
-        ...plantilla,
-        componentes: plantilla.componentes.map((c) =>
-          c.id === componente.id ? componente : c
-        ),
-      })
-    },
-    [plantilla]
-  )
+  const actualizarComponente = (componente: EmailComponentFormData) => {
+    setPlantilla({
+      ...plantilla,
+      componentes: plantilla.componentes.map((c) =>
+        c.id === componente.id ? componente : c
+      ),
+    })
+  }
 
   /**
    * Elimina un componente
    */
-  const eliminarComponente = useCallback(
-    (componenteId: string) => {
-      setPlantilla({
-        ...plantilla,
-        componentes: plantilla.componentes.filter((c) => c.id !== componenteId),
-      })
-      setComponenteSeleccionado(null)
-    },
-    [plantilla]
-  )
+  const eliminarComponente = (componenteId: string) => {
+    setPlantilla({
+      ...plantilla,
+      componentes: plantilla.componentes.filter((c) => c.id !== componenteId),
+    })
+    setComponenteSeleccionado(null)
+  }
 
   /**
    * Mueve un componente arriba en la lista
    */
-  const moverComponenteArriba = useCallback(
-    (index: number) => {
-      if (index === 0) return
+  const moverComponenteArriba = (index: number) => {
+    if (index === 0) return
 
-      const nuevosComponentes = [...plantilla.componentes]
-      ;[nuevosComponentes[index - 1], nuevosComponentes[index]] = [
-        nuevosComponentes[index],
-        nuevosComponentes[index - 1],
-      ]
+    const nuevosComponentes = [...plantilla.componentes]
+    ;[nuevosComponentes[index - 1], nuevosComponentes[index]] = [
+      nuevosComponentes[index],
+      nuevosComponentes[index - 1],
+    ]
 
-      // Actualizar orden
-      nuevosComponentes.forEach((c, i) => {
-        c.orden = i
-      })
+    nuevosComponentes.forEach((c, i) => { c.orden = i })
 
-      setPlantilla({
-        ...plantilla,
-        componentes: nuevosComponentes,
-      })
-    },
-    [plantilla]
-  )
+    setPlantilla({ ...plantilla, componentes: nuevosComponentes })
+  }
 
   /**
    * Mueve un componente abajo en la lista
    */
-  const moverComponenteAbajo = useCallback(
-    (index: number) => {
-      if (index === plantilla.componentes.length - 1) return
+  const moverComponenteAbajo = (index: number) => {
+    if (index === plantilla.componentes.length - 1) return
 
-      const nuevosComponentes = [...plantilla.componentes]
-      ;[nuevosComponentes[index], nuevosComponentes[index + 1]] = [
-        nuevosComponentes[index + 1],
-        nuevosComponentes[index],
-      ]
+    const nuevosComponentes = [...plantilla.componentes]
+    ;[nuevosComponentes[index], nuevosComponentes[index + 1]] = [
+      nuevosComponentes[index + 1],
+      nuevosComponentes[index],
+    ]
 
-      // Actualizar orden
-      nuevosComponentes.forEach((c, i) => {
-        c.orden = i
-      })
+    nuevosComponentes.forEach((c, i) => { c.orden = i })
 
-      setPlantilla({
-        ...plantilla,
-        componentes: nuevosComponentes,
-      })
-    },
-    [plantilla]
-  )
+    setPlantilla({ ...plantilla, componentes: nuevosComponentes })
+  }
 
   return (
     <div className="space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">

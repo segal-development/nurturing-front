@@ -3,7 +3,7 @@
  * Uses useOptimistic for immediate UI updates and useTransition for async operations
  */
 
-import { useCallback, useOptimistic, useTransition, useState, useReducer } from 'react'
+import { useOptimistic, useTransition, useState, useReducer } from 'react'
 import { nanoid } from 'nanoid'
 import type {
   CustomNode,
@@ -136,7 +136,7 @@ export function useFlowBuilder() {
    * Add a new stage node to the flow
    * Position: spaciada vertically para evitar que se apilen
    */
-  const addStageNode = useCallback(() => {
+  const addStageNode = () => {
     // Calcular posición basada en número de nodos existentes
     const stageCount = state.nodes.filter((n) => n.type === 'stage').length
     const newY = 250 + stageCount * 200 // Espaciado vertical: 200px entre etapas
@@ -169,13 +169,13 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [state.nodes])
+  }
 
   /**
    * Add a new conditional node to the flow
    * Position: spaciada vertically para evitar que se apilen
    */
-  const addConditionalNode = useCallback(() => {
+  const addConditionalNode = () => {
     // Calcular posición basada en número de nodos existentes
     const nodeCount = state.nodes.length
     const newY = 250 + nodeCount * 150 // Espaciado vertical
@@ -212,12 +212,12 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [state.nodes])
+  }
 
   /**
    * Remove a node and all its connected edges
    */
-  const removeNode = useCallback((nodeId: string) => {
+  const removeNode = (nodeId: string) => {
     dispatch({ type: 'REMOVE_NODE', payload: nodeId })
 
     startTransition(() => {
@@ -230,12 +230,12 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [])
+  }
 
   /**
    * Update node data
    */
-  const updateNode = useCallback((nodeId: string, data: any) => {
+  const updateNode = (nodeId: string, data: any) => {
     dispatch({ type: 'UPDATE_NODE', payload: { id: nodeId, data } })
 
     startTransition(() => {
@@ -248,12 +248,12 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [])
+  }
 
   /**
    * Add connection between nodes
    */
-  const addEdge = useCallback((connection: CustomEdge) => {
+  const addEdge = (connection: CustomEdge) => {
     // Validate connection
     const sourceNode = state.nodes.find((n) => n.id === connection.source)
     const targetNode = state.nodes.find((n) => n.id === connection.target)
@@ -282,12 +282,12 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [state.nodes, state.edges])
+  }
 
   /**
    * Remove edge
    */
-  const removeEdge = useCallback((edgeId: string) => {
+  const removeEdge = (edgeId: string) => {
     dispatch({ type: 'REMOVE_EDGE', payload: edgeId })
 
     startTransition(() => {
@@ -300,12 +300,12 @@ export function useFlowBuilder() {
         },
       ])
     })
-  }, [])
+  }
 
   /**
    * Validate the entire flow
    */
-  const validateFlow = useCallback((): FlowValidationResult => {
+  const validateFlow = (): FlowValidationResult => {
     const errors: string[] = []
     const warnings: string[] = []
 
@@ -349,13 +349,13 @@ export function useFlowBuilder() {
       errors,
       warnings,
     }
-  }, [state])
+  }
 
   /**
    * Get the final flow configuration for saving
    * Serializes the visual flow into a format the backend can understand
    */
-  const getFlowConfig = useCallback((): SerializedFlowConfig => {
+  const getFlowConfig = (): SerializedFlowConfig => {
     const stageNodes = state.nodes.filter((n) => n.type === 'stage')
     const conditionalNodes = state.nodes.filter((n) => n.type === 'conditional')
 
@@ -414,15 +414,15 @@ export function useFlowBuilder() {
       branches: branches.length > 0 ? branches : undefined,
       nodeMap,
     }
-  }, [state])
+  }
 
   /**
    * Reset flow to initial state
    */
-  const resetFlow = useCallback(() => {
+  const resetFlow = () => {
     dispatch({ type: 'RESET_FLOW' })
     setValidationErrors([])
-  }, [])
+  }
 
   return {
     // State

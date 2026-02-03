@@ -6,7 +6,7 @@
  * - Auto-refresh configurable
  */
 
-import { useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
+import { useEffect, useOptimistic, useRef, useState } from 'react'
 import { logger } from '@/lib/logger'
 import { flujosService } from '@/api/flujos.service'
 import type { EjecucionFlujo } from '@/types/flujo'
@@ -87,16 +87,16 @@ export function useExecutionProgress({
   /**
    * Valida si la ejecución está completa
    */
-  const isExecutionComplete = useCallback((exec: EjecucionFlujo | null): boolean => {
+  const isExecutionComplete = (exec: EjecucionFlujo | null): boolean => {
     if (!exec) return false
     return exec.estado === 'completado' || exec.estado === 'fallido'
-  }, [])
+  }
 
   /**
    * Obtiene datos de progreso del backend
    * Manejo robusto de errores con early returns
    */
-  const fetchExecutionProgress = useCallback(async () => {
+  const fetchExecutionProgress = async () => {
     // Early return: IDs inválidos
     if (!hasValidIds || !flujoId || !ejecucionId) {
       return
@@ -117,7 +117,7 @@ export function useExecutionProgress({
     } finally {
       setIsLoading(false)
     }
-  }, [flujoId, ejecucionId, hasValidIds])
+  }
 
   /**
    * Maneja auto-refresh con limpieza apropiada
@@ -149,16 +149,16 @@ export function useExecutionProgress({
   /**
    * Obtiene datos manualmente (útil para botones de refresh)
    */
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     await fetchExecutionProgress()
-  }, [fetchExecutionProgress])
+  }
 
   /**
    * Alterna auto-refresh
    */
-  const toggleAutoRefresh = useCallback(() => {
+  const toggleAutoRefresh = () => {
     setAutoRefreshEnabled((prev) => !prev)
-  }, [])
+  }
 
   return {
     execution,

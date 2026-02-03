@@ -15,7 +15,7 @@
  */
 
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useMemo } from 'react'
+
 import { Button } from '@/components/ui/button'
 
 // ============================================================================
@@ -86,10 +86,7 @@ export function Pagination({
   className = '',
 }: PaginationProps) {
   // Calcular rango de páginas (memoizado para performance)
-  const { startPage, endPage, pageNumbers } = useMemo(
-    () => calculatePageRange(currentPage, totalPages, maxPagesToShow),
-    [currentPage, totalPages, maxPagesToShow]
-  )
+  const { startPage, endPage, pageNumbers } = calculatePageRange(currentPage, totalPages, maxPagesToShow)
 
   // Early return si no hay páginas
   if (totalPages <= 1) {

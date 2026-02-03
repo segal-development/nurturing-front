@@ -3,7 +3,7 @@
  * Muestra información del flujo, sus etapas, estadísticas, estructura y historial de ejecuciones
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import {
@@ -131,7 +131,7 @@ export function FlujoDetailDialog({
 
   // Crear un mapa de estados de etapas por node_id para el tab General
   // El node_id en config_visual tiene formato "stage_X" donde X es el ID de la etapa
-  const etapaStatesMap = useMemo(() => {
+  const etapaStatesMap = (() => {
     const map = new Map<string, { estado: string; enviados?: number; fallidos?: number }>()
 
     if (latestExecutionDetail?.data?.etapas) {
@@ -157,7 +157,7 @@ export function FlujoDetailDialog({
     }
 
     return map
-  }, [latestExecutionDetail])
+  })()
 
   // Determinar si hay una ejecución activa
   const hasActiveExecution = activeExecutionData?.tiene_ejecucion_activa || false

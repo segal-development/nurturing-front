@@ -4,7 +4,7 @@
  * Supports editing name and deletion
  */
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
 import { CheckCircle2, Settings2, Trash2 } from 'lucide-react'
@@ -30,23 +30,23 @@ export function EndNode({
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
 
-  const handleEdit = useCallback(() => {
+  const handleEdit = () => {
     setIsEditing(true)
-  }, [])
+  }
 
-  const handleSave = useCallback(() => {
+  const handleSave = () => {
     onUpdate?.(id, localData)
     setIsEditing(false)
-  }, [id, localData, onUpdate])
+  }
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = () => {
     setLocalData(data)
     setIsEditing(false)
-  }, [data])
+  }
 
-  const handleDelete = useCallback(() => {
+  const handleDelete = () => {
     onDelete?.(id)
-  }, [id, onDelete])
+  }
 
   return (
     <>

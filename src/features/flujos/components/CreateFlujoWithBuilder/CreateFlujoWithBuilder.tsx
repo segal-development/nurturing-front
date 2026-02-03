@@ -4,7 +4,7 @@
  * Steps: Origin -> Prospects -> FlowBuilder
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import {
   Dialog,
@@ -182,19 +182,15 @@ export function CreateFlujoWithBuilder({
   /**
    * Obtiene el nombre de un origen por su ID
    */
-  const getOriginNameById = useCallback(
-    (originId: string): string | null => {
-      return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
-    },
-    [opciones?.origenes]
-  )
+  const getOriginNameById = (originId: string): string | null => {
+    return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
+  }
 
   /**
    * Carga prospectos del origen seleccionado
    * Early return si hay error de carga
    */
-  const handleOriginSelect = useCallback(
-    async (originId: string) => {
+  const handleOriginSelect = async (originId: string) => {
       setSelectedOriginId(originId)
       setSelectedOriginName(getOriginNameById(originId))
       setLoadingProspectos(true)
@@ -221,9 +217,7 @@ export function CreateFlujoWithBuilder({
       } finally {
         setLoadingProspectos(false)
       }
-    },
-    [getOriginNameById]
-  )
+  }
 
   /**
    * Maneja la apertura del diálogo y carga origen inicial si existe

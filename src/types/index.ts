@@ -78,7 +78,6 @@ export type {
 export type {
   Envio,
   EnvioCanal,
-  EnvioEstado,
   EnviosDailyStatsResponse,
   EnviosFilterOptions,
   EnviosFilters,

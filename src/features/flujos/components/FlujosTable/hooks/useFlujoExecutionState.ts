@@ -4,7 +4,7 @@
  * Follows Single Responsibility and Dependency Inversion principles
  */
 
-import { useMemo } from 'react'
+
 import { logger } from '@/lib/logger'
 import {
   useActiveExecution,
@@ -66,7 +66,7 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
   )
 
   // Calculate progress from latest execution
-  const calculatedProgress = useMemo<ExecutionProgress | null>(() => {
+  const calculatedProgress: ExecutionProgress | null = (() => {
     // Early return: no need to calculate if active execution has progress
     if (hasActiveExecution && activeExecution?.progreso) {
       logger.log('Using BACKEND progress from active execution:', activeExecution.progreso)
@@ -105,17 +105,13 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
 
     logger.log('NO progress data available for flujo:', flujoId)
     return null
-  }, [hasActiveExecution, activeExecution, latestExecutionDetail, latestExecution, flujoId])
+  })()
 
   // Resolve which execution to display
-  const displayExecution = useMemo<DisplayExecution | null>(() => {
-    return resolveDisplayExecution(activeExecution, latestExecution, calculatedProgress)
-  }, [activeExecution, latestExecution, calculatedProgress])
+  const displayExecution: DisplayExecution | null = resolveDisplayExecution(activeExecution, latestExecution, calculatedProgress)
 
   // Determine if flow can be executed
-  const canExecute = useMemo<boolean>(() => {
-    return canExecuteFlow(activeExecution, latestExecution)
-  }, [activeExecution, latestExecution])
+  const canExecute: boolean = canExecuteFlow(activeExecution, latestExecution)
 
   // Aggregate loading state
   const isLoading = isLoadingActive || isLoadingLatest || isLoadingDetail

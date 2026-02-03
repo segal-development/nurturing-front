@@ -11,7 +11,7 @@
  */
 
 import { Search, FileStack, CheckCircle2, Loader2, AlertCircle, Trash2 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -112,41 +112,32 @@ export function CompactFiltersBar({
   // ============================================================
   // MANEJADORES DE FILTROS CON EARLY RETURNS
   // ============================================================
-  const handleLoteChange = useCallback(
-    (value: string) => {
-      const parsedId = parseInt(value, 10)
-      if (isNaN(parsedId)) return
+  const handleLoteChange = (value: string) => {
+    const parsedId = parseInt(value, 10)
+    if (isNaN(parsedId)) return
 
-      const updatedFilters = createUpdatedFilters(filtros, { 
-        loteId: parsedId,
-        importacionId: null // Limpiar importacionId cuando cambia el lote
-      })
-      onFiltrosChange(updatedFilters)
-    },
-    [filtros, onFiltrosChange]
-  )
+    const updatedFilters = createUpdatedFilters(filtros, { 
+      loteId: parsedId,
+      importacionId: null // Limpiar importacionId cuando cambia el lote
+    })
+    onFiltrosChange(updatedFilters)
+  }
 
-  const handleEstadoChange = useCallback(
-    (value: string | null) => {
-      if (!value) return
+  const handleEstadoChange = (value: string | null) => {
+    if (!value) return
 
-      const estadoValue = value === 'todos-estados' ? null : value
-      const updatedFilters = createUpdatedFilters(filtros, { estado: estadoValue })
-      onFiltrosChange(updatedFilters)
-    },
-    [filtros, onFiltrosChange]
-  )
+    const estadoValue = value === 'todos-estados' ? null : value
+    const updatedFilters = createUpdatedFilters(filtros, { estado: estadoValue })
+    onFiltrosChange(updatedFilters)
+  }
 
-  const handleTipoChange = useCallback(
-    (value: string | null) => {
-      if (!value) return
+  const handleTipoChange = (value: string | null) => {
+    if (!value) return
 
-      const tipoValue = parseTypeIdSafely(value)
-      const updatedFilters = createUpdatedFilters(filtros, { tipoProspectoId: tipoValue })
-      onFiltrosChange(updatedFilters)
-    },
-    [filtros, onFiltrosChange]
-  )
+    const tipoValue = parseTypeIdSafely(value)
+    const updatedFilters = createUpdatedFilters(filtros, { tipoProspectoId: tipoValue })
+    onFiltrosChange(updatedFilters)
+  }
 
   // ============================================================
   // VALORES MOSTRADOS EN SELECTS

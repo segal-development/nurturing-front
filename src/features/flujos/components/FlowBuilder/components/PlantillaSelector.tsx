@@ -10,7 +10,7 @@
  * - TypeScript estricto
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState } from 'react'
 import { AlertCircle, FileText, Mail, MessageSquare, X } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -274,12 +274,12 @@ function PlantillaSelect({ plantillas, selectedId, tipo, onSelect }: PlantillaSe
   const label = tipo === 'sms' ? 'SMS' : 'Email'
   const Icon = tipo === 'sms' ? MessageSquare : Mail
 
-  const handleValueChange = useCallback((value: string) => {
+  const handleValueChange = (value: string) => {
     const id = parseInt(value, 10)
     if (!isNaN(id)) {
       onSelect(id)
     }
-  }, [onSelect])
+  }
 
   return (
     <Select
@@ -440,18 +440,12 @@ export function PlantillaSelector({
   } = usePlantillasEmail(shouldLoadEmail(tipo_mensaje))
 
   // Find selected plantillas
-  const selectedSMS = useMemo(
-    () => findPlantillaById(plantillasSMS, plantilla_id),
-    [plantillasSMS, plantilla_id]
-  )
+  const selectedSMS = findPlantillaById(plantillasSMS, plantilla_id)
 
-  const selectedEmail = useMemo(
-    () => findPlantillaById(plantillasEmail, tipo_mensaje === 'email' ? plantilla_id : plantilla_id_email),
-    [plantillasEmail, plantilla_id, plantilla_id_email, tipo_mensaje]
-  )
+  const selectedEmail = findPlantillaById(plantillasEmail, tipo_mensaje === 'email' ? plantilla_id : plantilla_id_email)
 
   // Handlers
-  const handleModeChange = useCallback((newMode: EditorMode) => {
+  const handleModeChange = (newMode: EditorMode) => {
     setMode(newMode)
     if (newMode === 'inline') {
       onChange({
@@ -461,26 +455,26 @@ export function PlantillaSelector({
         plantilla_type: 'inline',
       })
     }
-  }, [onChange, plantilla_mensaje])
+  }
 
-  const handleInlineChange = useCallback((contenido: string) => {
+  const handleInlineChange = (contenido: string) => {
     onChange({
       plantilla_id: undefined,
       plantilla_id_email: undefined,
       plantilla_mensaje: contenido,
       plantilla_type: 'inline',
     })
-  }, [onChange])
+  }
 
-  const handleSelectSMS = useCallback((id: number) => {
+  const handleSelectSMS = (id: number) => {
     onChange({
       plantilla_id: id,
       plantilla_type: 'reference',
       plantilla_mensaje: undefined,
     })
-  }, [onChange])
+  }
 
-  const handleSelectEmail = useCallback((id: number) => {
+  const handleSelectEmail = (id: number) => {
     if (tipo_mensaje === 'ambos') {
       onChange({
         plantilla_id_email: id,
@@ -493,16 +487,16 @@ export function PlantillaSelector({
         plantilla_mensaje: undefined,
       })
     }
-  }, [onChange, tipo_mensaje])
+  }
 
-  const handleClearSMS = useCallback(() => {
+  const handleClearSMS = () => {
     onChange({
       plantilla_id: undefined,
       plantilla_type: tipo_mensaje === 'ambos' && plantilla_id_email ? 'reference' : 'inline',
     })
-  }, [onChange, tipo_mensaje, plantilla_id_email])
+  }
 
-  const handleClearEmail = useCallback(() => {
+  const handleClearEmail = () => {
     if (tipo_mensaje === 'ambos') {
       onChange({
         plantilla_id_email: undefined,
@@ -514,7 +508,7 @@ export function PlantillaSelector({
         plantilla_type: 'inline',
       })
     }
-  }, [onChange, tipo_mensaje, plantilla_id])
+  }
 
   // Early return: no type selected
   if (!tipo_mensaje) {

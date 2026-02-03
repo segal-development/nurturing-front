@@ -8,7 +8,7 @@
  * - Guardar cambios
  */
 
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
@@ -227,8 +227,7 @@ export function EditFlujoBuilder({
     toast.info(`Flujo "${flujo.nombre}" cargado para edición`)
   }, [flujo, setFlowName, setFlowDescription, loadFlowConfiguration, resetFlow])
 
-  const handleSaveFlow = useCallback(
-    async (config: any) => {
+  const handleSaveFlow = async (config: any) => {
       logger.log('Guardando flujo editado:', config)
 
       try {
@@ -269,9 +268,7 @@ export function EditFlujoBuilder({
           description: error.response?.data?.message || error.message,
         })
       }
-    },
-    [flujo.id, updateFlowConfiguration, onSaveSuccess, queryClient]
-  )
+  }
 
   return (
     <FlowBuilder

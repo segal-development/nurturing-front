@@ -4,7 +4,7 @@
  * Con iconos, colores y animaciones que indican el progreso
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { logger } from '@/lib/logger'
 
 import ReactFlow, {
@@ -340,7 +340,7 @@ function FlowExecutionContent({
   const { data: precios } = usePrecios()
 
   // Create nodeTypes with precios - memoized to avoid re-renders
-  const nodeTypes = useMemo(() => ({
+  const nodeTypes = {
     stage: (props: any) => (
       <StageNode
         {...props}
@@ -352,7 +352,7 @@ function FlowExecutionContent({
     initial: InitialNode,
     end: EndNode,
     conditional: ConditionalNode,
-  }), [precios])
+  }
 
   const [nodes, setNodes] = useNodesState(configVisual?.nodes || [])
   const [edges, setEdges] = useEdgesState(configVisual?.edges || [])
@@ -399,7 +399,7 @@ function FlowExecutionContent({
   }, [executionData])
 
   // Crear mapa de etapas por node_id para acceso rápido
-  const stagesByNodeId = useMemo(() => {
+  const stagesByNodeId = (() => {
     const map = new Map<string, StageExecution>()
     if (executionData?.etapas) {
       executionData.etapas.forEach(stage => {
@@ -407,7 +407,7 @@ function FlowExecutionContent({
       })
     }
     return map
-  }, [executionData?.etapas])
+  })()
 
   // Mapa de node_id -> label para mostrar nombres en badges
   const nodeLabelsByNodeId = useNodeLabelMap(configVisual)
@@ -480,13 +480,13 @@ function FlowExecutionContent({
   }, [configVisual?.nodes, stagesByNodeId, setNodes, executionData?.proximo_nodo])
 
   // Obtener el camino de ejecución desde la timeline
-  const executionPath = useMemo(() => {
+  const executionPath = (() => {
     if (!executionData?.timeline) return []
     return executionData.timeline.sort((a, b) => a.orden_ejecucion - b.orden_ejecucion)
-  }, [executionData?.timeline])
+  })()
 
   // Generar estilos dinámicos basados en estado de ejecución
-  const executionStyles = useMemo(() => {
+  const executionStyles = (() => {
     let styles = ''
 
     stagesByNodeId.forEach((stage, nodeId) => {
@@ -599,9 +599,9 @@ function FlowExecutionContent({
     }
 
     return styles
-  }, [stagesByNodeId, executionPath, executionData?.nodo_actual, executionData?.proximo_nodo, selectedNodeId])
+  })()
 
-  const handlePause = useCallback(() => {
+  const handlePause = () => {
     pauseExecution(
       { flujoId, ejecucionId },
       {
@@ -616,9 +616,9 @@ function FlowExecutionContent({
         },
       },
     )
-  }, [flujoId, ejecucionId, pauseExecution, refetch])
+  }
 
-  const handleResume = useCallback(() => {
+  const handleResume = () => {
     resumeExecution(
       { flujoId, ejecucionId },
       {
@@ -633,14 +633,14 @@ function FlowExecutionContent({
         },
       },
     )
-  }, [flujoId, ejecucionId, resumeExecution, refetch])
+  }
 
-  const handleOpenCancelDialog = useCallback(() => {
+  const handleOpenCancelDialog = () => {
     setShowCancelDialog(true)
-  }, [])
+  }
 
   // Handle node click to show node-specific stats in the panel
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
+  const handleNodeClick = (_event: React.MouseEvent, node: any) => {
     logger.log('Node clicked:', node.id, node.type)
     setSelectedNodeId(node.id)
     // If the node has execution data, also set it as selected stage for detail view
@@ -648,15 +648,15 @@ function FlowExecutionContent({
     if (stage) {
       setSelectedStage(stage)
     }
-  }, [stagesByNodeId])
+  }
 
   // Handle clicking on the background to deselect
-  const handlePaneClick = useCallback(() => {
+  const handlePaneClick = () => {
     setSelectedNodeId(null)
     setSelectedStage(null)
-  }, [])
+  }
 
-  const handleConfirmCancel = useCallback(() => {
+  const handleConfirmCancel = () => {
     cancelExecution(
       { flujoId, ejecucionId },
       {
@@ -672,7 +672,7 @@ function FlowExecutionContent({
         },
       },
     )
-  }, [flujoId, ejecucionId, cancelExecution, refetch])
+  }
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (

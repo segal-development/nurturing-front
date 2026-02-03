@@ -6,11 +6,11 @@ import apiClient from './client'
 import { logger } from '@/lib/logger'
 import type {
   Prospecto,
-  PaginatedResponse,
   ProspectoFormData,
   ProspectoEstadisticas,
   ConteoPorTipoResponse,
 } from '@/types/prospecto'
+import type { PaginatedResponse } from '@/types'
 
 interface Importacion {
   id: number

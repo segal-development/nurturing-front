@@ -52,16 +52,6 @@ export interface ProspectoFormData {
   metadata?: Record<string, any>;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    current_page: number;
-    total: number;
-    per_page: number;
-    last_page: number;
-  };
-}
-
 export interface ProspectoEstadisticas {
   total_prospectos: number;
   por_estado: {

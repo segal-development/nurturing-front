@@ -15,7 +15,7 @@
  * El usuario solo necesita iniciar sesión una vez (duración del refresh_token)
  */
 
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
 import { authService } from '@/api/auth.service'
 import { logger } from '@/lib/logger'
 import type { User, LoginRequest } from '@/types/auth'
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = useCallback(async (credentials: LoginRequest) => {
+  const login = async (credentials: LoginRequest) => {
     dispatch({ type: 'SET_LOADING', payload: true })
     dispatch({ type: 'CLEAR_ERROR' })
 
@@ -162,9 +162,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: errorMessage })
       throw err
     }
-  }, [])
+  }
 
-  const logout = useCallback(async () => {
+  const logout = async () => {
     dispatch({ type: 'SET_LOADING', payload: true })
 
     try {
@@ -176,15 +176,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_ERROR', payload: errorMessage })
       throw err
     }
-  }, [])
+  }
 
-  const clearError = useCallback(() => {
+  const clearError = () => {
     dispatch({ type: 'CLEAR_ERROR' })
-  }, [])
+  }
 
-  const setError = useCallback((error: string) => {
+  const setError = (error: string) => {
     dispatch({ type: 'SET_ERROR', payload: error })
-  }, [])
+  }
 
   return (
     <AuthContext.Provider

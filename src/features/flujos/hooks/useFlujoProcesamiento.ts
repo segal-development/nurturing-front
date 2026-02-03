@@ -21,7 +21,7 @@
  * }
  */
 
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import {
   useFlujoProcesamientoStore,
@@ -111,25 +111,22 @@ export function useFlujoProcesamiento(
   }, [onComplete])
 
   // Wrapper con validación
-  const iniciarTracking = useCallback(
-    (flujoId: number, flujoNombre: string, totalProspectos: number) => {
-      if (!flujoId || !flujoNombre) {
-        logger.error('iniciarTracking: flujoId y flujoNombre son requeridos')
-        return
-      }
+  const iniciarTracking = (flujoId: number, flujoNombre: string, totalProspectos: number) => {
+    if (!flujoId || !flujoNombre) {
+      logger.error('iniciarTracking: flujoId y flujoNombre son requeridos')
+      return
+    }
 
-      if (totalProspectos <= 0) {
-        logger.warn('iniciarTracking: totalProspectos debe ser > 0')
-      }
+    if (totalProspectos <= 0) {
+      logger.warn('iniciarTracking: totalProspectos debe ser > 0')
+    }
 
-      storeIniciarTracking(flujoId, flujoNombre, totalProspectos)
-    },
-    [storeIniciarTracking]
-  )
+    storeIniciarTracking(flujoId, flujoNombre, totalProspectos)
+  }
 
-  const detenerTracking = useCallback(() => {
+  const detenerTracking = () => {
     storeLimpiarFlujo()
-  }, [storeLimpiarFlujo])
+  }
 
   return {
     flujoActivo,

@@ -4,7 +4,7 @@
  * Detección automática de caracteres especiales
  */
 
-import { useCallback, useMemo, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
@@ -39,17 +39,14 @@ export function SMSTemplateEditor({
   const contenido = form.watch('contenido')
 
   // Calcular información de caracteres
-  const infoCaracteres = useMemo(
-    () => obtenerInfoCaracteresSMS(contenido),
-    [contenido]
-  )
+  const infoCaracteres = obtenerInfoCaracteresSMS(contenido)
 
   // Determinar color de la barra de progreso
-  const obtenerColorProgreso = useCallback((): string => {
+  const obtenerColorProgreso = (): string => {
     if (infoCaracteres.porcentajeUso > 100) return 'bg-red-500'
     if (infoCaracteres.porcentajeUso > 80) return 'bg-orange-500'
     return 'bg-green-500'
-  }, [infoCaracteres.porcentajeUso])
+  }
 
   // Notificar cambios con debounce para evitar re-renders excesivos
   // Obtener valores del formulario sin observar todos
@@ -183,7 +180,7 @@ export function SMSTemplateEditor({
             </div>
 
             {/* Información sobre caracteres especiales */}
-            {useMemo(() => {
+            {(() => {
               const tieneCaracteresEspeciales = /[€\[\]{}]/.test(contenido)
               return tieneCaracteresEspeciales ? (
                 <div className="mt-3 flex gap-2 items-start text-xs bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded p-2">
@@ -193,7 +190,7 @@ export function SMSTemplateEditor({
                   </p>
                 </div>
               ) : null
-            }, [contenido])}
+            })()}
           </div>
 
           {/* Textarea para contenido */}

@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@/lib/logger'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowVisualizationViewer } from './FlowVisualizationViewer'
@@ -57,7 +57,7 @@ export function FlowStructurePanel({
   // 1. Ejecución activa (in_progress/paused) - más prioritario
   // 2. ExecutionId pasado como prop
   // 3. Última ejecución (cualquier estado) - para mostrar historial
-  const effectiveExecutionId = useMemo(() => {
+  const effectiveExecutionId = (() => {
     // 1. Si hay ejecución activa en el backend, usar ese ID (prioridad máxima)
     if (activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion) {
       logger.log('[FlowStructurePanel] Using ACTIVE execution:', activeExecutionData.ejecucion.id)
@@ -80,7 +80,7 @@ export function FlowStructurePanel({
     // 4. No hay ninguna ejecución
     logger.log('[FlowStructurePanel] No execution found')
     return undefined
-  }, [activeExecutionData, executionId, latestExecutionData])
+  })()
 
   // Usar config_structure si está disponible, sino usar los campos individuales
   const stages = config_structure?.stages || etapas || []

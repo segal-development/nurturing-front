@@ -7,7 +7,8 @@
  * for test data generation. This is acceptable for mock/test data only.
  */
 
-import type { Envio, EnvioEstado, EnvioCanal } from '@/types/envios'
+import type { Envio, EnvioCanal } from '@/types/envios'
+import type { EstadoEnvio } from '@/types/envio'
 import type { FlowExecution, ExecutionMetrics, ExecutionEvent } from '@/types/flowExecution'
 
 // Helper functions for random data generation
@@ -45,8 +46,8 @@ const messageTypes: any[] = ['email', 'sms', 'ambos']
  */
 export function generateEnvio(overrides?: Partial<Envio>): Envio {
   const canal: EnvioCanal = randomChoice(['email', 'sms'])
-  const estados: EnvioEstado[] = ['pendiente', 'enviado', 'fallido']
-  const estado: EnvioEstado = randomChoice(estados)
+  const estados: EstadoEnvio[] = ['pendiente', 'enviado', 'fallido']
+  const estado: EstadoEnvio = randomChoice(estados)
 
   const baseDate = randomDate(365)
   const sentDate = estado !== 'pendiente' ? new Date(baseDate.getTime() + randomInt(60000, 300000)) : undefined
@@ -200,7 +201,7 @@ export function generateRealisticEnviosBatch(count: number = 100) {
   const exitosos = Math.floor(count * 0.7)
   envios.push(
     ...generateEnvios(exitosos, {
-      estado: 'enviado' as EnvioEstado,
+      estado: 'enviado' as EstadoEnvio,
     }),
   )
 
@@ -208,7 +209,7 @@ export function generateRealisticEnviosBatch(count: number = 100) {
   const pendientes = Math.floor(count * 0.2)
   envios.push(
     ...generateEnvios(pendientes, {
-      estado: 'pendiente' as EnvioEstado,
+      estado: 'pendiente' as EstadoEnvio,
     }),
   )
 
@@ -216,7 +217,7 @@ export function generateRealisticEnviosBatch(count: number = 100) {
   const fallidos = count - exitosos - pendientes
   envios.push(
     ...generateEnvios(fallidos, {
-      estado: 'fallido' as EnvioEstado,
+      estado: 'fallido' as EstadoEnvio,
     }),
   )
 

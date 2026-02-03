@@ -4,7 +4,7 @@
  * Features: Drag-and-drop stage creation, real-time validation, visual preview
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -144,36 +144,28 @@ function FlowBuilderContent({
   const flowContainerRef = useRef<HTMLDivElement>(null)
 
   // Crear wrappers de nodos que tengan acceso a los callbacks
-  const StageNodeWrapper = useCallback((props: any) => (
+  const StageNodeWrapper = (props: any) => (
     <StageNode {...props} onDelete={removeNode} onUpdate={updateNode} precios={precios} />
-  ), [removeNode, updateNode, precios])
+  )
 
-  const ConditionalNodeWrapper = useCallback((props: any) => (
+  const ConditionalNodeWrapper = (props: any) => (
     <ConditionalNode {...props} onDelete={removeNode} onUpdate={updateNode} />
-  ), [removeNode, updateNode])
+  )
 
-  const EndNodeWrapper = useCallback((props: any) => (
+  const EndNodeWrapper = (props: any) => (
     <EndNode {...props} onDelete={removeNode} onUpdate={updateNode} />
-  ), [removeNode, updateNode])
-
-  // Memoize nodeTypes para evitar recreación en cada render
-  const memoizedNodeTypes = useMemo(
-    () => ({
-      stage: StageNodeWrapper,
-      initial: InitialNode,
-      end: EndNodeWrapper,
-      conditional: ConditionalNodeWrapper,
-    }),
-    [StageNodeWrapper, ConditionalNodeWrapper, EndNodeWrapper]
   )
 
-  // Memoize edgeTypes para los edges estilo n8n
-  const memoizedEdgeTypes = useMemo(
-    () => ({
-      animated: N8nStyleEdge,
-    }),
-    []
-  )
+  const memoizedNodeTypes = {
+    stage: StageNodeWrapper,
+    initial: InitialNode,
+    end: EndNodeWrapper,
+    conditional: ConditionalNodeWrapper,
+  }
+
+  const memoizedEdgeTypes = {
+    animated: N8nStyleEdge,
+  }
 
   // Sincronizar Zustand store con ReactFlow cuando cambian
   // Esta es la ÚNICA fuente de verdad para ReactFlow
@@ -208,124 +200,106 @@ function FlowBuilderContent({
   /**
    * Sincroniza cambios de posición de nodos a Zustand
    */
-  const syncNodePositionChanges = useCallback(
-    (changes: NodeChange[]): void => {
-      const positionChanges = extractPositionChanges(changes)
-      positionChanges.forEach((change) => {
-        setNodePosition(change.nodeId, change.position)
-      })
-    },
-    [setNodePosition]
-  )
+  const syncNodePositionChanges = (changes: NodeChange[]): void => {
+    const positionChanges = extractPositionChanges(changes)
+    positionChanges.forEach((change) => {
+      setNodePosition(change.nodeId, change.position)
+    })
+  }
 
   /**
    * Sincroniza eliminaciones de nodos a Zustand
    */
-  const syncNodeRemovals = useCallback(
-    (changes: NodeChange[]): void => {
-      const removals = extractNodeRemovals(changes)
-      removals.forEach((removal) => {
-        removeNode(removal.nodeId)
-      })
-    },
-    [removeNode]
-  )
+  const syncNodeRemovals = (changes: NodeChange[]): void => {
+    const removals = extractNodeRemovals(changes)
+    removals.forEach((removal) => {
+      removeNode(removal.nodeId)
+    })
+  }
 
   /**
    * Handle node changes (posición, selección, eliminación, etc)
    * Sincroniza cambios entre ReactFlow y Zustand
    */
-  const handleNodesChangeWrapper = useCallback(
-    (changes: NodeChange[]): void => {
-      // Aplicar cambios en ReactFlow primero
-      onNodesChange(changes)
+  const handleNodesChangeWrapper = (changes: NodeChange[]): void => {
+    // Aplicar cambios en ReactFlow primero
+    onNodesChange(changes)
 
-      // Sincronizar cambios de posición a Zustand
-      syncNodePositionChanges(changes)
+    // Sincronizar cambios de posición a Zustand
+    syncNodePositionChanges(changes)
 
-      // Sincronizar eliminaciones a Zustand (esto también limpiará edges automáticamente)
-      syncNodeRemovals(changes)
-    },
-    [onNodesChange, syncNodePositionChanges, syncNodeRemovals]
-  )
+    // Sincronizar eliminaciones a Zustand (esto también limpiará edges automáticamente)
+    syncNodeRemovals(changes)
+  }
 
   /**
    * Sincroniza eliminaciones de edges a Zustand
    */
-  const syncEdgeRemovals = useCallback(
-    (changes: EdgeChange[]): void => {
-      const removals = extractEdgeRemovals(changes)
-      removals.forEach((removal) => {
-        removeEdge(removal.edgeId)
-      })
-    },
-    [removeEdge]
-  )
+  const syncEdgeRemovals = (changes: EdgeChange[]): void => {
+    const removals = extractEdgeRemovals(changes)
+    removals.forEach((removal) => {
+      removeEdge(removal.edgeId)
+    })
+  }
 
   /**
    * Handle edge changes (eliminación, selección, etc)
    * Sincroniza cambios entre ReactFlow y Zustand
    */
-  const handleEdgesChangeWrapper = useCallback(
-    (changes: EdgeChange[]): void => {
-      // Aplicar cambios en ReactFlow primero
-      onEdgesChange(changes)
+  const handleEdgesChangeWrapper = (changes: EdgeChange[]): void => {
+    // Aplicar cambios en ReactFlow primero
+    onEdgesChange(changes)
 
-      // Luego sincronizar eliminaciones a Zustand
-      syncEdgeRemovals(changes)
-    },
-    [onEdgesChange, syncEdgeRemovals]
-  )
+    // Luego sincronizar eliminaciones a Zustand
+    syncEdgeRemovals(changes)
+  }
 
   /**
    * Handle connection creation
    * Construye un edge validado y lo agrega al store
    */
-  const handleConnect = useCallback(
-    (connection: Connection): void => {
-      // Obtener handles con fallback a 'center'
-      const sourceHandle = connection.sourceHandle || 'center'
-      const targetHandle = connection.targetHandle || 'center'
+  const handleConnect = (connection: Connection): void => {
+    // Obtener handles con fallback a 'center'
+    const sourceHandle = connection.sourceHandle || 'center'
+    const targetHandle = connection.targetHandle || 'center'
 
-      // Validar que source y target existan
-      if (!connection.source || !connection.target) {
-        return
-      }
+    // Validar que source y target existan
+    if (!connection.source || !connection.target) {
+      return
+    }
 
-      // Construir edge
-      const newEdge: CustomEdge = {
-        id: `edge-${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`,
-        source: connection.source,
-        target: connection.target,
-        sourceHandle,
-        targetHandle,
-        type: 'animated',
-      } as any
+    // Construir edge
+    const newEdge: CustomEdge = {
+      id: `edge-${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`,
+      source: connection.source,
+      target: connection.target,
+      sourceHandle,
+      targetHandle,
+      type: 'animated',
+    } as any
 
-      // Agregar a Zustand - ReactFlow se actualizará automáticamente
-      addFlowEdge(newEdge)
-    },
-    [addFlowEdge]
-  )
+    // Agregar a Zustand - ReactFlow se actualizará automáticamente
+    addFlowEdge(newEdge)
+  }
 
   /**
    * Valida el flujo antes de guardar
    * Early return para fallos de validación
    */
-  const validateBeforeSave = useCallback((): boolean => {
+  const validateBeforeSave = (): boolean => {
     const validation = validateFlow(flowName, storeNodes)
     if (!validation.isValid) {
       alert(validation.message)
       return false
     }
     return true
-  }, [flowName, storeNodes])
+  }
 
   /**
    * Handle save flow
    * Refactorizado con early returns y funciones pequeñas
    */
-  const handleSaveFlow = useCallback(async (): Promise<void> => {
+  const handleSaveFlow = async (): Promise<void> => {
     // Early return si la validación falla
     if (!validateBeforeSave()) return
 
@@ -339,7 +313,7 @@ function FlowBuilderContent({
         return
       }
 
-      // ✅ Validar configuración completa según requisitos del backend
+      // Validar configuración completa según requisitos del backend
       const validationResult = validateFlowConfiguration(config)
       if (!validationResult.isValid) {
         const errorMessage = validationResult.errors
@@ -347,7 +321,7 @@ function FlowBuilderContent({
           .join('\n')
 
         logger.error('Errores de validación del flujo:', validationResult.errors)
-        alert(`⚠️ El flujo tiene errores que deben corregirse:\n\n${errorMessage}`)
+        alert(`El flujo tiene errores que deben corregirse:\n\n${errorMessage}`)
         return
       }
 
@@ -360,16 +334,16 @@ function FlowBuilderContent({
       logger.error('Error saving flow:', error)
       alert('Error al guardar el flujo. Por favor intenta de nuevo.')
     }
-  }, [flowName, flowDescription, storeNodes, storeEdges, onSaveFlow, validateBeforeSave])
+  }
 
   /**
    * Handle reset flow
    */
-  const handleResetFlow = useCallback(() => {
+  const handleResetFlow = () => {
     setIsDiscardDialogOpen(true)
-  }, [])
+  }
 
-  const handleConfirmDiscard = useCallback(() => {
+  const handleConfirmDiscard = () => {
     resetFlow()
     // Sincronizar ReactFlow con los nodos y edges vacios del store
     setNodes([])
@@ -379,8 +353,7 @@ function FlowBuilderContent({
     if (onCancel) {
       onCancel()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetFlow, onCancel])
+  }
 
   // Contadores
   const stageCount = storeNodes.filter((n) => n.type === 'stage').length

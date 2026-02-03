@@ -5,11 +5,7 @@
 
 import type { Prospecto } from './prospecto'
 import type { FlujoNurturing, EtapaFlujo } from './flujo'
-
-/**
- * State of an individual shipment
- */
-export type EnvioEstado = 'pendiente' | 'enviado' | 'fallido'
+import type { EstadoEnvio } from './envio'
 
 /**
  * Communication channel used
@@ -24,7 +20,7 @@ export interface Envio {
   id: number
   flujo_id: number
   prospecto_id: number
-  estado: EnvioEstado
+  estado: EstadoEnvio
   canal: EnvioCanal
   fecha_creacion: string
   fecha_enviado?: string
@@ -111,7 +107,7 @@ export interface EnviosListResponse {
  * Filter options for envios list
  */
 export interface EnviosFilterOptions {
-  estado?: EnvioEstado
+  estado?: EstadoEnvio
   canal?: EnvioCanal
   flujo_id?: number
   fecha_desde?: string

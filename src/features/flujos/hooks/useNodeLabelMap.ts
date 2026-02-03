@@ -7,7 +7,7 @@
  * @module useNodeLabelMap
  */
 
-import { useMemo } from 'react'
+
 
 import type { ConfigVisual } from '@/types/flujo'
 
@@ -44,20 +44,18 @@ function extractNodeLabel(nodeId: string, nodeData?: Record<string, unknown>): s
  * const label = nodeLabelMap.get('stage-abc123') // 'Día 1'
  */
 export function useNodeLabelMap(configVisual: ConfigVisual | undefined): Map<string, string> {
-  return useMemo(() => {
-    const map = new Map<string, string>()
-    
-    if (!configVisual?.nodes) {
-      return map
-    }
-    
-    for (const node of configVisual.nodes) {
-      const label = extractNodeLabel(node.id, node.data as Record<string, unknown> | undefined)
-      map.set(node.id, label)
-    }
-    
+  const map = new Map<string, string>()
+  
+  if (!configVisual?.nodes) {
     return map
-  }, [configVisual?.nodes])
+  }
+  
+  for (const node of configVisual.nodes) {
+    const label = extractNodeLabel(node.id, node.data as Record<string, unknown> | undefined)
+    map.set(node.id, label)
+  }
+  
+  return map
 }
 
 /**

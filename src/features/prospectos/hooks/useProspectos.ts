@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { logger } from '@/lib/logger'
 import { prospectosService } from '@/api/prospectos.service'
 import type { Prospecto } from '../types/prospectos'
-import type { PaginatedResponse } from '@/types/prospecto'
+import type { PaginatedResponse } from '@/types'
 
 interface UseProspectosParams {
   loteId?: number | null

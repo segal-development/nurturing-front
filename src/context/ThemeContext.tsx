@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
 
 export type ThemeType = 'light' | 'dark'
 
@@ -56,18 +56,18 @@ export function ThemeProvider({ children, initialTheme }: ThemeProviderProps) {
     applyThemeToDocument(theme)
   }, [theme])
 
-  const setTheme = useCallback((newTheme: ThemeType) => {
+  const setTheme = (newTheme: ThemeType) => {
     if (!newTheme) return
     if (newTheme !== 'light' && newTheme !== 'dark') return
 
     setThemeState(newTheme)
     localStorage.setItem(THEME_STORAGE_KEY, newTheme)
-  }, [])
+  }
 
-  const toggleTheme = useCallback(() => {
+  const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
-  }, [theme, setTheme])
+  }
 
   const value: ThemeContextType = {
     theme,

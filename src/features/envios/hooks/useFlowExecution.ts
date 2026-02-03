@@ -10,7 +10,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useMemo } from 'react'
+
 import type { ExecutionEvent, ExecutionMetrics, StartFlowExecutionPayload } from '@/types/flowExecution'
 import { flowExecutionService } from '@/api/flowExecution.service'
 
@@ -72,9 +72,7 @@ export function useExecutionEvents(flujoId: number, ejecucionId: string, limit: 
 export function useExecutionMetrics(flujoId: number, ejecucionId?: string) {
   const { data, ...query } = useFlowExecution(flujoId, ejecucionId)
 
-  const metricas = useMemo<ExecutionMetrics | undefined>(() => {
-    return data?.ejecucion?.metricas
-  }, [data?.ejecucion?.metricas])
+  const metricas: ExecutionMetrics | undefined = data?.ejecucion?.metricas
 
   return {
     data: metricas,
@@ -95,9 +93,7 @@ export function useExecutionMetrics(flujoId: number, ejecucionId?: string) {
 export function useExecutionStatus(flujoId: number, ejecucionId?: string) {
   const { data, ...query } = useFlowExecution(flujoId, ejecucionId)
 
-  const status = useMemo(() => {
-    return data?.ejecucion?.estado
-  }, [data?.ejecucion?.estado])
+  const status = data?.ejecucion?.estado
 
   return {
     data: status,
@@ -135,9 +131,7 @@ export function useIsExecutionInProgress(flujoId: number, ejecucionId?: string) 
 export function useGetExecutionEvents(flujoId: number, ejecucionId: string) {
   const { data: ejecucion } = useFlowExecution(flujoId, ejecucionId)
 
-  const eventos = useMemo<ExecutionEvent[]>(() => {
-    return ejecucion?.ejecucion?.eventos || []
-  }, [ejecucion?.ejecucion?.eventos])
+  const eventos: ExecutionEvent[] = ejecucion?.ejecucion?.eventos || []
 
   return eventos
 }

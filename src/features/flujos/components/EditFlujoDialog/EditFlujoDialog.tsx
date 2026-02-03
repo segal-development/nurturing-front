@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@/lib/logger'
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -118,20 +118,17 @@ export function EditFlujoDialog({ open, onOpenChange, flujo, onSuccess }: EditFl
   })
 
   // Inicializar etapas cuando se abre el dialog
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      if (newOpen && flujo) {
-        setEtapas(flujo.etapas || [])
-        resetFlujosForm({
-          nombre: flujo.nombre || '',
-          descripcion: flujo.descripcion || '',
-          activo: flujo.activo || false,
-        })
-      }
-      onOpenChange(newOpen)
-    },
-    [flujo, onOpenChange, resetFlujosForm]
-  )
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen && flujo) {
+      setEtapas(flujo.etapas || [])
+      resetFlujosForm({
+        nombre: flujo.nombre || '',
+        descripcion: flujo.descripcion || '',
+        activo: flujo.activo || false,
+      })
+    }
+    onOpenChange(newOpen)
+  }
 
   if (!flujo) {
     return null

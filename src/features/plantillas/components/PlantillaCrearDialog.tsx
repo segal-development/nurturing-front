@@ -3,7 +3,7 @@
  * Permite elegir entre SMS y Email, y abre el editor correspondiente
  */
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
@@ -73,7 +73,7 @@ export function PlantillaCrearDialog({
     html: '',
   })
 
-  const handleGuardar = useCallback(async () => {
+  const handleGuardar = async () => {
     setIsSaving(true)
     try {
       if (tipo === 'sms') {
@@ -165,10 +165,10 @@ export function PlantillaCrearDialog({
     } finally {
       setIsSaving(false)
     }
-  }, [tipo, plantillaSMS, plantillaEmail, queryClient, onOpenChange])
+  }
 
   // Validar que el formulario esté completo usando Zod
-  const esValido = useCallback(() => {
+  const esValido = (() => {
     try {
       if (tipo === 'sms') {
         plantillaSMSSchema.parse(plantillaSMS)
@@ -185,7 +185,7 @@ export function PlantillaCrearDialog({
     } catch {
       return false
     }
-  }, [tipo, modoEmail, plantillaSMS, plantillaEmail, plantillaEmailAvanzada])()
+  })()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

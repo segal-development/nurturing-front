@@ -13,7 +13,7 @@
  * const pagination = usePagination({ initialPage: 2 })
  */
 
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 // ============================================================================
 // Types
@@ -54,48 +54,48 @@ export function usePagination(options: UsePaginationOptions = {}): UsePagination
    * Navegar a la siguiente página
    * Usa Math.min para no exceder el total de páginas
    */
-  const goToNextPage = useCallback((totalPages: number) => {
+  const goToNextPage = (totalPages: number) => {
     if (totalPages <= 0) return
     
     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-  }, [])
+  }
 
   /**
    * Navegar a la página anterior
    * Usa Math.max para no bajar de 1
    */
-  const goToPreviousPage = useCallback(() => {
+  const goToPreviousPage = () => {
     setCurrentPage((prev) => Math.max(1, prev - 1))
-  }, [])
+  }
 
   /**
    * Ir a una página específica
    * Valida que sea un número positivo
    */
-  const goToPage = useCallback((page: number) => {
+  const goToPage = (page: number) => {
     if (page < 1) return
     
     setCurrentPage(page)
-  }, [])
+  }
 
   /**
    * Resetear a la página inicial
    */
-  const resetPage = useCallback(() => {
+  const resetPage = () => {
     setCurrentPage(initialPage)
-  }, [initialPage])
+  }
 
   /**
    * Verificar si está en la primera página
    */
-  const isFirstPage = useMemo(() => currentPage === 1, [currentPage])
+  const isFirstPage = currentPage === 1
 
   /**
    * Verificar si está en la última página
    */
-  const isLastPage = useCallback((totalPages: number) => {
+  const isLastPage = (totalPages: number) => {
     return currentPage >= totalPages
-  }, [currentPage])
+  }
 
   return {
     currentPage,

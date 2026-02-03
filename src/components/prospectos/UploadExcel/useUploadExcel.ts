@@ -2,7 +2,7 @@
  * Hook personalizado para manejar el estado y logica de UploadExcel
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -66,7 +66,7 @@ export function useUploadExcel(onSuccess?: () => void) {
   // POLLING DE PROGRESO
   // =============================================================================
 
-  const checkImportacionProgress = useCallback(async (importacionId: number): Promise<boolean> => {
+  const checkImportacionProgress = async (importacionId: number): Promise<boolean> => {
     try {
       const progreso = await importacionesService.getProgreso(importacionId)
 
@@ -97,7 +97,7 @@ export function useUploadExcel(onSuccess?: () => void) {
       logger.error('Error checking progress:', error)
       return false
     }
-  }, [])
+  }
 
   useEffect(() => {
     if (!importacionActualId) return
@@ -118,7 +118,7 @@ export function useUploadExcel(onSuccess?: () => void) {
   // PROCESAMIENTO DE EXCEL
   // =============================================================================
 
-  const processExcelFile = useCallback(async (file: File) => {
+  const processExcelFile = async (file: File) => {
     setLoading(true)
     setErrors([])
     setUploadSuccess(false)
@@ -170,14 +170,13 @@ export function useUploadExcel(onSuccess?: () => void) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
   // =============================================================================
   // SUBMIT DEL FORMULARIO
   // =============================================================================
 
-  const onSubmit = useCallback(
-    async (data: UploadFormData) => {
+  const onSubmit = async (data: UploadFormData) => {
       if (!data.archivo || data.archivo.length === 0) {
         setErrors(['Debes seleccionar un archivo'])
         return
@@ -194,15 +193,13 @@ export function useUploadExcel(onSuccess?: () => void) {
       if (!modoAgregarArchivo && data.originName) {
         setSelectedOriginName(data.originName)
       }
-    },
-    [modoAgregarArchivo, processExcelFile]
-  )
+  }
 
   // =============================================================================
   // UPLOAD AL BACKEND
   // =============================================================================
 
-  const handleUpload = useCallback(async () => {
+  const handleUpload = async () => {
     if (preview.length === 0 || !selectedFile) {
       logger.error('No file selected or preview empty')
       return
@@ -279,13 +276,13 @@ export function useUploadExcel(onSuccess?: () => void) {
       setErrors([`Error al importar los prospectos: ${errorMessage}`])
       setIsUploading(false)
     }
-  }, [preview, selectedFile, loteActivo, selectedOriginName, loteEnStore, iniciarTrackingLote])
+  }
 
   // =============================================================================
   // RESET
   // =============================================================================
 
-  const handleReset = useCallback(() => {
+  const handleReset = () => {
     form.reset()
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -302,13 +299,13 @@ export function useUploadExcel(onSuccess?: () => void) {
     setImportacionActualId(null)
     setImportacionTerminada(false)
     setProgresoActual(null)
-  }, [form])
+  }
 
   // =============================================================================
   // AGREGAR OTRO ARCHIVO
   // =============================================================================
 
-  const handleAgregarOtroArchivo = useCallback(() => {
+  const handleAgregarOtroArchivo = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -322,13 +319,13 @@ export function useUploadExcel(onSuccess?: () => void) {
     setImportacionActualId(null)
     setImportacionTerminada(false)
     setProgresoActual(null)
-  }, [])
+  }
 
   // =============================================================================
   // FINALIZAR LOTE
   // =============================================================================
 
-  const handleFinalizarLote = useCallback(async () => {
+  const handleFinalizarLote = async () => {
     if (!loteActivo?.id) {
       handleReset()
       onSuccess?.()
@@ -354,7 +351,7 @@ export function useUploadExcel(onSuccess?: () => void) {
         duration: 8000,
       })
     }
-  }, [loteActivo, handleReset, onSuccess])
+  }
 
   // =============================================================================
   // ESTADO DERIVADO Y SINCRONIZACION

@@ -4,7 +4,7 @@
  * Dynamically fetches debt categories from backend
  */
 
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { logger } from '@/lib/logger'
 
 import type { TipoProspecto } from '@/api/tiposProspecto.service'
@@ -63,7 +63,7 @@ export function ProspectSelector({
   /**
    * Map conteo data by tipo_id for easy lookup
    */
-  const conteoByTipoId = useMemo(() => {
+  const conteoByTipoId = (() => {
     if (!conteoPorTipo?.por_tipo) return {}
     return conteoPorTipo.por_tipo.reduce(
       (acc, item) => {
@@ -72,56 +72,53 @@ export function ProspectSelector({
       },
       {} as Record<number, number>
     )
-  }, [conteoPorTipo])
+  })()
 
   /**
    * Deselect all / Clear selection
    */
-  const handleDeselectAll = useCallback(() => {
+  const handleDeselectAll = () => {
     onSelectionChange(new Set())
     onSelectAllFromOriginChange(false)
     setSelectedTipoId(null)
     setIsAllTypesSelected(false)
     onTipoChange?.(null)
     onSelectedCountChange?.(0)
-  }, [onSelectionChange, onSelectAllFromOriginChange, onTipoChange, onSelectedCountChange])
+  }
 
   /**
    * Select all prospects from origin of a SPECIFIC type
    */
-  const handleSelectAllFromOrigin = useCallback(
-    (tipo: TipoProspecto) => {
-      const tipoCount = conteoByTipoId[tipo.id] ?? 0
-      onSelectAllFromOriginChange(true)
-      onSelectionChange(new Set()) // Clear manual selection
-      setSelectedTipoId(tipo.id)
-      setIsAllTypesSelected(false) // Only this specific type
-      onTipoChange?.(tipo.id)
-      onSelectedCountChange?.(tipoCount)
-    },
-    [onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, conteoByTipoId]
-  )
+  const handleSelectAllFromOrigin = (tipo: TipoProspecto) => {
+    const tipoCount = conteoByTipoId[tipo.id] ?? 0
+    onSelectAllFromOriginChange(true)
+    onSelectionChange(new Set()) // Clear manual selection
+    setSelectedTipoId(tipo.id)
+    setIsAllTypesSelected(false) // Only this specific type
+    onTipoChange?.(tipo.id)
+    onSelectedCountChange?.(tipoCount)
+  }
 
   /**
    * Get the selected tipo name for display
    */
-  const selectedTipoNombre = useMemo(() => {
+  const selectedTipoNombre = (() => {
     if (!selectedTipoId || !tiposProspecto) return null
     return tiposProspecto.find((t) => t.id === selectedTipoId)?.nombre || null
-  }, [selectedTipoId, tiposProspecto])
+  })()
 
   /**
    * Get the count of the selected tipo for display in summary
    */
-  const selectedTipoCount = useMemo(() => {
+  const selectedTipoCount = (() => {
     if (!selectedTipoId) return 0
     return conteoByTipoId[selectedTipoId] ?? 0
-  }, [selectedTipoId, conteoByTipoId])
+  })()
 
   /**
    * Find the "Todos" tipo (special type for selecting all prospects)
    */
-  const getTodosTipoId = useCallback((): number | null => {
+  const getTodosTipoId = (): number | null => {
     if (!tiposProspecto || tiposProspecto.length === 0) return null
 
     const todosTipo = tiposProspecto.find(
@@ -129,12 +126,12 @@ export function ProspectSelector({
     )
 
     return todosTipo?.id ?? null
-  }, [tiposProspecto])
+  }
 
   /**
    * Select ALL prospects from origin (all types) - uses "Todos" tipo
    */
-  const handleSelectAllFromOriginAllTypes = useCallback(() => {
+  const handleSelectAllFromOriginAllTypes = () => {
     const todosTipoId = getTodosTipoId()
 
     if (todosTipoId === null) {
@@ -147,7 +144,7 @@ export function ProspectSelector({
     setIsAllTypesSelected(true) // ALL types selected
     onTipoChange?.(todosTipoId)
     onSelectedCountChange?.(totalEnBD) // All prospects from origin
-  }, [getTodosTipoId, onSelectAllFromOriginChange, onSelectionChange, onTipoChange, onSelectedCountChange, totalEnBD])
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

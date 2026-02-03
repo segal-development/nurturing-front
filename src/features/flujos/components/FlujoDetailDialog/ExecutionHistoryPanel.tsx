@@ -13,7 +13,7 @@
  * @module ExecutionHistoryPanel
  */
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { 
@@ -188,15 +188,9 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
   const fechaInicio = ejecucion.fecha_inicio_real ?? ejecucion.fecha_inicio_programada ?? ejecucion.created_at
   const duracion = calculateExecutionDuration(fechaInicio, ejecucion.fecha_fin)
   
-  const etapasOrdenadas = useMemo(() => {
-    if (!ejecucion.etapas) return []
-    return sortStagesByDate(ejecucion.etapas)
-  }, [ejecucion.etapas])
+  const etapasOrdenadas = ejecucion.etapas ? sortStagesByDate(ejecucion.etapas) : []
   
-  const estadisticas = useMemo(() => 
-    calculateStageStatistics(etapasOrdenadas),
-    [etapasOrdenadas]
-  )
+  const estadisticas = calculateStageStatistics(etapasOrdenadas)
 
   const handleToggleExpand = () => setIsExpanded(prev => !prev)
   
