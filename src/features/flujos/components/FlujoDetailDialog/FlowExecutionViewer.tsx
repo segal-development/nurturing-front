@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { logger } from '@/lib/logger'
 
 import ReactFlow, {
   Background,
@@ -377,7 +378,7 @@ function FlowExecutionContent({
   // DEBUG: Loguear datos de ejecución
   useEffect(() => {
     if (executionData) {
-      console.log('🎬 FlowExecutionViewer - Execution Data:', {
+      logger.log('FlowExecutionViewer - Execution Data:', {
         nodo_actual: executionData.nodo_actual,
         proximo_nodo: executionData.proximo_nodo,
         estado: executionData.estado,
@@ -640,7 +641,7 @@ function FlowExecutionContent({
 
   // Handle node click to show node-specific stats in the panel
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: any) => {
-    console.log('🖱️ Node clicked:', node.id, node.type)
+    logger.log('Node clicked:', node.id, node.type)
     setSelectedNodeId(node.id)
     // If the node has execution data, also set it as selected stage for detail view
     const stage = stagesByNodeId.get(node.id)

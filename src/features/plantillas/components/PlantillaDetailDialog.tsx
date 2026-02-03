@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { Copy, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -48,7 +49,7 @@ export function PlantillaDetailDialog({
         const data = await plantillasService.getById(plantillaId)
         setPlantilla(data)
       } catch (err: any) {
-        console.error('Error cargando plantilla:', err)
+        logger.error('Error cargando plantilla:', err)
         const mensaje = err.response?.data?.message || 'No se pudo cargar la plantilla'
         setError(mensaje)
         toast.error(mensaje)

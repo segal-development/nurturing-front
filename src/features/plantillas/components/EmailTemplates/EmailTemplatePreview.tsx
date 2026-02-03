@@ -4,6 +4,7 @@
  * Agnóstico al proveedor de email
  */
 
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import { render } from '@react-email/components'
 import type { EmailBlockData } from './EmailBlock'
@@ -72,7 +73,7 @@ export function EmailTemplatePreview({
         setHtmlContent(html)
         onRender?.(html)
       } catch (error) {
-        console.error('Error rendering email template:', error)
+        logger.error('Error rendering email template:', error)
       } finally {
         setIsLoading(false)
       }

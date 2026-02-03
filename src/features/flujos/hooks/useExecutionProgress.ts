@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
+import { logger } from '@/lib/logger'
 import { flujosService } from '@/api/flujos.service'
 import type { EjecucionFlujo } from '@/types/flujo'
 
@@ -112,7 +113,7 @@ export function useExecutionProgress({
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido'
       setErrorMessage(`Error al obtener progreso: ${errorMsg}`)
       setIsError(true)
-      console.error('❌ Error fetching execution progress:', { flujoId, ejecucionId, error })
+      logger.error('Error fetching execution progress:', { flujoId, ejecucionId, error })
     } finally {
       setIsLoading(false)
     }

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -71,11 +72,11 @@ export function ExecuteFlowModal({
 
     setIsLoading(true)
     try {
-      console.log('========== EJECUTANDO FLUJO ==========')
-      console.log('📋 Flujo completo:', flujo)
-      console.log('🔧 Config Structure:', flujo.config_structure)
-      console.log('📊 Stages:', flujo.config_structure?.stages)
-      console.log('🔗 Branches:', flujo.config_structure?.branches)
+      logger.log('========== EJECUTANDO FLUJO ==========')
+      logger.log('Flujo completo:', flujo)
+      logger.log('Config Structure:', flujo.config_structure)
+      logger.log('Stages:', flujo.config_structure?.stages)
+      logger.log('Branches:', flujo.config_structure?.branches)
 
       // NO enviamos prospectos_ids porque puede haber 350k+
       // El backend los obtiene directamente de prospectos_en_flujo
@@ -89,9 +90,9 @@ export function ExecuteFlowModal({
         payload.origen_id = flujo.origen_id
       }
 
-      console.log('📤 Payload que se enviará:', payload)
-      console.log('🎯 Flujo ID:', flujo.id)
-      console.log('======================================')
+      logger.log('Payload que se enviará:', payload)
+      logger.log('Flujo ID:', flujo.id)
+      logger.log('======================================')
 
       const result = await flujosService.ejecutarFlujo(flujo.id, payload)
 
@@ -108,8 +109,8 @@ export function ExecuteFlowModal({
       queryClient.invalidateQueries({ queryKey: ['flujos-page'] })
       queryClient.invalidateQueries({ queryKey: ['flowExecutionActive'] })
     } catch (error: any) {
-      console.error('❌ [ExecuteFlowModal] Error completo:', error)
-      console.error('❌ [ExecuteFlowModal] Response data:', error.response?.data)
+      logger.error('[ExecuteFlowModal] Error completo:', error)
+      logger.error('[ExecuteFlowModal] Response data:', error.response?.data)
 
       // Extraer mensaje de error detallado
       const errorData = error.response?.data

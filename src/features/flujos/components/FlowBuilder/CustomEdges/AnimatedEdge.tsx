@@ -5,6 +5,7 @@
  * Automatically displays "Sí" / "No" labels for conditional branches
  */
 
+import { logger } from '@/lib/logger'
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -37,9 +38,7 @@ export function AnimatedEdge(props: EdgeProps & { sourceHandle?: string }) {
     targetY,
   })
 
-  // Debug logging
   const handleToUse = sourceHandle || (data as any)?.sourceHandle
-  console.log(`[DEBUG Edge ${id}] sourceHandle: "${sourceHandle}", data.sourceHandle: "${(data as any)?.sourceHandle}", handleToUse: "${handleToUse}"`)
 
   // Determine label based on sourceHandle for conditional nodes
   let edgeLabel = data?.label
@@ -48,11 +47,9 @@ export function AnimatedEdge(props: EdgeProps & { sourceHandle?: string }) {
   if (handleToUse?.includes('-yes')) {
     edgeLabel = edgeLabel || '✓ Sí'
     labelBgClass = 'bg-segal-green/10 border border-segal-green/50 text-segal-green'
-    console.log(`[DEBUG Edge ${id}] Detected YES handle - showing green edge`)
   } else if (handleToUse?.includes('-no')) {
     edgeLabel = edgeLabel || '✗ No'
     labelBgClass = 'bg-segal-red/10 border border-segal-red/50 text-segal-red'
-    console.log(`[DEBUG Edge ${id}] Detected NO handle - showing red edge`)
   }
 
   const handleDeleteEdge = () => {

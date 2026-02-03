@@ -9,6 +9,7 @@
  */
 
 import { apiClient } from './client'
+import { logger } from '@/lib/logger'
 import type {
   AnyPlantilla,
   PlantillaSMS,
@@ -55,7 +56,7 @@ function safeJsonParse<T>(str: string, defaultValue: T): T {
   try {
     return JSON.parse(str)
   } catch {
-    console.warn('⚠️ [safeJsonParse] Failed to parse:', str)
+    logger.warn('[safeJsonParse] Failed to parse:', str)
     return defaultValue
   }
 }
@@ -92,7 +93,7 @@ export const plantillasService = {
     por_pagina?: number
   }): Promise<PlantillasResponse> {
     try {
-      console.log('📤 plantillasService.getAll() - Enviando request')
+      logger.log('plantillasService.getAll() - Enviando request')
       const response = await apiClient.get<PlantillasResponse>('/plantillas', {
         params: {
           ...params,
@@ -104,13 +105,13 @@ export const plantillasService = {
       // Deserializar componentes de email
       const plantillasDeserializadas = response.data.data.map(deserializePlantilla)
 
-      console.log('✅ plantillasService.getAll() - Plantillas cargadas:', plantillasDeserializadas.length)
+      logger.log('plantillasService.getAll() - Plantillas cargadas:', plantillasDeserializadas.length)
       return {
         ...response.data,
         data: plantillasDeserializadas,
       }
     } catch (error: any) {
-      console.error('❌ plantillasService.getAll() - Error:', {
+      logger.error('plantillasService.getAll() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -124,16 +125,16 @@ export const plantillasService = {
    */
   async getById(id: number): Promise<AnyPlantilla> {
     try {
-      console.log(`📤 plantillasService.getById(${id}) - Enviando request`)
+      logger.log(`plantillasService.getById(${id}) - Enviando request`)
       const response = await apiClient.get<{ data: AnyPlantilla }>(`/plantillas/${id}`)
 
       // Deserializar componentes de email
       const plantillaDeserializada = deserializePlantilla(response.data.data)
 
-      console.log(`✅ plantillasService.getById(${id}) - Plantilla obtenida:`, plantillaDeserializada)
+      logger.log(`plantillasService.getById(${id}) - Plantilla obtenida:`, plantillaDeserializada)
       return plantillaDeserializada
     } catch (error: any) {
-      console.error(`❌ plantillasService.getById(${id}) - Error:`, {
+      logger.error(`plantillasService.getById(${id}) - Error:`, {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -147,8 +148,8 @@ export const plantillasService = {
    */
   async crearPlantillaSMS(plantilla: Omit<PlantillaSMS, 'id'>): Promise<GuardarPlantillaResponse> {
     try {
-      console.log('📤 plantillasService.crearPlantillaSMS() - Enviando plantilla SMS')
-      console.log('   Datos:', {
+      logger.log('plantillasService.crearPlantillaSMS() - Enviando plantilla SMS')
+      logger.log('   Datos:', {
         nombre: plantilla.nombre,
         tipo: plantilla.tipo,
         contenidoLength: plantilla.contenido.length,
@@ -161,10 +162,10 @@ export const plantillasService = {
         activo: plantilla.activo !== false,
       })
 
-      console.log('✅ plantillasService.crearPlantillaSMS() - Plantilla creada:', response.data)
+      logger.log('plantillasService.crearPlantillaSMS() - Plantilla creada:', response.data)
       return response.data
     } catch (error: any) {
-      console.error('❌ plantillasService.crearPlantillaSMS() - Error:', {
+      logger.error('plantillasService.crearPlantillaSMS() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
         errores: error.response?.data?.errores,
@@ -181,8 +182,8 @@ export const plantillasService = {
     plantilla: Omit<PlantillaEmail, 'id'>
   ): Promise<GuardarPlantillaResponse> {
     try {
-      console.log('📤 plantillasService.crearPlantillaEmail() - Enviando plantilla Email')
-      console.log('   Datos:', {
+      logger.log('plantillasService.crearPlantillaEmail() - Enviando plantilla Email')
+      logger.log('   Datos:', {
         nombre: plantilla.nombre,
         tipo: plantilla.tipo,
         componentes: plantilla.componentes.length,
@@ -190,7 +191,7 @@ export const plantillasService = {
 
       // Serializar componentes para el backend
       const componentesSerializados = serializeEmailComponents(plantilla.componentes)
-      console.log('🔍 [crearPlantillaEmail] Componentes serializados:', componentesSerializados)
+      logger.log('[crearPlantillaEmail] Componentes serializados:', componentesSerializados)
 
       const response = await apiClient.post<GuardarPlantillaResponse>('/plantillas/email', {
         nombre: plantilla.nombre,
@@ -200,10 +201,10 @@ export const plantillasService = {
         activo: plantilla.activo !== false,
       })
 
-      console.log('✅ plantillasService.crearPlantillaEmail() - Plantilla creada:', response.data)
+      logger.log('plantillasService.crearPlantillaEmail() - Plantilla creada:', response.data)
       return response.data
     } catch (error: any) {
-      console.error('❌ plantillasService.crearPlantillaEmail() - Error:', {
+      logger.error('plantillasService.crearPlantillaEmail() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
         errores: error.response?.data?.errores,
@@ -217,7 +218,7 @@ export const plantillasService = {
    */
   async actualizar(id: number, plantilla: Partial<AnyPlantilla>): Promise<GuardarPlantillaResponse> {
     try {
-      console.log(`📤 plantillasService.actualizar(${id}) - Enviando actualización`)
+      logger.log(`plantillasService.actualizar(${id}) - Enviando actualización`)
 
       let data = { ...plantilla }
 
@@ -225,17 +226,17 @@ export const plantillasService = {
       if (plantilla.tipo === 'email' && 'componentes' in plantilla && plantilla.componentes) {
         const componentesSerializados = serializeEmailComponents(plantilla.componentes)
         data = { ...data, componentes: componentesSerializados } as typeof data
-        console.log('🔍 [actualizar] Componentes serializados:', componentesSerializados)
+        logger.log('[actualizar] Componentes serializados:', componentesSerializados)
       }
 
-      console.log('🔍 [actualizar] Payload que se enviará:', data)
+      logger.log('[actualizar] Payload que se enviará:', data)
 
       const response = await apiClient.put<GuardarPlantillaResponse>(`/plantillas/${id}`, data)
 
-      console.log(`✅ plantillasService.actualizar(${id}) - Plantilla actualizada:`, response.data)
+      logger.log(`plantillasService.actualizar(${id}) - Plantilla actualizada:`, response.data)
       return response.data
     } catch (error: any) {
-      console.error(`❌ plantillasService.actualizar(${id}) - Error:`, {
+      logger.error(`plantillasService.actualizar(${id}) - Error:`, {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -248,13 +249,13 @@ export const plantillasService = {
    */
   async eliminar(id: number): Promise<{ mensaje: string }> {
     try {
-      console.log(`📤 plantillasService.eliminar(${id}) - Enviando eliminación`)
+      logger.log(`plantillasService.eliminar(${id}) - Enviando eliminación`)
       const response = await apiClient.delete<{ mensaje: string }>(`/plantillas/${id}`)
 
-      console.log(`✅ plantillasService.eliminar(${id}) - Plantilla eliminada:`, response.data)
+      logger.log(`plantillasService.eliminar(${id}) - Plantilla eliminada:`, response.data)
       return response.data
     } catch (error: any) {
-      console.error(`❌ plantillasService.eliminar(${id}) - Error:`, {
+      logger.error(`plantillasService.eliminar(${id}) - Error:`, {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -268,7 +269,7 @@ export const plantillasService = {
    */
   async generarPreviewEmail(plantilla: Omit<PlantillaEmail, 'id'>): Promise<string> {
     try {
-      console.log('📤 plantillasService.generarPreviewEmail() - Generando preview')
+      logger.log('plantillasService.generarPreviewEmail() - Generando preview')
       
       // Serializar componentes para el backend
       const componentesSerializados = serializeEmailComponents(plantilla.componentes)
@@ -281,10 +282,10 @@ export const plantillasService = {
         activo: plantilla.activo !== false,
       })
 
-      console.log('✅ plantillasService.generarPreviewEmail() - Preview generado')
+      logger.log('plantillasService.generarPreviewEmail() - Preview generado')
       return response.data.preview
     } catch (error: any) {
-      console.error('❌ plantillasService.generarPreviewEmail() - Error:', {
+      logger.error('plantillasService.generarPreviewEmail() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -298,15 +299,15 @@ export const plantillasService = {
    */
   async validarSMS(contenido: string): Promise<{ valido: boolean; caracteresValidos: number; advertencias?: string[] }> {
     try {
-      console.log('📤 plantillasService.validarSMS() - Validando SMS')
+      logger.log('plantillasService.validarSMS() - Validando SMS')
       const response = await apiClient.post<{ valido: boolean; caracteresValidos: number; advertencias?: string[] }>('/plantillas/validar/sms', {
         contenido,
       })
 
-      console.log('✅ plantillasService.validarSMS() - SMS validado:', response.data)
+      logger.log('plantillasService.validarSMS() - SMS validado:', response.data)
       return response.data
     } catch (error: any) {
-      console.error('❌ plantillasService.validarSMS() - Error:', {
+      logger.error('plantillasService.validarSMS() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })

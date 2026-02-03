@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { logger } from '@/lib/logger';
 
 // ============================================================
 // API ERROR TYPES
@@ -123,28 +124,13 @@ const getXsrfToken = (): string | null => {
 
 const createRequestInterceptor = (clientName: string) => {
   return (config: InternalAxiosRequestConfig) => {
-    console.log(`🔵 [${clientName}] [${config.method?.toUpperCase()}] ${config.url}`)
-    console.log(`   withCredentials: ${config.withCredentials}`)
-    console.log(`   withXSRFToken: ${config.withXSRFToken}`)
+    logger.debug(`[${clientName}] [${config.method?.toUpperCase()}] ${config.url}`)
 
-    // Log cookies que se envían
-    const cookies = document.cookie;
-    if (cookies) {
-      console.log(`   📦 Cookies enviadas: ${cookies.substring(0, 100)}...`);
-    } else {
-      console.log(`   ⚠️ No hay cookies para enviar`);
-    }
-
-    // ⭐ CRÍTICO: Extraer el token XSRF de la cookie y asegurar que está decodificado
+    // Ensure XSRF token is properly decoded for Laravel Sanctum
     const xsrfToken = getXsrfToken();
     if (xsrfToken) {
-      // Asegurar que el token está decodificado (sin %3D, con = al final)
       const decodedToken = decodeURIComponent(xsrfToken);
       config.headers['X-XSRF-TOKEN'] = decodedToken;
-      console.log(`   🔐 Header X-XSRF-TOKEN: ${decodedToken.substring(0, 20)}...`);
-    } else {
-      console.log(`   ⚠️ ¡ATENCIÓN! No se encontró token XSRF-TOKEN en cookies`);
-      console.log(`      Cookies disponibles: ${document.cookie}`);
     }
 
     return config;
@@ -163,20 +149,7 @@ interface ExtendedAxiosConfig extends InternalAxiosRequestConfig {
 const createResponseInterceptor = (clientName: string) => {
   return {
     success: <T>(response: import('axios').AxiosResponse<T>) => {
-      console.log(`🟢 [${clientName}] [${response.status}] ${response.config.url}`);
-
-      // Log Set-Cookie headers si existen
-      const setCookieHeader = response.headers['set-cookie'];
-      if (setCookieHeader) {
-        console.log(`   🍪 Set-Cookie recibido`);
-      }
-
-      // Log cookies almacenadas
-      const cookies = document.cookie;
-      if (cookies) {
-        console.log(`   📦 Cookies almacenadas: ${cookies.substring(0, 80)}...`);
-      }
-
+      logger.debug(`[${clientName}] [${response.status}] ${response.config.url}`);
       return response;
     },
     error: async (error: AxiosError) => {
@@ -186,30 +159,18 @@ const createResponseInterceptor = (clientName: string) => {
       const skipAuthRedirect = config?.skipAuthRedirect;
       const url = error.config?.url || '';
 
-      // Mostrar error detallado
-      console.error(`🔴 [${clientName}] [${status}] ${url}`, error.response?.data);
+      logger.error(`[${clientName}] [${status}] ${url}`);
 
-      // Si es error 401 (no autenticado) o 419 (sesión expirada/CSRF)
-      // NO redirigir en estos casos:
-      // 1. Si skipAuthRedirect está configurado (ej: durante AuthContext init)
-      // 2. Si ya estamos en /login
-      // 3. Si es la petición GET /me (parte de la inicialización)
+      // Redirect to login on 401/419 unless:
+      // 1. skipAuthRedirect is set (e.g., during AuthContext init)
+      // 2. Already on /login
+      // 3. It's the GET /me init check
       const isInitCheck = url.includes('/me') && (error.config?.method === 'get' || !error.config?.method);
 
       if ((status === 401 || status === 419) && currentPath !== '/login' && !skipAuthRedirect && !isInitCheck) {
-        console.log(`⚠️ [${status}] Sesión expirada o CSRF inválido, redirigiendo a login`);
-
-        // Limpiar cualquier token del localStorage
         localStorage.removeItem('access_token');
-
-        // Redirigir a login
         window.location.href = '/login';
         return Promise.reject(error);
-      }
-
-      // Si es 403 (sin permisos)
-      if (status === 403) {
-        console.error('🔴 [403] Permiso denegado:', error.config?.url);
       }
 
       return Promise.reject(error);
@@ -258,7 +219,7 @@ export async function fetchCsrfToken(): Promise<void> {
   try {
     await baseClient.get('/sanctum/csrf-cookie');
   } catch (error) {
-    console.error('❌ fetchCsrfToken() - Error al obtener token CSRF:', error);
+    logger.error('fetchCsrfToken() - Error al obtener token CSRF:', error);
     throw error;
   }
 }

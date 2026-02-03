@@ -3,6 +3,7 @@
  * Renderiza un flujo con sus datos formateados
  */
 
+import { logger } from '@/lib/logger'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -108,8 +109,7 @@ export function FlujoTableRow({
         }
       : null
 
-  // DEBUG: Ver qué retorna el API para cada flujo
-  console.log('🔍 [FlujoTableRow] Flujo:', flujo.id, flujo.nombre, {
+  logger.log('[FlujoTableRow] Flujo:', flujo.id, flujo.nombre, {
     tiene_ejecucion_activa: hasActiveExecution,
     activeExecution: activeExecution,
     latestExecution: latestExecution,

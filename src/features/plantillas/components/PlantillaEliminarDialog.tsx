@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -45,7 +46,7 @@ export function PlantillaEliminarDialog({
       toast.success(`Plantilla "${plantilla.nombre}" eliminada exitosamente`)
       onOpenChange(false)
     } catch (error: any) {
-      console.error('Error eliminando plantilla:', error)
+      logger.error('Error eliminando plantilla:', error)
       const mensaje = error.response?.data?.message || error.message || 'Error desconocido'
       toast.error(`Error al eliminar: ${mensaje}`)
     } finally {

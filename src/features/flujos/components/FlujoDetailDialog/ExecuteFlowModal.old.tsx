@@ -3,6 +3,7 @@
  * Pre-carga los prospectos del flujo, permite modificarlos y establecer fecha de inicio
  */
 
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
@@ -105,8 +106,8 @@ export function ExecuteFlowModal({ flujo, isOpen, onClose, onExecuteSuccess }: E
       // Invalidate cache to refresh flow list
       queryClient.invalidateQueries({ queryKey: ['flujos-page'] })
     } catch (error: any) {
-      console.error('❌ [ExecuteFlowModal] Error completo:', error)
-      console.error('❌ [ExecuteFlowModal] Response data:', error.response?.data)
+      logger.error('[ExecuteFlowModal] Error completo:', error)
+      logger.error('[ExecuteFlowModal] Response data:', error.response?.data)
 
       // Extraer mensaje de error detallado
       const errorData = error.response?.data

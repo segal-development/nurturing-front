@@ -13,6 +13,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import { logger } from '@/lib/logger'
 import type { StageProgressStats, StageExecutionState } from '@/types/flowExecutionTracking'
 import { flowExecutionTrackingService } from '@/api/flowExecutionTracking.service'
 
@@ -78,22 +79,19 @@ export function useLatestExecution(flujoId: number, enablePolling: boolean = fal
 export function useFlowExecutions(flujoId: number, limit: number = 50) {
   const isEnabled = !!flujoId
   
-  // DEBUG: Ver si el hook se está habilitando
-  console.log('🔍 [useFlowExecutions] Hook called:', {
+  logger.log('[useFlowExecutions] Hook called:', {
     flujoId,
     limit,
     isEnabled,
-    flujoIdType: typeof flujoId,
   })
   
   return useQuery({
     queryKey: ['flowExecutions', flujoId, limit],
     queryFn: async () => {
-      console.log('🚀 [useFlowExecutions] queryFn executing for flujoId:', flujoId)
+      logger.log('[useFlowExecutions] queryFn executing for flujoId:', flujoId)
       const result = await flowExecutionTrackingService.getExecutions(flujoId, limit)
-      console.log('✅ [useFlowExecutions] queryFn result:', {
+      logger.log('[useFlowExecutions] queryFn result:', {
         flujoId,
-        result,
         hasData: !!result?.data,
         dataLength: result?.data?.length,
       })
@@ -130,7 +128,7 @@ export function useFlowExecutionDetail(
     retry: (failureCount, error: any) => {
       // Don't retry on 404 - execution doesn't exist
       if (error?.response?.status === 404) {
-        console.warn(`⚠️ Execution ${ejecucionId} not found (404), stopping retries`)
+        logger.warn(`Execution ${ejecucionId} not found (404), stopping retries`)
         return false
       }
       // Retry on other errors (max 3 times)

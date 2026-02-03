@@ -4,6 +4,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
+import { logger } from '@/lib/logger'
 import { prospectosService } from '@/api/prospectos.service'
 import type { Prospecto } from '../types/prospectos'
 import type { PaginatedResponse } from '@/types/prospecto'
@@ -31,12 +32,12 @@ export function useProspectos({
     queryKey: ['prospectos', loteId, importacionId, estado, tipoProspectoId, page],
     queryFn: async () => {
       if (!hasFilter) {
-        console.log('⚠️ useProspectos: No hay lote/importación seleccionada, no cargando prospectos')
+        logger.log('useProspectos: No hay lote/importación seleccionada, no cargando prospectos')
         return null
       }
 
       try {
-        console.log('📡 useProspectos: Cargando prospectos con filtros:', {
+        logger.log('useProspectos: Cargando prospectos con filtros:', {
           loteId,
           importacionId,
           estado,
@@ -54,10 +55,10 @@ export function useProspectos({
           per_page: perPage,
         })
 
-        console.log('✅ useProspectos: Prospectos cargados:', result)
+        logger.log('useProspectos: Prospectos cargados:', result)
         return result
       } catch (err: any) {
-        console.error('❌ useProspectos: Error fetching prospectos:', {
+        logger.error('useProspectos: Error fetching prospectos:', {
           status: err.response?.status,
           message: err.response?.data?.message || err.message,
         })

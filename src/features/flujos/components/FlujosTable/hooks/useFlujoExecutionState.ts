@@ -5,6 +5,7 @@
  */
 
 import { useMemo } from 'react'
+import { logger } from '@/lib/logger'
 import {
   useActiveExecution,
   useLatestExecution,
@@ -68,11 +69,11 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
   const calculatedProgress = useMemo<ExecutionProgress | null>(() => {
     // Early return: no need to calculate if active execution has progress
     if (hasActiveExecution && activeExecution?.progreso) {
-      console.log('✅ Using BACKEND progress from active execution:', activeExecution.progreso)
+      logger.log('Using BACKEND progress from active execution:', activeExecution.progreso)
 
       // Backend bug: If total is 0, don't use backend progress
       if (activeExecution.progreso.total === 0) {
-        console.warn('⚠️ Backend returned progreso.total = 0, falling back to calculation')
+        logger.warn('Backend returned progreso.total = 0, falling back to calculation')
       } else {
         return null // Use backend progress
       }
@@ -81,7 +82,7 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
     // Priority 1: Calculate from execution details (if available)
     if (latestExecutionDetail?.data) {
       const progress = calculateExecutionProgress(latestExecutionDetail.data)
-      console.log('📊 Calculated progress from DETAIL:', {
+      logger.log('Calculated progress from DETAIL:', {
         etapas: latestExecutionDetail.data.etapas,
         progress,
       })
@@ -92,7 +93,7 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
     const latestExecWithStages = latestExecution as SimpleExecution | undefined
     if (latestExecWithStages?.etapas && latestExecWithStages.etapas.length > 0) {
       const progress = calculateProgressFromStages(latestExecWithStages.etapas)
-      console.log('📊 Calculated progress from STAGES:', {
+      logger.log('Calculated progress from STAGES:', {
         flujoId,
         etapas: latestExecWithStages.etapas,
         etapasCount: latestExecWithStages.etapas.length,
@@ -102,7 +103,7 @@ export function useFlujoExecutionState(flujoId: number): FlujoExecutionState {
       return progress
     }
 
-    console.log('⚠️ NO progress data available for flujo:', flujoId)
+    logger.log('NO progress data available for flujo:', flujoId)
     return null
   }, [hasActiveExecution, activeExecution, latestExecutionDetail, latestExecution, flujoId])
 

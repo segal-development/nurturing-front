@@ -9,6 +9,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { CompactFiltersBar } from './components/ProspectosFilters/CompactFiltersBar'
@@ -58,7 +59,7 @@ export function Prospectos() {
   // ============================================================
   useEffect(() => {
     setOnLoteComplete((loteId) => {
-      console.log('✅ Lote completado, invalidando queries...', loteId)
+      logger.log('Lote completado, invalidando queries...', loteId)
       queryClient.invalidateQueries({ queryKey: ['prospectos-opciones-filtrado'] })
       queryClient.invalidateQueries({ queryKey: ['prospectos'] })
     })
@@ -115,7 +116,7 @@ export function Prospectos() {
   }, [resetPage])
 
   const handleExport = useCallback(() => {
-    console.log('Exportar prospectos filtrados:', filteredProspectos)
+    logger.log('Exportar prospectos filtrados:', filteredProspectos)
   }, [filteredProspectos])
 
   const handleUploadSuccess = useCallback(() => {
@@ -262,7 +263,7 @@ export function Prospectos() {
 
           <ProspectosTable
             prospectos={filteredProspectos}
-            onViewProspecto={(id) => console.log('Ver prospecto:', id)}
+            onViewProspecto={() => {}}
             onDeleteProspecto={(id) => {
               setDeletingId(id)
               deleteProspecto.mutate(id, {

@@ -9,6 +9,7 @@
  * - Si la sesión expira (401/419), se redirige a login
  */
 
+import { logger } from '@/lib/logger'
 import apiClient, { fetchCsrfToken } from './client'
 import type { LoginRequest, LoginResponse, RegisterRequest, User } from '@/types/auth'
 
@@ -35,12 +36,12 @@ export const authService = {
       // Nota: NO guardamos access_token en localStorage
       // Laravel Sanctum maneja todo con cookies httpOnly
       if (response.data.access_token) {
-        console.log('⚠️ Backend envió access_token, pero Sanctum con sesiones no lo necesita')
+        logger.log('Backend envió access_token, pero Sanctum con sesiones no lo necesita')
       }
 
       return response.data
     } catch (error: any) {
-      console.error('❌ authService.login() - Error en login:', {
+      logger.error('authService.login() - Error en login:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
         responseData: error.response?.data,
@@ -62,7 +63,7 @@ export const authService = {
 
       return data
     } catch (error: any) {
-      console.error('❌ authService.register() - Error en registro:', {
+      logger.error('authService.register() - Error en registro:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
         responseData: error.response?.data,
@@ -106,14 +107,14 @@ export const authService = {
       // Llamar al endpoint de logout en el backend
       const response = await apiClient.post('/logout')
 
-      console.log('✅ authService.logout() - Logout exitoso:', response.data)
+      logger.log('authService.logout() - Logout exitoso:', response.data)
     } catch (error: any) {
-      console.error('❌ authService.logout() - Error al cerrar sesión:', {
+      logger.error('authService.logout() - Error al cerrar sesión:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
 
-      console.log('   ⚠️ Error en logout, pero el frontend continuará limpiando sesión')
+      logger.log('Error en logout, pero el frontend continuará limpiando sesión')
 
       // No re-lanzar el error - SIEMPRE permitir que el usuario cierre sesión
       // El estado se limpiará en AuthContext de todas formas
@@ -127,12 +128,12 @@ export const authService = {
    */
   async getMe(): Promise<User> {
     try {
-      console.log('🔐 authService.getMe() - Obteniendo usuario actual...')
+      logger.log('authService.getMe() - Obteniendo usuario actual...')
       const { data } = await apiClient.get<{ user: User }>('/me')
-      console.log('✅ authService.getMe() - Usuario obtenido:', data.user)
+      logger.log('authService.getMe() - Usuario obtenido:', data.user)
       return data.user
     } catch (error: any) {
-      console.error('❌ authService.getMe() - Error al obtener usuario:', {
+      logger.error('authService.getMe() - Error al obtener usuario:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -148,15 +149,15 @@ export const authService = {
    */
   async getMeQuietly(): Promise<User> {
     try {
-      console.log('🔐 authService.getMeQuietly() - Obteniendo usuario actual (sin redirect en 401)...')
+      logger.log('authService.getMeQuietly() - Obteniendo usuario actual (sin redirect en 401)...')
       // Usar baseClient con flag skipAuthRedirect para evitar redireccionamiento
       const response = await apiClient.get<{ user: User }>('/me', {
         skipAuthRedirect: true, // Flag personalizado para el interceptor
       } as any)
-      console.log('✅ authService.getMeQuietly() - Usuario obtenido:', response.data.user)
+      logger.log('authService.getMeQuietly() - Usuario obtenido:', response.data.user)
       return response.data.user
     } catch (error: any) {
-      console.error('❌ authService.getMeQuietly() - Error al obtener usuario:', {
+      logger.error('authService.getMeQuietly() - Error al obtener usuario:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })

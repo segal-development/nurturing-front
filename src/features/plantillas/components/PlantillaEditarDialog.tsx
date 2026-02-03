@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -123,7 +124,7 @@ export function PlantillaEditarDialog({
         }
       }
     } catch (error) {
-      console.error('Error loading plantilla:', error)
+      logger.error('Error loading plantilla:', error)
       toast.error('Error al cargar la plantilla')
     } finally {
       setIsLoading(false)
@@ -143,8 +144,8 @@ export function PlantillaEditarDialog({
       } else if (modoEmail === 'modular') {
         const validatedData = plantillaEmailSchema.parse(plantillaEmail)
 
-        console.log('✏️ [PlantillaEditarDialog] Actualizando plantilla email modular')
-        console.log('📤 [PlantillaEditarDialog] Componentes que se enviarán:', validatedData.componentes)
+         logger.log('[PlantillaEditarDialog] Actualizando plantilla email modular')
+        logger.log('[PlantillaEditarDialog] Componentes que se enviarán:', validatedData.componentes)
 
         await plantillasService.actualizar(plantilla.id, {
           ...validatedData,
@@ -181,7 +182,7 @@ export function PlantillaEditarDialog({
       toast.success(`Plantilla actualizada correctamente`)
       onOpenChange(false)
     } catch (error: any) {
-      console.error('Error al guardar plantilla:', error)
+      logger.error('Error al guardar plantilla:', error)
       const errorMessage = error.response?.data?.message || error.message || 'Error desconocido'
       toast.error(`Error al guardar: ${errorMessage}`)
     } finally {

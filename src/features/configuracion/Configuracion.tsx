@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 import { Loader2, Settings, AlertCircle, CheckCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,7 +60,7 @@ export function ConfiguracionPage() {
       setMaxSmsPorDia(String(data.max_sms_por_dia || ''))
       setReintentos(String(data.reintentos_envio || ''))
     } catch (error) {
-      console.error('Error al cargar configuración:', error)
+      logger.error('Error al cargar configuración:', error)
       setNotification({
         type: 'error',
         message: 'Error al cargar la configuración',
@@ -91,7 +92,7 @@ export function ConfiguracionPage() {
       // Recargar configuración
       await cargarConfiguracion()
     } catch (error: any) {
-      console.error('Error al guardar configuración:', error)
+      logger.error('Error al guardar configuración:', error)
       setNotification({
         type: 'error',
         message: error.response?.data?.message || 'Error al guardar la configuración',

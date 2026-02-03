@@ -3,6 +3,7 @@
  * Maneja obtener y actualizar las configuraciones globales
  */
 
+import { logger } from '@/lib/logger'
 import { apiClient } from './client'
 import type { Configuracion, ActualizarConfiguracionPayload } from '@/types/configuracion'
 
@@ -12,14 +13,14 @@ export const configuracionService = {
    */
   async obtener(): Promise<Configuracion> {
     try {
-      console.log('📤 configuracionService.obtener() - Solicitando configuración actual')
+      logger.log('configuracionService.obtener() - Solicitando configuración actual')
 
       const { data } = await apiClient.get<{ data: Configuracion }>('/configuracion')
 
-      console.log('✅ configuracionService.obtener() - Configuración obtenida:', data.data)
+      logger.log('configuracionService.obtener() - Configuración obtenida:', data.data)
       return data.data
     } catch (error: any) {
-      console.error('❌ configuracionService.obtener() - Error:', {
+      logger.error('configuracionService.obtener() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
@@ -32,17 +33,17 @@ export const configuracionService = {
    */
   async actualizar(payload: ActualizarConfiguracionPayload): Promise<Configuracion> {
     try {
-      console.log('📤 configuracionService.actualizar() - Actualizando configuración', payload)
+      logger.log('configuracionService.actualizar() - Actualizando configuración', payload)
 
       const { data } = await apiClient.put<{ data: Configuracion; mensaje: string }>(
         '/configuracion',
         payload
       )
 
-      console.log('✅ configuracionService.actualizar() - Configuración actualizada:', data.data)
+      logger.log('configuracionService.actualizar() - Configuración actualizada:', data.data)
       return data.data
     } catch (error: any) {
-      console.error('❌ configuracionService.actualizar() - Error:', {
+      logger.error('configuracionService.actualizar() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })

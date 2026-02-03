@@ -3,6 +3,7 @@
  */
 
 import apiClient from './client'
+import { logger } from '@/lib/logger'
 import type {
   Prospecto,
   PaginatedResponse,
@@ -49,21 +50,10 @@ export const prospectosService = {
    */
   async getOpciones(): Promise<OpcionesFiltrado> {
     try {
-      console.log('📤 prospectosService.getOpciones() - Enviando request a GET /prospectos/opciones-filtrado')
-      const response = await apiClient.get<any>('/prospectos/opciones-filtrado')
-
-      console.log('📥 prospectosService.getOpciones() - response.status:', response.status)
-      console.log('📥 prospectosService.getOpciones() - response.data (completo):', JSON.stringify(response.data, null, 2))
-
-      // El backend devuelve { data: { importaciones, origenes, estados, tipos_prospecto } }
-      // response.data ya es lo que Axios extrajo, así que es { data: {...} }
+      const response = await apiClient.get<{ data: OpcionesFiltrado }>('/prospectos/opciones-filtrado')
       const backendData = response.data.data || response.data
 
-      console.log('📥 prospectosService.getOpciones() - backendData:', backendData)
-      console.log('📥 prospectosService.getOpciones() - backendData.importaciones:', backendData.importaciones)
-      console.log('📥 prospectosService.getOpciones() - backendData.estados:', backendData.estados)
-
-      const opciones: OpcionesFiltrado = {
+      return {
         lotes: backendData.lotes || [],
         importaciones: backendData.importaciones || [],
         estados: backendData.estados?.map((estado: string) => ({
@@ -72,18 +62,8 @@ export const prospectosService = {
         })) || [],
         tipos_prospecto: backendData.tipos_prospecto || [],
       }
-
-      console.log('✅ prospectosService.getOpciones() - Opciones finales transformadas:', JSON.stringify(opciones, null, 2))
-      console.log('✅ prospectosService.getOpciones() - lotes count:', opciones.lotes?.length || 0)
-      console.log('✅ prospectosService.getOpciones() - importaciones count:', opciones.importaciones?.length || 0)
-      return opciones
-    } catch (error: any) {
-      console.error('🔴 prospectosService.getOpciones() - Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: error.response?.data?.message || error.message,
-        fullError: error
-      })
+    } catch (error) {
+      logger.error('prospectosService.getOpciones() failed:', error)
       throw error
     }
   },
@@ -104,28 +84,12 @@ export const prospectosService = {
     per_page?: number
   }): Promise<PaginatedResponse<Prospecto>> {
     try {
-      console.log('📤 prospectosService.getAll() - Enviando request a GET /prospectos')
-      console.log('   Params:', JSON.stringify(params, null, 2))
-
       const response = await apiClient.get<PaginatedResponse<Prospecto>>('/prospectos', {
         params,
       })
-
-      console.log('📥 prospectosService.getAll() - Response recibido:')
-      console.log('   Status:', response.status)
-      console.log('   Data:', response.data)
-      console.log('   Data.data length:', response.data.data?.length || 0)
-      console.log('   Data.meta:', response.data.meta)
-
       return response.data
-    } catch (error: any) {
-      console.error('🔴 prospectosService.getAll() - Error:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        message: error.response?.data?.message || error.message,
-        responseData: error.response?.data,
-        config: error.config,
-      })
+    } catch (error) {
+      logger.error('prospectosService.getAll() failed:', error)
       throw error
     }
   },

@@ -11,14 +11,12 @@ export default function Ofertas() {
     filterActive !== undefined ? { activa: filterActive } : undefined
   )
 
-  const handleEdit = (oferta: any) => {
+  const handleEdit = (_oferta: any) => {
     // TODO: Implement edit functionality
-    console.log('Edit oferta:', oferta)
   }
 
-  const handleDelete = (oferta: any) => {
+  const handleDelete = (_oferta: any) => {
     // TODO: Implement delete functionality
-    console.log('Delete oferta:', oferta)
   }
 
   return (

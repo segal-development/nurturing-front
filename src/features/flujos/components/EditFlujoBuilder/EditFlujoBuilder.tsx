@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import { FlowBuilder } from '../FlowBuilder/FlowBuilder'
@@ -131,14 +132,14 @@ export function EditFlujoBuilder({
 
   // Inicializar el flujo cuando se carga el componente
   useEffect(() => {
-    console.log('📥 Cargando flujo para edición:', flujo)
+    logger.log('Cargando flujo para edición:', flujo)
 
     // Resetear el store primero para limpiar estado anterior
     resetFlow()
 
     // Si el flujo ya tiene configuración visual, usarla
     if (flujo.config_visual?.nodes && flujo.config_visual?.edges) {
-      console.log('✅ Usando configuración visual existente del flujo')
+      logger.log('Usando configuración visual existente del flujo')
       setFlowName(flujo.nombre)
       setFlowDescription(flujo.descripcion || '')
       loadFlowConfiguration(flujo.config_visual.nodes as CustomNode[], flujo.config_visual.edges as CustomEdge[])
@@ -166,7 +167,7 @@ export function EditFlujoBuilder({
     // Cargar etapas (stages) - Backend devuelve en flujo_etapas
     const etapas = flujo.flujo_etapas || flujo.etapas || []
     if (etapas.length > 0) {
-      console.log('📊 Cargando etapas:', etapas.length)
+      logger.log('Cargando etapas:', etapas.length)
       etapas.forEach((etapa: EtapaFlujo, index: number) => {
         const node = createStageNodeFromEtapa(etapa, index)
         nodes.push(node)
@@ -177,7 +178,7 @@ export function EditFlujoBuilder({
     // Cargar condiciones - Backend devuelve en flujo_condiciones
     const condiciones = flujo.flujo_condiciones || []
     if (condiciones.length > 0) {
-      console.log('⚙️ Cargando condiciones:', condiciones.length)
+      logger.log('Cargando condiciones:', condiciones.length)
       condiciones.forEach((condicion: CondicionFlujo, index: number) => {
         const node = createConditionalNodeFromCondicion(condicion, index)
         nodes.push(node)
@@ -188,7 +189,7 @@ export function EditFlujoBuilder({
     // Cargar nodos finales - Backend devuelve en flujo_nodos_finales
     const nodosFinales = flujo.flujo_nodos_finales || []
     if (nodosFinales.length > 0) {
-      console.log('🏁 Cargando nodos finales:', nodosFinales.length)
+      logger.log('Cargando nodos finales:', nodosFinales.length)
       nodosFinales.forEach((nodoFinal: NodoFinalFlujo, index: number) => {
         const node = createEndNodeFromNodoFinal(nodoFinal, index)
         nodes.push(node)
@@ -200,14 +201,14 @@ export function EditFlujoBuilder({
     const edges: CustomEdge[] = []
     const ramificaciones = flujo.flujo_ramificaciones || []
     if (ramificaciones.length > 0) {
-      console.log('🔗 Cargando ramificaciones:', ramificaciones.length)
+      logger.log('Cargando ramificaciones:', ramificaciones.length)
       ramificaciones.forEach((ramificacion: RamificacionFlujo) => {
         const edge = createEdgeFromRamificacion(ramificacion, nodeMap)
         edges.push(edge)
       })
     }
 
-    console.log('✅ Flujo reconstruido:', {
+    logger.log('Flujo reconstruido:', {
       nodes: nodes.length,
       edges: edges.length,
       etapas: etapas.length,
@@ -228,7 +229,7 @@ export function EditFlujoBuilder({
 
   const handleSaveFlow = useCallback(
     async (config: any) => {
-      console.log('💾 Guardando flujo editado:', config)
+      logger.log('Guardando flujo editado:', config)
 
       try {
         // Preparar payload para el backend
@@ -247,7 +248,7 @@ export function EditFlujoBuilder({
           },
         }
 
-        console.log('📤 Enviando payload al backend:', payload)
+        logger.log('Enviando payload al backend:', payload)
 
         // Usar el hook para actualizar en el backend
         await updateFlowConfiguration.mutateAsync({
@@ -256,14 +257,14 @@ export function EditFlujoBuilder({
         })
 
         // Invalidar caché para refrescar la tabla de flujos
-        console.log('🔄 Invalidando caché de flujos para refrescar tabla')
+        logger.log('Invalidando caché de flujos para refrescar tabla')
         queryClient.invalidateQueries({ queryKey: ['flujos-page'] })
         queryClient.invalidateQueries({ queryKey: ['flujos-detail', flujo.id] })
 
         toast.success(`Flujo "${config.nombre}" actualizado correctamente`)
         onSaveSuccess?.()
       } catch (error: any) {
-        console.error('❌ Error al guardar flujo:', error)
+        logger.error('Error al guardar flujo:', error)
         toast.error('Error al guardar el flujo', {
           description: error.response?.data?.message || error.message,
         })

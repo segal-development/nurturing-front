@@ -3,6 +3,7 @@
  * Usado en EditFlujoBuilder para guardar cambios en el flow builder
  */
 
+import { logger } from '@/lib/logger'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { flujosService } from '@/api/flujos.service'
 import type { FlujoNurturing } from '@/types/flujo'
@@ -29,7 +30,7 @@ export function useUpdateFlowConfiguration() {
     },
 
     onError: (error: any) => {
-      console.error('Error al actualizar flujo:', error)
+      logger.error('Error al actualizar flujo:', error)
     },
   })
 }

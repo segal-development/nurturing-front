@@ -64,12 +64,10 @@ export function StageNode({
   }, [data, isEditing])
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Use useLayoutEffect to measure and position the node
+  // Measure node height for dynamic positioning
   useLayoutEffect(() => {
     if (containerRef.current) {
-      const { height } = containerRef.current.getBoundingClientRect()
-      // Can be used for dynamic positioning based on node height
-      console.log(`Stage node ${id} height: ${height}`)
+      containerRef.current.getBoundingClientRect()
     }
   }, [id, isEditing])
 

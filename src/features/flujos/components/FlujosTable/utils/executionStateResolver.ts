@@ -3,6 +3,7 @@
  * Implements Strategy Pattern - different strategies for determining execution to display
  */
 
+import { logger } from '@/lib/logger'
 import type { ActiveExecutionInfo } from '@/types/flowExecutionTracking'
 import type { ExecutionProgress } from './executionProgressCalculator'
 
@@ -122,13 +123,13 @@ export function canExecuteFlow(
 ): boolean {
   // Cannot execute if actively running
   if (isExecutionActive(activeExecution)) {
-    console.log('❌ Cannot execute: Active execution exists')
+    logger.log('Cannot execute: Active execution exists')
     return false
   }
 
   // Cannot execute if latest execution is in_progress (waiting for scheduled node)
   if (latestExecution?.estado === 'in_progress') {
-    console.log('❌ Cannot execute: Latest execution in_progress')
+    logger.log('Cannot execute: Latest execution in_progress')
     return false
   }
 
@@ -136,7 +137,7 @@ export function canExecuteFlow(
   // This happens when backend marks execution as 'completed' but has pending stages
   const latestExecWithNext = latestExecution as any
   if (latestExecWithNext?.proximo_nodo) {
-    console.log('❌ Cannot execute: Has proximo_nodo scheduled:', latestExecWithNext.proximo_nodo)
+    logger.log('Cannot execute: Has proximo_nodo scheduled:', latestExecWithNext.proximo_nodo)
     return false
   }
 
@@ -147,11 +148,11 @@ export function canExecuteFlow(
       etapa => etapa.estado === 'pending' || etapa.estado === 'executing'
     )
     if (hasPendingStages) {
-      console.log('❌ Cannot execute: Has pending/executing stages')
+      logger.log('Cannot execute: Has pending/executing stages')
       return false
     }
   }
 
-  console.log('✅ Can execute: No active execution')
+  logger.log('Can execute: No active execution')
   return true
 }

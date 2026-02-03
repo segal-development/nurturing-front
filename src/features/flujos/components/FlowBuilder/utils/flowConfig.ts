@@ -4,6 +4,7 @@
  */
 
 import type { Node as ReactFlowNode } from 'reactflow'
+import { logger } from '@/lib/logger'
 import type {
   StageData,
   ConditionData,
@@ -42,8 +43,8 @@ function filterOrphanedEdges(
     const targetExists = nodeIds.has(edge.target)
 
     if (!sourceExists || !targetExists) {
-      console.warn(
-        `⚠️ [flowConfig] Removiendo edge huérfano: ${edge.id}`,
+      logger.warn(
+        `[flowConfig] Removiendo edge huérfano: ${edge.id}`,
         `source=${edge.source} (${sourceExists ? 'OK' : 'MISSING'})`,
         `target=${edge.target} (${targetExists ? 'OK' : 'MISSING'})`
       )
@@ -54,8 +55,8 @@ function filterOrphanedEdges(
   })
 
   if (validEdges.length !== edges.length) {
-    console.warn(
-      `⚠️ [flowConfig] Se removieron ${edges.length - validEdges.length} edges huérfanos`
+    logger.warn(
+      `[flowConfig] Se removieron ${edges.length - validEdges.length} edges huérfanos`
     )
   }
 
@@ -164,7 +165,7 @@ export function isConfigurationValid(config: FlowConfiguration): boolean {
  * Registra la configuración para debugging
  */
 export function logConfigurationForDebug(config: FlowConfiguration): void {
-  console.log('[DEBUG FINAL] Configuración del flujo:', {
+  logger.log('[flowConfig] Configuración del flujo:', {
     nombre: config.nombre,
     descripcion: config.descripcion,
     etapas: config.structure.stages.length,
@@ -174,11 +175,11 @@ export function logConfigurationForDebug(config: FlowConfiguration): void {
     edges_visuales: config.visual.edges.length,
   })
 
-  console.log('[DEBUG FINAL] config.visual.nodes que se enviará:', config.visual.nodes)
-  console.log('[DEBUG FINAL] config.visual completo:', config.visual)
-  console.log('[DEBUG FINAL] ✅ STAGES con campo TYPE:', config.structure.stages)
-  console.log('[DEBUG FINAL] ✅ CONDITIONS con campo TYPE:', config.structure.conditions)
-  console.log('[DEBUG FINAL] ✅ BRANCHES completo:', config.structure.branches)
-  console.log('[DEBUG FINAL] 🔵 INITIAL_NODE:', config.structure.initial_node)
-  console.log('[DEBUG FINAL] 🔵 END_NODES:', config.structure.end_nodes)
+  logger.log('[flowConfig] config.visual.nodes:', config.visual.nodes)
+  logger.log('[flowConfig] config.visual completo:', config.visual)
+  logger.log('[flowConfig] STAGES:', config.structure.stages)
+  logger.log('[flowConfig] CONDITIONS:', config.structure.conditions)
+  logger.log('[flowConfig] BRANCHES:', config.structure.branches)
+  logger.log('[flowConfig] INITIAL_NODE:', config.structure.initial_node)
+  logger.log('[flowConfig] END_NODES:', config.structure.end_nodes)
 }

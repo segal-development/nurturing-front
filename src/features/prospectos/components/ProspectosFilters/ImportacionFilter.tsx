@@ -3,6 +3,7 @@
  * Filtro obligatorio que debe seleccionarse primero
  */
 
+import { logger } from '@/lib/logger'
 import {
   Select,
   SelectContent,
@@ -20,10 +21,10 @@ interface ImportacionFilterProps {
 }
 
 export function ImportacionFilter({ selectedId, opciones, onChange }: ImportacionFilterProps) {
-  console.log('🔍 ImportacionFilter - opciones:', opciones)
-  console.log('🔍 ImportacionFilter - opciones.importaciones:', opciones?.importaciones)
-  console.log('🔍 ImportacionFilter - total importaciones:', opciones?.importaciones?.length || 0)
-  console.log('🔍 ImportacionFilter - selectedId:', selectedId)
+  logger.log('ImportacionFilter:', {
+    totalImportaciones: opciones?.importaciones?.length || 0,
+    selectedId,
+  })
 
   // Convertir selectedId a string solo si existe
   const selectValue = selectedId ? selectedId.toString() : undefined
@@ -41,7 +42,6 @@ export function ImportacionFilter({ selectedId, opciones, onChange }: Importacio
           </SelectTrigger>
           <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg">
             {opciones?.importaciones?.map((imp) => {
-              console.log('🔍 Renderizando importación:', imp)
               return (
                 <SelectItem key={imp.id} value={imp.id.toString()}>
                   <span className="text-sm">

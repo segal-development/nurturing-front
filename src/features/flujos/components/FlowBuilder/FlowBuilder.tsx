@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
   Background,
@@ -345,7 +346,7 @@ function FlowBuilderContent({
           .map((error, index) => `${index + 1}. ${error}`)
           .join('\n')
 
-        console.error('❌ Errores de validación del flujo:', validationResult.errors)
+        logger.error('Errores de validación del flujo:', validationResult.errors)
         alert(`⚠️ El flujo tiene errores que deben corregirse:\n\n${errorMessage}`)
         return
       }
@@ -356,7 +357,7 @@ function FlowBuilderContent({
       // Guardar en backend
       await onSaveFlow?.(config)
     } catch (error) {
-      console.error('❌ Error saving flow:', error)
+      logger.error('Error saving flow:', error)
       alert('Error al guardar el flujo. Por favor intenta de nuevo.')
     }
   }, [flowName, flowDescription, storeNodes, storeEdges, onSaveFlow, validateBeforeSave])

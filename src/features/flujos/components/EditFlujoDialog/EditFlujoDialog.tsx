@@ -6,6 +6,7 @@
  * - Validación de integridad de datos
  */
 
+import { logger } from '@/lib/logger'
 import { useState, useCallback } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -195,12 +196,12 @@ export function EditFlujoDialog({ open, onOpenChange, flujo, onSuccess }: EditFl
   const onFlujosSubmit = async (data: EditFlujoFormData) => {
     try {
       // TODO: Enviar datos actualizados al backend
-      console.log('Actualizando flujo:', data)
-      console.log('Con etapas:', etapas)
+      logger.log('Actualizando flujo:', data)
+      logger.log('Con etapas:', etapas)
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
-      console.error('Error al actualizar flujo:', error)
+      logger.error('Error al actualizar flujo:', error)
     }
   }
 

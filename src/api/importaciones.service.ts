@@ -6,6 +6,7 @@
  */
 
 import apiClient from './client'
+import { logger } from '@/lib/logger'
 import type {
   Importacion,
   ImportarResponse,
@@ -71,7 +72,7 @@ function parseImportarResponse(responseData: unknown): ImportarResponse {
   }
 
   // Fallback: asumir que es la estructura correcta
-  console.warn('[importacionesService] Estructura de respuesta no estándar:', data)
+  logger.warn('[importacionesService] Estructura de respuesta no estándar:', data)
   return data as unknown as ImportarResponse
 }
 

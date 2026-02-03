@@ -22,6 +22,7 @@
  */
 
 import { useCallback, useEffect } from 'react'
+import { logger } from '@/lib/logger'
 import {
   useFlujoProcesamientoStore,
   selectFlujoActivo,
@@ -113,12 +114,12 @@ export function useFlujoProcesamiento(
   const iniciarTracking = useCallback(
     (flujoId: number, flujoNombre: string, totalProspectos: number) => {
       if (!flujoId || !flujoNombre) {
-        console.error('iniciarTracking: flujoId y flujoNombre son requeridos')
+        logger.error('iniciarTracking: flujoId y flujoNombre son requeridos')
         return
       }
 
       if (totalProspectos <= 0) {
-        console.warn('iniciarTracking: totalProspectos debe ser > 0')
+        logger.warn('iniciarTracking: totalProspectos debe ser > 0')
       }
 
       storeIniciarTracking(flujoId, flujoNombre, totalProspectos)

@@ -11,6 +11,7 @@
 import { create } from 'zustand'
 import { importacionesService } from '@/api/importaciones.service'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 
 // =============================================================================
 // CONFIGURACIÓN
@@ -226,7 +227,7 @@ export const useImportacionStore = create<ImportacionStore>((set, get) => ({
       try {
         await procesarPolling(state)
       } catch (error) {
-        console.error('Error en polling de importacion:', error)
+        logger.error('Error en polling de importacion:', error)
         // No detener el polling por un error temporal
       }
     }, POLLING_INTERVAL_MS)

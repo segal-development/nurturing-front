@@ -10,6 +10,7 @@
 
 import { create } from 'zustand'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import { flujosService } from '@/api/flujos.service'
 import type {
   EstadoProcesamientoFlujo,
@@ -127,7 +128,7 @@ function notifyFlujoComplete(flujoId: number): void {
     try {
       callback(flujoId)
     } catch (error) {
-      console.error('Error en listener de flujo completado:', error)
+      logger.error('Error en listener de flujo completado:', error)
     }
   })
 }
@@ -221,7 +222,7 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
       // Early return si ya hay un flujo activo
       const { flujoActivo, detenerPolling } = get()
       if (flujoActivo) {
-        console.warn(`Ya hay un flujo en procesamiento: ${flujoActivo.flujoId}`)
+        logger.warn(`Ya hay un flujo en procesamiento: ${flujoActivo.flujoId}`)
         detenerPolling()
       }
 
@@ -240,7 +241,7 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
       // Esto previene que una respuesta tardía de un flujo eliminado/anterior
       // sobrescriba el estado del flujo actual
       if (!flujoActivo || data.flujo_id !== flujoActivo.flujoId) {
-        console.warn(
+        logger.warn(
           `Ignorando respuesta de flujo ${data.flujo_id} - flujo activo: ${flujoActivo?.flujoId ?? 'ninguno'}`
         )
         return
@@ -320,13 +321,13 @@ export const useFlujoProcesamientoStore = create<FlujoProcesamientoStore>(
 
           if (httpStatus === 404) {
             // Flujo fue eliminado - detener polling silenciosamente
-            console.warn(`Flujo ${state.flujoActivo?.flujoId} no encontrado (404) - deteniendo polling`)
+            logger.warn(`Flujo ${state.flujoActivo?.flujoId} no encontrado (404) - deteniendo polling`)
             state.limpiarFlujo()
             return
           }
 
           // Errores temporales de red - continuar polling
-          console.error('Error temporal en polling de flujo:', error)
+          logger.error('Error temporal en polling de flujo:', error)
         }
       }, POLLING_INTERVAL_MS)
     },

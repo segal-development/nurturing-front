@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react'
 import { Plus, Mail, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { PlantillasTable } from '../components/PlantillasTable'
@@ -77,7 +78,7 @@ export function PlantillasPage() {
           `Plantilla ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`
         )
       } catch (error: any) {
-        console.error('Error toggling estado:', error)
+        logger.error('Error toggling estado:', error)
         const mensaje = error.response?.data?.message || 'Error al cambiar estado'
         toast.error(mensaje)
       }

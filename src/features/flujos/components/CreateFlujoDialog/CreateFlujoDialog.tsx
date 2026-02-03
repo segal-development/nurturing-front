@@ -7,6 +7,7 @@
  * - Calcular automáticamente costos basados en prospectos seleccionados
  */
 
+import { logger } from '@/lib/logger'
 import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -97,9 +98,9 @@ export function CreateFlujoDialog({
       const precios = await configuracionService.obtenerPrecios()
       setCostEmail(precios.email_costo)
       setCostSms(precios.sms_costo)
-      console.log('✅ Precios cargados:', { email: precios.email_costo, sms: precios.sms_costo })
+      logger.log('Precios cargados:', { email: precios.email_costo, sms: precios.sms_costo })
     } catch (error) {
-      console.error('❌ Error cargando precios:', error)
+      logger.error('Error cargando precios:', error)
       // Usar valores por defecto en caso de error
       setCostEmail(1)
       setCostSms(11)
@@ -132,15 +133,15 @@ export function CreateFlujoDialog({
     setSelectedProspectoIds(new Set())
 
     try {
-      console.log('📥 Cargando prospectos para origen:', originId)
+      logger.log('Cargando prospectos para origen:', originId)
       const response = await prospectosService.getAll({
         origen: originId,
         per_page: 1000, // Traer todos los prospectos sin paginar
       })
       setProspectos(response.data)
-      console.log('✅ Prospectos cargados:', response.data.length)
+      logger.log('Prospectos cargados:', response.data.length)
     } catch (error) {
-      console.error('❌ Error cargando prospectos:', error)
+      logger.error('Error cargando prospectos:', error)
       setProspectos([])
     } finally {
       setLoadingProspectos(false)
@@ -259,7 +260,7 @@ export function CreateFlujoDialog({
       onOpenChange(false)
       onSuccess?.()
     } catch (error) {
-      console.error('❌ Error al crear flujo:', error)
+      logger.error('Error al crear flujo:', error)
       // TODO: Mostrar error al usuario
     }
   }

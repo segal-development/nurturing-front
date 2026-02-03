@@ -7,6 +7,7 @@
  * - Detalles de cada envío con su estado
  */
 
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import {
   Dialog,
@@ -81,7 +82,7 @@ export function FlujoProgressPanel({
         }
         setExecution(mockExecution)
       } catch (error) {
-        console.error('Error loading execution data:', error)
+        logger.error('Error loading execution data:', error)
       }
     }
 

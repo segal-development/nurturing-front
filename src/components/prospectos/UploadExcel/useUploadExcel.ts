@@ -3,6 +3,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import ExcelJS from 'exceljs'
@@ -93,7 +94,7 @@ export function useUploadExcel(onSuccess?: () => void) {
       }
       return false
     } catch (error) {
-      console.error('Error checking progress:', error)
+      logger.error('Error checking progress:', error)
       return false
     }
   }, [])
@@ -164,7 +165,7 @@ export function useUploadExcel(onSuccess?: () => void) {
       setPreview(data)
       setFileSelected(true)
     } catch (error) {
-      console.error('Error al leer el archivo:', error)
+      logger.error('Error al leer el archivo:', error)
       setErrors(['Error al procesar el archivo Excel. Verifica que el formato sea correcto.'])
     } finally {
       setLoading(false)
@@ -203,7 +204,7 @@ export function useUploadExcel(onSuccess?: () => void) {
 
   const handleUpload = useCallback(async () => {
     if (preview.length === 0 || !selectedFile) {
-      console.error('No file selected or preview empty')
+      logger.error('No file selected or preview empty')
       return
     }
 
@@ -267,7 +268,7 @@ export function useUploadExcel(onSuccess?: () => void) {
       setIsUploading(false)
       setUploadSuccess(true)
     } catch (error) {
-      console.error('Error al importar:', error)
+      logger.error('Error al importar:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
 
       toast.error('Error al importar', {
@@ -346,7 +347,7 @@ export function useUploadExcel(onSuccess?: () => void) {
       handleReset()
       onSuccess?.()
     } catch (error) {
-      console.error('Error al cerrar lote:', error)
+      logger.error('Error al cerrar lote:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       toast.error('Error al finalizar lote', {
         description: errorMessage,

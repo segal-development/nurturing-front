@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react'
+import { logger } from '@/lib/logger'
 
 import type { TipoProspecto } from '@/api/tiposProspecto.service'
 import { Button } from '@/components/ui/button'
@@ -137,7 +138,7 @@ export function ProspectSelector({
     const todosTipoId = getTodosTipoId()
 
     if (todosTipoId === null) {
-      console.warn('No se encontró el tipo "Todos" en la base de datos')
+      logger.warn('No se encontró el tipo "Todos" en la base de datos')
     }
 
     onSelectAllFromOriginChange(true)

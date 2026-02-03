@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { GitBranch, Loader2, AlertCircle, Trash2 } from 'lucide-react'
@@ -84,7 +85,7 @@ export function Flujos() {
   // y refrescar automáticamente la tabla
   useFlujoProcesamiento({
     onComplete: () => {
-      console.log('✅ Procesamiento de prospectos completado - refrescando tabla')
+      logger.log('Procesamiento de prospectos completado - refrescando tabla')
       queryClient.invalidateQueries({
         queryKey: ['flujos-page'],
       })
@@ -119,7 +120,7 @@ export function Flujos() {
    * Invalida caché de flujos y reinicia paginación
    */
   const invalidateFlujosCache = () => {
-    console.log('🔄 Invalidando caché de flujos y reiniciando paginación')
+    logger.log('Invalidando caché de flujos y reiniciando paginación')
     queryClient.invalidateQueries({
       queryKey: ['flujos-page']
     })

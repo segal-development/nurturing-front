@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   LayoutDashboard,
   Users,
@@ -48,8 +49,8 @@ export function DashboardLayout() {
   const handleLogout = async () => {
     try {
       await logout()
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error)
+    } catch {
+      // Logout errors are non-critical — always redirect to login
     } finally {
       navigate('/login')
     }
@@ -177,7 +178,9 @@ export function DashboardLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-white p-6 dark:bg-slate-950 transition-colors duration-300">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

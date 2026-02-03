@@ -9,6 +9,7 @@
  * - Dependency Inversion: Depends on HTTP client abstraction
  */
 
+import { logger } from '@/lib/logger'
 import type {
   FlowExecutionDetailResponse,
   PauseExecutionPayload,
@@ -39,7 +40,7 @@ class FlowExecutionTrackingService {
    */
   async getExecutions(flujoId: number, limit: number = 20): Promise<FlowExecutionsListResponse> {
     const url = `${BASE_URL}/${flujoId}/ejecuciones`
-    console.log('🌐 [FlowExecutionTrackingService.getExecutions] Making request:', {
+    logger.log('[FlowExecutionTrackingService.getExecutions] Making request:', {
       url,
       flujoId,
       limit,
@@ -52,7 +53,7 @@ class FlowExecutionTrackingService {
         },
       })
       
-      console.log('🌐 [FlowExecutionTrackingService.getExecutions] Response:', {
+      logger.log('[FlowExecutionTrackingService.getExecutions] Response:', {
         status: response.status,
         data: response.data,
         hasData: !!response.data?.data,
@@ -61,7 +62,7 @@ class FlowExecutionTrackingService {
       
       return response.data
     } catch (error: any) {
-      console.error('❌ [FlowExecutionTrackingService.getExecutions] Error:', {
+      logger.error('[FlowExecutionTrackingService.getExecutions] Error:', {
         url,
         flujoId,
         error: error.message,

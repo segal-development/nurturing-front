@@ -12,6 +12,7 @@
  * - Accessibility compliant
  */
 
+import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { format, isValid, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -75,7 +76,7 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
         setCopiedEmail(true)
         setTimeout(() => setCopiedEmail(false), 2000)
       } catch (err) {
-        console.error('Failed to copy email:', err)
+        logger.error('Failed to copy email:', err)
       }
     }
   }
@@ -152,13 +153,13 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
       const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString)
       
       if (!isValid(date)) {
-        console.warn('Invalid date:', dateString)
+        logger.warn('Invalid date:', dateString)
         return null
       }
       
       return format(date, 'dd/MM/yyyy HH:mm', { locale: es })
     } catch (error) {
-      console.warn('Error formatting date:', dateString, error)
+      logger.warn('Error formatting date:', dateString, error)
       return null
     }
   }

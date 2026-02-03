@@ -15,8 +15,9 @@
  * El usuario solo necesita iniciar sesión una vez (duración del refresh_token)
  */
 
-import { createContext, useContext, useReducer, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
 import { authService } from '@/api/auth.service'
+import { logger } from '@/lib/logger'
 import type { User, LoginRequest } from '@/types/auth'
 
 interface AuthState {
@@ -118,31 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasRun = true
 
       try {
-        console.log('🔐 AuthContext: Inicializando autenticación...')
         const user = await authService.getMeQuietly()
         if (isMounted) {
-          console.log('✅ AuthContext: Usuario autenticado:', user.email)
           dispatch({ type: 'INIT_AUTH', payload: user })
         }
-      } catch (error: any) {
-        // Usuario no autenticado, cookies expiradas o inválidas
+      } catch (error: unknown) {
         if (isMounted) {
-          const status = error.response?.status
-          const message = error.response?.data?.message || error.message
-
-          // 401 es NORMAL si no hay sesión activa - no es un error
-          if (status === 401) {
-            console.log('ℹ️ AuthContext: No hay sesión activa - usuario necesita iniciar sesión')
-          } else {
-            // Solo loguear otros errores como warnings
-            console.warn('⚠️ AuthContext: Error inesperado en autenticación:', {
-              status,
-              message,
-              url: error.config?.url,
-            })
+          const axiosErr = error as { response?: { status?: number } }
+          if (axiosErr.response?.status !== 401) {
+            logger.warn('AuthContext: Unexpected auth error:', error)
           }
-
-          // Fin de la inicialización sin user = no autenticado
           dispatch({ type: 'SET_INITIALIZING', payload: false })
         }
       }
@@ -163,17 +149,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authService.login(credentials)
 
-      // ⭐ CRÍTICO: Esperar a que las cookies se guarden en el navegador
-      // Las cookies httpOnly se guardan de forma asíncrona, necesitamos dar tiempo
-      console.log('⏳ Esperando que las cookies se guarden en el navegador...')
+      // Wait for httpOnly cookies to be stored by the browser
       await new Promise(resolve => setTimeout(resolve, 100))
 
       dispatch({ type: 'SET_USER', payload: response.user })
-      console.log('✅ Login completado y cookies guardadas')
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { errors?: { email?: string[] }; message?: string } } }
       const errorMessage =
-        err.response?.data?.errors?.email?.[0] ||
-        err.response?.data?.message ||
+        axiosErr.response?.data?.errors?.email?.[0] ||
+        axiosErr.response?.data?.message ||
         'Error al iniciar sesión'
       dispatch({ type: 'SET_ERROR', payload: errorMessage })
       throw err
@@ -186,8 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout()
       dispatch({ type: 'LOGOUT' })
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cerrar sesión'
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      const errorMessage = axiosErr.response?.data?.message || 'Error al cerrar sesión'
       dispatch({ type: 'SET_ERROR', payload: errorMessage })
       throw err
     }

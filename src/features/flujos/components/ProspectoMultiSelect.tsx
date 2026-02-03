@@ -3,6 +3,7 @@
  * Used in flow execution modals
  */
 
+import { logger } from '@/lib/logger'
 import { useEffect, useState } from 'react'
 import { Loader2, Search } from 'lucide-react'
 
@@ -41,7 +42,7 @@ export function ProspectoMultiSelect({
         setProspectos([])
         setFilteredProspectos([])
       } catch (error) {
-        console.error('Error loading prospectos:', error)
+        logger.error('Error loading prospectos:', error)
         setProspectos([])
       } finally {
         setIsLoading(false)

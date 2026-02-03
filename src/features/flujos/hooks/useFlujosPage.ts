@@ -3,6 +3,7 @@
  * Diseñado para la arquitectura modularizada de la página de Flujos
  */
 
+import { logger } from '@/lib/logger'
 import { useQuery } from '@tanstack/react-query'
 import { flujosService } from '@/api/flujos.service'
 import type { FlujoNurturing } from '@/types/flujo'
@@ -19,12 +20,12 @@ export function useFlujosPage({ origenId, tipoDeudor, page, perPage }: UseFlujos
     queryKey: ['flujos-page', origenId, tipoDeudor, page],
     queryFn: async () => {
       if (!origenId) {
-        console.log('⚠️ useFlujosPage: No hay origen seleccionado, no cargando flujos')
+        logger.log('useFlujosPage: No hay origen seleccionado, no cargando flujos')
         return null
       }
 
       try {
-        console.log('📡 useFlujosPage: Cargando flujos con filtros:', {
+        logger.log('useFlujosPage: Cargando flujos con filtros:', {
           origenId,
           tipoDeudor,
           page,
@@ -38,10 +39,10 @@ export function useFlujosPage({ origenId, tipoDeudor, page, perPage }: UseFlujos
           per_page: perPage,
         })
 
-        console.log('✅ useFlujosPage: Flujos cargados:', result)
+        logger.log('useFlujosPage: Flujos cargados:', result)
         return result
       } catch (err: any) {
-        console.error('❌ useFlujosPage: Error fetching flujos:', {
+        logger.error('useFlujosPage: Error fetching flujos:', {
           status: err.response?.status,
           message: err.response?.data?.message || err.message,
         })

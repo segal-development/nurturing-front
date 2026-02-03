@@ -5,6 +5,7 @@
  */
 
 import { useCallback, useMemo } from 'react'
+import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
   Background,
@@ -81,24 +82,24 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
     if (!configVisual?.nodes || !Array.isArray(configVisual.nodes)) {
       return []
     }
-    console.log('Nodes cargados:', configVisual.nodes)
+    logger.log('Nodes cargados:', configVisual.nodes)
 
     // Log detallado de cada nodo
     configVisual.nodes.forEach((node: any) => {
-      console.log(`\n=== NODO ${node.id} (tipo: ${node.type}) ===`)
-      console.log('data completo:', node.data)
-      console.log('label:', node.data?.label)
-      console.log('tipo_mensaje:', node.data?.tipo_mensaje)
-      console.log('dia_envio:', node.data?.dia_envio)
-      console.log('plantilla_mensaje:', node.data?.plantilla_mensaje)
-      console.log('condition:', node.data?.condition)
+      logger.log(`\n=== NODO ${node.id} (tipo: ${node.type}) ===`)
+      logger.log('data completo:', node.data)
+      logger.log('label:', node.data?.label)
+      logger.log('tipo_mensaje:', node.data?.tipo_mensaje)
+      logger.log('dia_envio:', node.data?.dia_envio)
+      logger.log('plantilla_mensaje:', node.data?.plantilla_mensaje)
+      logger.log('condition:', node.data?.condition)
     })
 
     // Enriquecer nodos SOLO con valores por defecto si no existen
     const enrichedNodes = (configVisual.nodes as Node[]).map((node) => {
       const nodeData = node.data || {}
 
-      console.log(`[DEBUG] Nodo ${node.id}:`, {
+      logger.log(`[DEBUG] Nodo ${node.id}:`, {
         type: node.type,
         originalData: nodeData,
         hasLabel: 'label' in nodeData,
@@ -123,14 +124,14 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
         noLabel: nodeData.noLabel !== undefined ? nodeData.noLabel : 'No',
       }
 
-      console.log(`[DEBUG] Nodo ${node.id} enriquecido:`, enrichedData)
+      logger.log(`[DEBUG] Nodo ${node.id} enriquecido:`, enrichedData)
       return {
         ...node,
         data: enrichedData,
       } as Node
     })
 
-    console.log('Nodes enriquecidos (completo):', enrichedNodes)
+    logger.log('Nodes enriquecidos (completo):', enrichedNodes)
     return enrichedNodes
   }, [configVisual?.nodes])
 
@@ -138,7 +139,7 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
       return []
     }
-    console.log('Edges cargados:', configVisual.edges)
+    logger.log('Edges cargados:', configVisual.edges)
     return configVisual.edges as Edge[]
   }, [configVisual?.edges])
 
@@ -153,8 +154,8 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
 
   // Log para debugging
   useMemo(() => {
-    console.log('FlowVisualizationContent - nodes:', nodes)
-    console.log('FlowVisualizationContent - edges:', edges)
+    logger.log('FlowVisualizationContent - nodes:', nodes)
+    logger.log('FlowVisualizationContent - edges:', edges)
   }, [nodes, edges])
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {

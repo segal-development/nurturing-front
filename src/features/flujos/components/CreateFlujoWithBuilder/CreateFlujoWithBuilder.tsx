@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -216,7 +217,7 @@ export function CreateFlujoWithBuilder({
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
         setError(`Error al cargar prospectos: ${errorMessage}`)
-        console.error('❌ Error cargando prospectos:', { originId, error })
+        logger.error('Error cargando prospectos:', { originId, error })
       } finally {
         setLoadingProspectos(false)
       }
@@ -387,7 +388,7 @@ export function CreateFlujoWithBuilder({
     // Validación crítica: tipo de prospecto es obligatorio
     if (!selectedTipoProspectoId) {
       setError('Error: No se ha seleccionado un tipo de prospecto. Por favor vuelve al paso anterior.')
-      console.error('❌ selectedTipoProspectoId is null/undefined')
+      logger.error('selectedTipoProspectoId is null/undefined')
       return
     }
 
@@ -399,7 +400,7 @@ export function CreateFlujoWithBuilder({
       // Use selectedCount which reflects the actual count (all types OR specific tipo)
       const totalProspectos = selectedCount || selectedProspectoIds.size
 
-      console.log('📤 Enviando payload a backend:', JSON.stringify(payload, null, 2))
+      logger.log('Enviando payload a backend:', JSON.stringify(payload, null, 2))
 
       // Usar el nuevo método que retorna info de procesamiento async
       const response = await flujosService.createWithProspectosAsync(payload)
@@ -412,7 +413,7 @@ export function CreateFlujoWithBuilder({
 
       if (isAsync) {
         // Procesamiento async: mostrar indicador de progreso
-        console.log('⏳ Procesamiento async iniciado para flujo:', response.data.id)
+        logger.log('Procesamiento async iniciado para flujo:', response.data.id)
 
         setFlujoCreado({ id: response.data.id, nombre: response.data.nombre || config.nombre })
         setCurrentStep('processing')
@@ -425,14 +426,14 @@ export function CreateFlujoWithBuilder({
         )
       } else {
         // Procesamiento síncrono: cerrar y notificar
-        console.log('✅ Flujo creado exitosamente (síncrono)')
+        logger.log('Flujo creado exitosamente (síncrono)')
         onOpenChange(false)
         onSuccess?.()
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       setError(`Error al crear el flujo: ${errorMessage}`)
-      console.error('❌ Error creando flujo:', error)
+      logger.error('Error creando flujo:', error)
     } finally {
       setSaving(false)
     }
@@ -449,10 +450,10 @@ export function CreateFlujoWithBuilder({
         config_visual: config.visual,
         config_structure: config.structure,
       })
-      console.log('✅ Configuración visual guardada')
+      logger.log('Configuración visual guardada')
     } catch (err) {
       // No es crítico, el flujo ya se creó
-      console.warn('⚠️ Error al guardar configuración visual:', err)
+      logger.warn('Error al guardar configuración visual:', err)
     }
   }
 

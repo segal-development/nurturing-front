@@ -15,6 +15,7 @@
 import { create } from 'zustand'
 import { lotesService } from '@/api/lotes.service'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import type { LoteProgreso, LoteProgresoImportacion } from '@/types/lote'
 
 // =============================================================================
@@ -287,7 +288,7 @@ export const useLoteStore = create<LoteStore>((set, get) => ({
       try {
         await procesarPolling(state)
       } catch (error) {
-        console.error('Error en polling de lote:', error)
+        logger.error('Error en polling de lote:', error)
         // No detener el polling por un error temporal
       }
     }, POLLING_INTERVAL_MS)

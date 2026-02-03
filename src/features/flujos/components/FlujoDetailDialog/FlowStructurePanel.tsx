@@ -4,6 +4,7 @@
  * Sino, muestra etapas, condiciones, ramificaciones y nodos finales en formato texto
  */
 
+import { logger } from '@/lib/logger'
 import { useState, useMemo } from 'react'
 import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -59,25 +60,25 @@ export function FlowStructurePanel({
   const effectiveExecutionId = useMemo(() => {
     // 1. Si hay ejecución activa en el backend, usar ese ID (prioridad máxima)
     if (activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion) {
-      console.log('🎯 [FlowStructurePanel] Using ACTIVE execution:', activeExecutionData.ejecucion.id)
+      logger.log('[FlowStructurePanel] Using ACTIVE execution:', activeExecutionData.ejecucion.id)
       return activeExecutionData.ejecucion.id.toString()
     }
 
     // 2. Si se pasó executionId como prop, usar ese
     if (executionId) {
-      console.log('🎯 [FlowStructurePanel] Using PROP execution:', executionId)
+      logger.log('[FlowStructurePanel] Using PROP execution:', executionId)
       return executionId
     }
 
     // 3. Si hay última ejecución (completada/fallida), usar ese ID para mostrar historial
     const latestExecution = latestExecutionData?.data?.[0]
     if (latestExecution?.id) {
-      console.log('🎯 [FlowStructurePanel] Using LATEST execution:', latestExecution.id, 'Estado:', latestExecution.estado)
+      logger.log('[FlowStructurePanel] Using LATEST execution:', latestExecution.id, 'Estado:', latestExecution.estado)
       return latestExecution.id.toString()
     }
 
     // 4. No hay ninguna ejecución
-    console.log('🎯 [FlowStructurePanel] No execution found')
+    logger.log('[FlowStructurePanel] No execution found')
     return undefined
   }, [activeExecutionData, executionId, latestExecutionData])
 
@@ -286,9 +287,7 @@ export function FlowStructurePanel({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {endNodes.map((nodo: any) => {
-                  console.log('📋 Nodo Final COMPLETO:', JSON.stringify(nodo, null, 2))
-                  console.log('📋 Claves del nodo:', Object.keys(nodo))
-                  // Intentar acceder a diferentes campos posibles
+                   // Intentar acceder a diferentes campos posibles
                   const label = nodo.label || nodo.tipo || nodo.nombre || nodo.title || 'Nodo Final'
                   const desc = nodo.descripcion || nodo.description || nodo.detalles || ''
 

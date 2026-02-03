@@ -3,6 +3,7 @@
  * Filtro obligatorio que debe seleccionarse primero
  */
 
+import { logger } from '@/lib/logger'
 import {
   Select,
   SelectContent,
@@ -21,11 +22,11 @@ interface OrigenFilterProps {
 }
 
 export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: OrigenFilterProps) {
-  console.log('🔍 OrigenFilter - opciones:', opciones)
-  console.log('🔍 OrigenFilter - opciones.origenes:', opciones?.origenes)
-  console.log('🔍 OrigenFilter - total origenes:', opciones?.origenes?.length || 0)
-  console.log('🔍 OrigenFilter - selectedId:', selectedId)
-  console.log('🔍 OrigenFilter - isLoading:', isLoading)
+  logger.log('OrigenFilter:', {
+    totalOrigenes: opciones?.origenes?.length || 0,
+    selectedId,
+    isLoading,
+  })
 
   // Convertir selectedId a string solo si existe, undefined si no
   const selectValue = selectedId || undefined
@@ -43,7 +44,6 @@ export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: Orig
           </SelectTrigger>
           <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
             {opciones.origenes.map((origen) => {
-              console.log('🔍 Renderizando origen:', origen)
               return (
                 <SelectItem key={origen.id} value={origen.id}>
                   <span className="text-sm">

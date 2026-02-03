@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { logger } from '@/lib/logger'
 import {
   Dialog,
   DialogContent,
@@ -84,8 +85,8 @@ export function PlantillaCrearDialog({
           // Validar antes de enviar
           const validatedData = plantillaEmailSchema.parse(plantillaEmail)
 
-          console.log('🆕 [PlantillaCrearDialog] Creando plantilla email modular')
-          console.log('📤 [PlantillaCrearDialog] Componentes que se enviarán:', validatedData.componentes)
+          logger.log('[PlantillaCrearDialog] Creando plantilla email modular')
+          logger.log('[PlantillaCrearDialog] Componentes que se enviarán:', validatedData.componentes)
 
           await plantillasService.crearPlantillaEmail(validatedData)
         } else {
@@ -158,7 +159,7 @@ export function PlantillaCrearDialog({
       setTipo('sms')
       setModoEmail('modular')
     } catch (error: any) {
-      console.error('Error al crear plantilla:', error)
+      logger.error('Error al crear plantilla:', error)
       const errorMessage = error.response?.data?.message || error.message || 'Error desconocido'
       toast.error(`Error al crear plantilla: ${errorMessage}`)
     } finally {

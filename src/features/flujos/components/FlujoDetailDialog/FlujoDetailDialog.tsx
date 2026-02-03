@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
+import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -97,7 +98,7 @@ export function FlujoDetailDialog({
   // DEBUG: Ver estado de las ejecuciones
   useEffect(() => {
     if (open) {
-      console.log('🔍 [FlujoDetailDialog] Executions Debug:', {
+      logger.log('[FlujoDetailDialog] Executions Debug:', {
         flujoId: initialFlujo?.id,
         isLoadingExecutions,
         isExecutionsError,
@@ -175,7 +176,7 @@ export function FlujoDetailDialog({
   // DEBUG: Ver qué responde el backend
   useEffect(() => {
     if (activeExecutionData && open) {
-      console.log('🔍 [FlujoDetailDialog] Active Execution Response:', {
+      logger.log('[FlujoDetailDialog] Active Execution Response:', {
         tiene_ejecucion_activa: activeExecutionData.tiene_ejecucion_activa,
         ejecucion: activeExecutionData.ejecucion,
         flujoId: initialFlujo?.id,
@@ -191,7 +192,7 @@ export function FlujoDetailDialog({
   // DEBUG: Ver el execution ID efectivo
   useEffect(() => {
     if (open) {
-      console.log('🎯 [FlujoDetailDialog] Execution IDs:', {
+      logger.log('[FlujoDetailDialog] Execution IDs:', {
         effectiveExecutionId,
         hasActiveExecution,
         activeExecutionId: activeExecution?.id,
@@ -204,7 +205,7 @@ export function FlujoDetailDialog({
   // Auto-switch to estructura tab when execution starts
   useEffect(() => {
     if (effectiveExecutionId && open) {
-      console.log('✅ [FlujoDetailDialog] Auto-switching to estructura tab')
+      logger.log('[FlujoDetailDialog] Auto-switching to estructura tab')
       setActiveTab('estructura')
     }
   }, [effectiveExecutionId, open])

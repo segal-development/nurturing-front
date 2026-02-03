@@ -4,6 +4,7 @@
  */
 
 import { apiClient, getApiErrorMessage } from './client'
+import { logger } from '@/lib/logger'
 import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure } from '@/types/flujo'
 import type { FlujoProgresoResponse, FlujoCreacionResponse } from '@/types/flujoAsignacion'
 
@@ -43,78 +44,43 @@ export const flujosService = {
    */
   async getOpciones(): Promise<OpcionesFlujos> {
     try {
-      console.log('📤 flujosService.getOpciones() - Enviando request a GET /flujos/opciones-filtrado')
-      const response = await apiClient.get<{ data: any }>('/flujos/opciones-filtrado')
+      const response = await apiClient.get<{ data: Record<string, unknown> }>('/flujos/opciones-filtrado')
+      const backendData = (response.data.data || response.data) as Record<string, unknown>
 
-      console.log('📥 flujosService.getOpciones() - response.status:', response.status)
-      console.log('📥 flujosService.getOpciones() - response.data (completo):', JSON.stringify(response.data, null, 2))
-
-      // El backend devuelve { data: { origenes, tipos_deudor, ... } }
-      const backendData = response.data.data || response.data
-
-      console.log('📥 flujosService.getOpciones() - backendData:', backendData)
-      console.log('📥 flujosService.getOpciones() - backendData.origenes:', backendData.origenes)
-      console.log('📥 flujosService.getOpciones() - backendData.tipos_deudor:', backendData.tipos_deudor)
-
-      // Transformar orígenes
-      let origenes: OrigenFlujo[] = []
-      if (Array.isArray(backendData.origenes)) {
-        console.log('📋 Origen RAW del backend:', JSON.stringify(backendData.origenes, null, 2))
-        origenes = backendData.origenes.map((origen: any) => {
-          console.log('🔄 Transformando origen:', origen, 'tipo:', typeof origen)
-
-          // Si es un objeto con id y nombre
-          if (typeof origen === 'object' && origen.id && origen.nombre) {
-            const transformed = {
-              id: String(origen.id),
-              nombre: origen.nombre,
-              total_flujos: typeof origen.total_flujos === 'number' ? origen.total_flujos : 0,
-            }
-            console.log('✅ Origen transformado:', transformed)
-            return transformed
+      // Transform origenes from backend format
+      const rawOrigenes = Array.isArray(backendData.origenes) ? backendData.origenes : []
+      const origenes: OrigenFlujo[] = rawOrigenes.map((origen: unknown) => {
+        if (typeof origen === 'object' && origen !== null && 'id' in origen && 'nombre' in origen) {
+          const o = origen as { id: string | number; nombre: string; total_flujos?: number }
+          return {
+            id: String(o.id),
+            nombre: o.nombre,
+            total_flujos: typeof o.total_flujos === 'number' ? o.total_flujos : 0,
           }
+        }
+        if (typeof origen === 'string') {
+          return { id: origen, nombre: origen, total_flujos: 0 }
+        }
+        return origen as OrigenFlujo
+      })
 
-          // Si es un string, convertirlo en un objeto
-          if (typeof origen === 'string') {
-            return {
-              id: origen,
-              nombre: origen,
-              total_flujos: 0,
-            }
-          }
-
-          return origen
-        })
-      }
-
-      // Transformar tipos de deudor
-      let tiposDeudor: Array<{ value: string; label: string }> = []
-      if (Array.isArray(backendData.tipos_deudor)) {
-        tiposDeudor = backendData.tipos_deudor.map((tipo: any) => {
+      // Transform tipos de deudor
+      const rawTipos = Array.isArray(backendData.tipos_deudor) ? backendData.tipos_deudor : []
+      const tipos_deudor = rawTipos
+        .map((tipo: unknown) => {
           if (typeof tipo === 'string') {
-            return {
-              value: tipo,
-              label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
-            }
+            return { value: tipo, label: tipo.charAt(0).toUpperCase() + tipo.slice(1) }
           }
-          if (typeof tipo === 'object' && tipo.value && tipo.label) {
-            return tipo
+          if (typeof tipo === 'object' && tipo !== null && 'value' in tipo && 'label' in tipo) {
+            return tipo as { value: string; label: string }
           }
           return { value: '', label: '' }
-        }).filter((t: { value: string; label: string }) => t.value) // Filtrar vacíos
-      }
+        })
+        .filter((t: { value: string; label: string }) => t.value)
 
-      const opciones: OpcionesFlujos = {
-        origenes,
-        tipos_deudor: tiposDeudor,
-      }
-
-      console.log('✅ flujosService.getOpciones() - Opciones finales transformadas:', JSON.stringify(opciones, null, 2))
-      console.log('✅ flujosService.getOpciones() - origenes count:', opciones.origenes.length)
-      console.log('✅ flujosService.getOpciones() - tipos_deudor count:', opciones.tipos_deudor.length)
-      return opciones
+      return { origenes, tipos_deudor }
     } catch (error) {
-      console.error('🔴 flujosService.getOpciones() - Error:', getApiErrorMessage(error))
+      logger.error('flujosService.getOpciones() failed:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -129,27 +95,10 @@ export const flujosService = {
     per_page?: number
   }): Promise<FlujoResponse> {
     try {
-      console.log('📤 flujosService.getAll() - Enviando request a GET /flujos')
-      console.log('   Params:', JSON.stringify(params, null, 2))
-
-      const response = await apiClient.get<FlujoResponse>('/flujos', {
-        params,
-      })
-
-      console.log('📥 flujosService.getAll() - Response recibido:')
-      console.log('   Status:', response.status)
-      console.log('   Data:', response.data)
-      console.log('   Data.data length:', response.data.data?.length || 0)
-      console.log('   Data.meta:', response.data.meta)
-
-      // Log detallado del primer flujo para ver su estructura
-      if (response.data.data && response.data.data.length > 0) {
-        console.log('📋 Estructura del primer flujo:', JSON.stringify(response.data.data[0], null, 2))
-      }
-
+      const response = await apiClient.get<FlujoResponse>('/flujos', { params })
       return response.data
     } catch (error) {
-      console.error('🔴 flujosService.getAll() - Error:', getApiErrorMessage(error))
+      logger.error('flujosService.getAll() failed:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -159,20 +108,10 @@ export const flujosService = {
    */
   async getById(id: number): Promise<FlujoNurturing> {
     try {
-      console.log(`📤 flujosService.getById(${id}) - Enviando request a GET /flujos/${id}`)
       const { data } = await apiClient.get<{ data: FlujoNurturing }>(`/flujos/${id}`)
-
-      console.log(`📥 flujosService.getById(${id}) - Response completo:`, JSON.stringify(data.data, null, 2))
-      console.log(`📥 Claves del flujo:`, Object.keys(data.data))
-      console.log(`📥 etapas:`, data.data.etapas)
-      console.log(`📥 flujo_etapas:`, data.data.flujo_etapas)
-      console.log(`📥 flujo_condiciones:`, data.data.flujo_condiciones)
-      console.log(`📥 flujo_ramificaciones:`, data.data.flujo_ramificaciones)
-      console.log(`📥 flujo_nodos_finales:`, data.data.flujo_nodos_finales)
-
       return data.data
     } catch (error) {
-      console.error(`❌ flujosService.getById(${id}) - Error:`, getApiErrorMessage(error))
+      logger.error(`flujosService.getById(${id}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -217,15 +156,13 @@ export const flujosService = {
     config_structure?: ConfigStructure;
   }): Promise<FlujoNurturing> {
     try {
-      console.log('📤 flujosService.createWithProspectos() - Enviando payload a POST /flujos/crear-con-prospectos')
       const { data } = await apiClient.post<{ data: FlujoNurturing; mensaje: string }>(
         '/flujos/crear-con-prospectos',
         payload
       )
-      console.log('✅ flujosService.createWithProspectos() - Flujo creado:', data.data)
       return data.data
     } catch (error) {
-      console.error('❌ flujosService.createWithProspectos() - Error:', getApiErrorMessage(error))
+      logger.error('flujosService.createWithProspectos() failed:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -266,18 +203,13 @@ export const flujosService = {
     }
   ): Promise<FlujoNurturing> {
     try {
-      console.log(`📤 flujosService.updateFlowConfiguration(${id}) - Enviando datos actualizados`)
-      console.log('   Payload:', JSON.stringify(payload, null, 2))
-
       const { data } = await apiClient.put<{ data: FlujoNurturing; mensaje: string }>(
         `/flujos/${id}`,
         payload
       )
-
-      console.log(`✅ flujosService.updateFlowConfiguration(${id}) - Flujo actualizado:`, data.data)
       return data.data
     } catch (error) {
-      console.error(`❌ flujosService.updateFlowConfiguration(${id}) - Error:`, getApiErrorMessage(error))
+      logger.error(`flujosService.updateFlowConfiguration(${id}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -287,14 +219,12 @@ export const flujosService = {
    */
   async delete(id: number): Promise<{ mensaje: string; detalles: { etapas_eliminadas?: number; prospectos_desvinculados?: number } }> {
     try {
-      console.log('📤 flujosService.delete() - Enviando request a DELETE /flujos/' + id)
-      const { data } = await apiClient.delete<{ mensaje: string; detalles: any }>(
+      const { data } = await apiClient.delete<{ mensaje: string; detalles: Record<string, number> }>(
         `/flujos/${id}`
       )
-      console.log('✅ flujosService.delete() - Flujo eliminado:', data)
       return data
     } catch (error) {
-      console.error('❌ flujosService.delete() - Error:', getApiErrorMessage(error))
+      logger.error(`flujosService.delete(${id}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -313,9 +243,6 @@ export const flujosService = {
     }
   ): Promise<{ ejecucion_id: number; estado: string; fecha_inicio_programada: string; prospectos_count: number }> {
     try {
-      console.log('📤 flujosService.ejecutarFlujo() - Iniciando ejecución del flujo:', flujoId)
-      console.log('   Config:', config)
-
       const response = await apiClient.post<{
         error: boolean
         mensaje: string
@@ -331,10 +258,9 @@ export const flujosService = {
         }
       }>(`/flujos/${flujoId}/ejecutar`, config)
 
-      console.log('✅ flujosService.ejecutarFlujo() - Flujo ejecutado:', response.data.data)
       return response.data.data
     } catch (error) {
-      console.error('❌ flujosService.ejecutarFlujo() - Error:', getApiErrorMessage(error))
+      logger.error(`flujosService.ejecutarFlujo(${flujoId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -346,7 +272,6 @@ export const flujosService = {
    */
   async ejecutar(flujoId: number, prospecto_ids?: number[]): Promise<EjecucionFlujo> {
     try {
-      console.log('📤 flujosService.ejecutar() - Iniciando ejecución del flujo:', flujoId)
       const payload = {
         flujo_id: flujoId,
         ...(prospecto_ids && { prospecto_ids }),
@@ -357,10 +282,9 @@ export const flujosService = {
         payload
       )
 
-      console.log('✅ flujosService.ejecutar() - Flujo ejecutado:', data.data)
       return data.data
     } catch (error) {
-      console.error('❌ flujosService.ejecutar() - Error:', getApiErrorMessage(error))
+      logger.error(`flujosService.ejecutar(${flujoId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -371,16 +295,12 @@ export const flujosService = {
    */
   async obtenerProgreso(ejecucionId: number): Promise<EjecucionFlujo> {
     try {
-      console.log('📤 flujosService.obtenerProgreso() - Obteniendo progreso de ejecución:', ejecucionId)
-
       const { data } = await apiClient.get<{ data: EjecucionFlujo }>(
         `/flujos/ejecuciones/${ejecucionId}`
       )
-
-      console.log('✅ flujosService.obtenerProgreso() - Progreso obtenido:', data.data)
       return data.data
     } catch (error) {
-      console.error('❌ flujosService.obtenerProgreso() - Error:', getApiErrorMessage(error))
+      logger.error(`flujosService.obtenerProgreso(${ejecucionId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -391,16 +311,12 @@ export const flujosService = {
    */
   async obtenerHistorialEjecuciones(flujoId: number): Promise<{ data: EjecucionFlujo[] }> {
     try {
-      console.log('📤 flujosService.obtenerHistorialEjecuciones() - Obteniendo historial del flujo:', flujoId)
-
       const { data } = await apiClient.get<{ data: EjecucionFlujo[] }>(
         `/flujos/${flujoId}/ejecuciones`
       )
-
-      console.log('✅ flujosService.obtenerHistorialEjecuciones() - Historial obtenido:', data.data)
       return data
     } catch (error) {
-      console.error('❌ flujosService.obtenerHistorialEjecuciones() - Error:', getApiErrorMessage(error))
+      logger.error(`flujosService.obtenerHistorialEjecuciones(${flujoId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -429,7 +345,7 @@ export const flujosService = {
       const response = await apiClient.get<FlujoProgresoResponse>(`/flujos/${flujoId}/progreso`)
       return response.data
     } catch (error) {
-      console.error(`❌ flujosService.getProgresoAsignacion(${flujoId}) - Error:`, getApiErrorMessage(error))
+      logger.error(`flujosService.getProgresoAsignacion(${flujoId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
@@ -469,19 +385,13 @@ export const flujosService = {
     metadata?: Record<string, unknown>
   }): Promise<FlujoCreacionResponse> {
     try {
-      console.log('📤 flujosService.createWithProspectosAsync() - Creando flujo con payload')
-
       const { data } = await apiClient.post<FlujoCreacionResponse>(
         '/flujos/crear-con-prospectos',
         payload
       )
-
-      const isAsync = data.resumen?.procesamiento_async ?? false
-      console.log(`✅ Flujo creado (async: ${isAsync}):`, data.data.id)
-
       return data
     } catch (error) {
-      console.error('❌ flujosService.createWithProspectosAsync() - Error:', getApiErrorMessage(error))
+      logger.error('flujosService.createWithProspectosAsync() failed:', getApiErrorMessage(error))
       throw error
     }
   },
@@ -523,9 +433,6 @@ export const flujosService = {
     }
   }> {
     try {
-      console.log(`📤 flujosService.agregarProspectos(${flujoId}) - Agregando prospectos`)
-      console.log('   Payload:', payload)
-
       const { data } = await apiClient.post<{
         mensaje: string
         resumen: {
@@ -537,10 +444,9 @@ export const flujosService = {
         }
       }>(`/flujos/${flujoId}/agregar-prospectos`, payload)
 
-      console.log(`✅ flujosService.agregarProspectos(${flujoId}) - Resultado:`, data)
       return data
     } catch (error) {
-      console.error(`❌ flujosService.agregarProspectos(${flujoId}) - Error:`, getApiErrorMessage(error))
+      logger.error(`flujosService.agregarProspectos(${flujoId}) failed:`, getApiErrorMessage(error))
       throw error
     }
   },
