@@ -33,25 +33,22 @@ import type { StageNodeData } from '../../../types/flowBuilder'
 import { PlantillaSelector } from '../components/PlantillaSelector'
 
 interface StageNodeProps extends NodeProps<StageNodeData> {
-  onUpdate?: (id: string, data: Partial<StageNodeData>) => void
-  onDelete?: (id: string) => void
   isSelected?: boolean
   isNextNode?: boolean
   nextExecutionTime?: string
-  /** Precios por tipo de mensaje (para mostrar costo del nodo) */
-  precios?: { email: number; sms: number }
 }
 
 export function StageNode({
   id,
   data,
-  onUpdate,
-  onDelete,
   isSelected = false,
   isNextNode = false,
   nextExecutionTime = '',
-  precios,
 }: StageNodeProps) {
+  // Callbacks and precios are injected into node.data by FlowBuilder's sync useEffect
+  const onUpdate = data.onUpdate as ((id: string, data: Partial<StageNodeData>) => void) | undefined
+  const onDelete = data.onDelete as ((id: string) => void) | undefined
+  const precios = data.precios as { email: number; sms: number } | undefined
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
 

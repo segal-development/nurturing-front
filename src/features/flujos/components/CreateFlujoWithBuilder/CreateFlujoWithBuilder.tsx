@@ -177,7 +177,8 @@ export function CreateFlujoWithBuilder({
       // Stop any ongoing polling from previous flujo
       detenerTracking()
     }
-  }, [open, detenerTracking])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- detenerTracking is stable from the store, but recreated per render in the hook wrapper
+  }, [open])
 
   /**
    * Obtiene el nombre de un origen por su ID
@@ -240,7 +241,8 @@ export function CreateFlujoWithBuilder({
     if (initialOriginId) {
       handleOriginSelect(initialOriginId)
     }
-  }, [open, initialOriginId, handleOriginSelect])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleOriginSelect is stable in intent, recreated per render
+  }, [open, initialOriginId])
 
   /**
    * Valida y avanza a step de builder CON prospectos
@@ -379,10 +381,11 @@ export function CreateFlujoWithBuilder({
    * Manejo robusto de errores y soporte para procesamiento async
    */
   const handleSaveFlow = async (config: any) => {
-    // Validación crítica: tipo de prospecto es obligatorio
-    if (!selectedTipoProspectoId) {
+    // Validación: tipo prospecto obligatorio solo si hay prospectos seleccionados
+    const hasProspects = selectedCount > 0 || selectedProspectoIds.size > 0 || selectAllFromOrigin
+    if (hasProspects && !selectedTipoProspectoId) {
       setError('Error: No se ha seleccionado un tipo de prospecto. Por favor vuelve al paso anterior.')
-      logger.error('selectedTipoProspectoId is null/undefined')
+      logger.error('selectedTipoProspectoId is null/undefined (with prospects selected)')
       return
     }
 

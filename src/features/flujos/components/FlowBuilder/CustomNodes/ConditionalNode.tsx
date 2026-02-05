@@ -11,8 +11,6 @@ import { GitBranch, Settings2, Trash2 } from 'lucide-react'
 import type { ConditionalNodeData, FlowCondition } from '../../../types/flowBuilder'
 
 interface ConditionalNodeProps extends NodeProps<ConditionalNodeData> {
-  onUpdate?: (id: string, data: Partial<ConditionalNodeData>) => void
-  onDelete?: (id: string) => void
   isSelected?: boolean
 }
 
@@ -27,10 +25,11 @@ const CONDITION_OPTIONS: Array<{ type: FlowCondition['type']; label: string; des
 export function ConditionalNode({
   id,
   data,
-  onUpdate,
-  onDelete,
   isSelected = false,
 }: ConditionalNodeProps) {
+  // Callbacks are injected into node.data by FlowBuilder's sync useEffect
+  const onUpdate = (data as any).onUpdate as ((id: string, data: Partial<ConditionalNodeData>) => void) | undefined
+  const onDelete = (data as any).onDelete as ((id: string) => void) | undefined
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
 

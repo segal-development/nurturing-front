@@ -21,7 +21,7 @@
  * }
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { logger } from '@/lib/logger'
 import {
   useFlujoProcesamientoStore,
@@ -99,16 +99,21 @@ export function useFlujoProcesamiento(
     (state) => state.limpiarFlujo
   )
 
-  // Suscripción al evento de completación
-  // Cada instancia del hook mantiene su propia suscripción independiente
-  useEffect(() => {
-    if (!onComplete) return
+  // Keep a stable ref to onComplete so the useEffect doesn't re-subscribe on every render.
+  // This avoids infinite loops when callers pass an inline arrow function.
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
 
-    // subscribeToFlujoComplete retorna la función de cleanup automáticamente
-    const unsubscribe = subscribeToFlujoComplete(onComplete)
+  // Suscripción al evento de completación
+  useEffect(() => {
+    if (!onCompleteRef.current) return
+
+    const unsubscribe = subscribeToFlujoComplete((flujoId: number) => {
+      onCompleteRef.current?.(flujoId)
+    })
 
     return unsubscribe
-  }, [onComplete])
+  }, []) // stable — ref handles changes
 
   // Wrapper con validación
   const iniciarTracking = (flujoId: number, flujoNombre: string, totalProspectos: number) => {

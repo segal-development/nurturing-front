@@ -15,18 +15,17 @@ interface EndNodeData {
 }
 
 interface EndNodeProps extends NodeProps<EndNodeData> {
-  onUpdate?: (id: string, data: Partial<EndNodeData>) => void
-  onDelete?: (id: string) => void
   isSelected?: boolean
 }
 
 export function EndNode({
   id,
   data,
-  onUpdate,
-  onDelete,
   isSelected = false,
 }: EndNodeProps) {
+  // Callbacks are injected into node.data by FlowBuilder's sync useEffect
+  const onUpdate = data.onUpdate as ((id: string, data: Partial<EndNodeData>) => void) | undefined
+  const onDelete = data.onDelete as ((id: string) => void) | undefined
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState(data)
 

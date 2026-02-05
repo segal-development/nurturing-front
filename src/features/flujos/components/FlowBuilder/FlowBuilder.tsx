@@ -4,7 +4,7 @@
  * Features: Drag-and-drop stage creation, real-time validation, visual preview
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -143,36 +143,37 @@ function FlowBuilderContent({
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false)
   const flowContainerRef = useRef<HTMLDivElement>(null)
 
-  // Crear wrappers de nodos que tengan acceso a los callbacks
-  const StageNodeWrapper = (props: any) => (
-    <StageNode {...props} onDelete={removeNode} onUpdate={updateNode} precios={precios} />
-  )
-
-  const ConditionalNodeWrapper = (props: any) => (
-    <ConditionalNode {...props} onDelete={removeNode} onUpdate={updateNode} />
-  )
-
-  const EndNodeWrapper = (props: any) => (
-    <EndNode {...props} onDelete={removeNode} onUpdate={updateNode} />
-  )
-
-  const memoizedNodeTypes = {
-    stage: StageNodeWrapper,
+  // Node & edge types — created ONCE to avoid React Flow re-processing on every render.
+  // Callbacks (removeNode, updateNode) are passed via node.data instead of wrapper closures.
+  const memoizedNodeTypes = useMemo(() => ({
+    stage: StageNode,
     initial: InitialNode,
-    end: EndNodeWrapper,
-    conditional: ConditionalNodeWrapper,
-  }
+    end: EndNode,
+    conditional: ConditionalNode,
+  }), [])
 
-  const memoizedEdgeTypes = {
+  const memoizedEdgeTypes = useMemo(() => ({
     animated: N8nStyleEdge,
-  }
+  }), [])
 
   // Sincronizar Zustand store con ReactFlow cuando cambian
   // Esta es la ÚNICA fuente de verdad para ReactFlow
+  // Inyectamos callbacks (removeNode, updateNode) y precios en node.data
+  // para que los custom nodes puedan accederlos sin wrapper closures.
   // IMPORTANTE: No incluir setNodes/setEdges en dependencias (causan loop infinito)
   useEffect(() => {
-    // Actualizar nodos
-    setNodes(storeNodes)
+    // Inyectar callbacks y precios en node.data para cada nodo
+    const nodesWithCallbacks = storeNodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        onDelete: removeNode,
+        onUpdate: updateNode,
+        precios: precios ?? undefined,
+      },
+    }))
+
+    setNodes(nodesWithCallbacks)
 
     // Actualizar edges con tipo asegurado
     const edgesWithType = storeEdges.map((edge) => ({
@@ -182,7 +183,7 @@ function FlowBuilderContent({
 
     setEdges(edgesWithType)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeNodes, storeEdges])
+  }, [storeNodes, storeEdges, precios])
 
   // Initialize form values
   useEffect(() => {
