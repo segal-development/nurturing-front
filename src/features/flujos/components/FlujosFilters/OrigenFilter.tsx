@@ -21,20 +21,18 @@ interface OrigenFilterProps {
   isLoading?: boolean
 }
 
-export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: OrigenFilterProps) {
-  logger.log('OrigenFilter:', {
-    totalOrigenes: opciones?.origenes?.length || 0,
-    selectedId,
-    isLoading,
-  })
+/** Special filter values for non-origin views */
+const FILTER_ALL = '_todos'
+const FILTER_NO_ORIGIN = '_sin_origen'
 
+export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: OrigenFilterProps) {
   // Convertir selectedId a string solo si existe, undefined si no
   const selectValue = selectedId || undefined
 
   return (
     <div className="flex-1">
       <label className="block text-sm font-semibold text-segal-dark mb-2 dark:text-white">
-        Origen de Flujos <span className="text-segal-red">*</span>
+        Origen de Flujos
       </label>
       {/* Solo renderizar el Select cuando hay origenes disponibles */}
       {!isLoading && opciones?.origenes && opciones.origenes.length > 0 ? (
@@ -43,15 +41,20 @@ export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: Orig
             <SelectValue placeholder="Selecciona un origen..." />
           </SelectTrigger>
           <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
-            {opciones.origenes.map((origen) => {
-              return (
-                <SelectItem key={origen.id} value={origen.id}>
-                  <span className="text-sm">
-                    {origen.nombre} ({origen.total_flujos} flujos)
-                  </span>
-                </SelectItem>
-              )
-            })}
+            <SelectItem value={FILTER_ALL}>
+              <span className="text-sm font-medium">Todos los flujos</span>
+            </SelectItem>
+            <SelectItem value={FILTER_NO_ORIGIN}>
+              <span className="text-sm text-segal-dark/70">Sin origen asignado</span>
+            </SelectItem>
+            <div className="my-1 border-t border-segal-blue/10" />
+            {opciones.origenes.map((origen) => (
+              <SelectItem key={origen.id} value={origen.id}>
+                <span className="text-sm">
+                  {origen.nombre} ({origen.total_flujos} flujos)
+                </span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       ) : (
@@ -63,3 +66,5 @@ export function OrigenFilter({ selectedId, opciones, onChange, isLoading }: Orig
     </div>
   )
 }
+
+export { FILTER_ALL, FILTER_NO_ORIGIN }

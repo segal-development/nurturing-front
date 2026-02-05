@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { flujosService } from '@/api/flujos.service'
 import type { FlujoNurturing } from '@/types/flujo'
+import { FILTER_ALL, FILTER_NO_ORIGIN } from './components/FlujosFilters/OrigenFilter'
 
 const ITEMS_PER_PAGE = 15
 
@@ -255,11 +256,13 @@ export function Flujos() {
             Flujos de Nurturing
           </h1>
           <p className="text-segal-dark/60 mt-2 dark:text-white">
-            {filtros.origenId
-              ? `Gestiona y crea flujos de nurturing para ${
-                  opciones?.origenes?.find((o) => o.id === filtros.origenId)?.nombre || 'este origen'
-                }`
-              : 'Selecciona un origen para ver los flujos disponibles'}
+            {!filtros.origenId && 'Selecciona un origen para ver los flujos disponibles'}
+            {filtros.origenId === FILTER_ALL && 'Mostrando todos los flujos de nurturing'}
+            {filtros.origenId === FILTER_NO_ORIGIN && 'Flujos sin origen asignado'}
+            {filtros.origenId && filtros.origenId !== FILTER_ALL && filtros.origenId !== FILTER_NO_ORIGIN &&
+              `Gestiona y crea flujos de nurturing para ${
+                opciones?.origenes?.find((o) => o.id === filtros.origenId)?.nombre || 'este origen'
+              }`}
           </p>
         </div>
         <Button
