@@ -3,7 +3,7 @@
  * Composición de filtro requerido y filtros opcionales
  */
 
-import { ImportacionFilter } from './ImportacionFilter'
+import { ImportacionCombobox } from './ImportacionCombobox'
 import { OptionalFilters } from './OptionalFilters'
 import type { ProspectosFiltersProps, FiltrosState } from '../../types/prospectos'
 
@@ -30,8 +30,8 @@ export function ProspectosFilters({
 
   return (
     <div className="flex flex-col gap-4 p-4 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
-      {/* Filtro requerido: Importación */}
-      <ImportacionFilter
+      {/* Filtro requerido: Importación con búsqueda */}
+      <ImportacionCombobox
         selectedId={filtros.importacionId}
         opciones={opciones}
         onChange={(id) => {
