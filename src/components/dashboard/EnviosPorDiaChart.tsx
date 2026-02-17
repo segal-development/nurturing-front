@@ -122,6 +122,7 @@ function LineChartTooltip({ point, isDark }: { point: any; isDark: boolean }) {
 
 export function EnviosPorDiaChart({ data, isDark }: EnviosPorDiaChartProps) {
   const theme = isDark ? DARK_LINE_THEME : LIGHT_LINE_THEME;
+  const hasData = data.length > 0;
 
   return (
     <Card className="border-segal-blue/10 dark:border-gray-700 dark:bg-gray-900">
@@ -130,20 +131,26 @@ export function EnviosPorDiaChart({ data, isDark }: EnviosPorDiaChartProps) {
       </CardHeader>
       <CardContent>
         <div style={{ height: '300px' }}>
-          <ResponsiveLine
-            data={transformLineChartData(data)}
-            margin={CHART_MARGIN}
-            xScale={{ type: 'point' }}
-            yScale={Y_SCALE}
-            theme={theme}
-            axisBottom={AXIS_BOTTOM}
-            axisLeft={AXIS_LEFT}
-            colors={{ scheme: 'set2' }}
-            pointSize={6}
-            pointColor={{ from: 'color', modifiers: [['darker', 0.5]] }}
-            useMesh={true}
-            tooltip={({ point }: any) => <LineChartTooltip point={point} isDark={isDark} />}
-          />
+          {hasData ? (
+            <ResponsiveLine
+              data={transformLineChartData(data)}
+              margin={CHART_MARGIN}
+              xScale={{ type: 'point' }}
+              yScale={Y_SCALE}
+              theme={theme}
+              axisBottom={AXIS_BOTTOM}
+              axisLeft={AXIS_LEFT}
+              colors={{ scheme: 'set2' }}
+              pointSize={6}
+              pointColor={{ from: 'color', modifiers: [['darker', 0.5]] }}
+              useMesh={true}
+              tooltip={({ point }: any) => <LineChartTooltip point={point} isDark={isDark} />}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              No hay datos de envíos para mostrar
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

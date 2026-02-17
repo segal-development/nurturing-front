@@ -75,6 +75,29 @@ function getDisplayName(nombre: string): string {
   return nombre.replace(/_\d{4}-\d{2}-\d{2}$/, '').replace(/_/g, ' ')
 }
 
+/**
+ * Genera un string de búsqueda completo para el lote
+ * Incluye: nombre original, nombre formateado, cantidad, fecha
+ * Esto permite buscar "IC re" y encontrar "IC_rechazado_2026-02-17"
+ */
+function getSearchableValue(lote: LoteOpcion): string {
+  const displayName = getDisplayName(lote.nombre)
+  const fecha = extractDateFromName(lote.nombre)
+  
+  // Incluir todas las variantes para búsqueda
+  const parts = [
+    lote.nombre,                          // IC_rechazado_2026-02-17
+    displayName,                          // IC rechazado
+    lote.nombre.replace(/_/g, ' '),       // IC rechazado 2026-02-17
+    `${lote.total_prospectos}`,           // 7480
+    `${formatNumber(lote.total_prospectos)} prospectos`, // 7.480 prospectos
+    fecha || '',                          // 17/02/2026
+    lote.estado,                          // completado
+  ]
+  
+  return parts.join(' ').toLowerCase()
+}
+
 export function LoteCombobox({
   lotes,
   selectedId,
@@ -138,11 +161,12 @@ export function LoteCombobox({
               {lotes.map((lote) => {
                 const fecha = extractDateFromName(lote.nombre)
                 const displayName = getDisplayName(lote.nombre)
+                const searchValue = getSearchableValue(lote)
 
                 return (
                   <CommandItem
                     key={lote.id}
-                    value={`${lote.nombre} ${lote.total_prospectos}`}
+                    value={searchValue}
                     onSelect={() => {
                       onChange(lote.id)
                       setOpen(false)

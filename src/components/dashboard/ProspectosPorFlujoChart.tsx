@@ -132,6 +132,7 @@ function PieChartTooltip({
 export function ProspectosPorFlujoChart({ data, isDark }: ProspectosPorFlujoChartProps) {
   const theme = isDark ? DARK_PIE_THEME : LIGHT_PIE_THEME;
   const total = data.reduce((sum, item) => sum + item.cantidad, 0);
+  const hasData = data.length > 0 && total > 0;
 
   return (
     <Card className="border-segal-turquoise/10 dark:border-gray-700 dark:bg-gray-900">
@@ -145,29 +146,35 @@ export function ProspectosPorFlujoChart({ data, isDark }: ProspectosPorFlujoChar
       </CardHeader>
       <CardContent>
         <div style={{ height: '350px' }}>
-          <ResponsivePie
-            data={transformPieChartData(data)}
-            margin={CHART_MARGIN}
-            innerRadius={0.5}
-            padAngle={1.2}
-            cornerRadius={4}
-            colors={SEGAL_PIE_COLORS}
-            borderWidth={2}
-            borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
-            arcLabelsSkipAngle={5}
-            arcLabelsTextColor="#ffffff"
-            arcLabelsRadiusOffset={0.6}
-            enableArcLinkLabels={true}
-            arcLinkLabelsSkipAngle={5}
-            arcLinkLabelsTextColor={isDark ? '#e5e7eb' : '#333333'}
-            arcLinkLabelsThickness={2}
-            arcLinkLabelsColor={{ from: 'color' }}
-            theme={theme}
-            tooltip={({ datum }: any) => (
-              <PieChartTooltip datum={datum} total={total} isDark={isDark} />
-            )}
-            legends={getLegends(isDark)}
-          />
+          {hasData ? (
+            <ResponsivePie
+              data={transformPieChartData(data)}
+              margin={CHART_MARGIN}
+              innerRadius={0.5}
+              padAngle={1.2}
+              cornerRadius={4}
+              colors={SEGAL_PIE_COLORS}
+              borderWidth={2}
+              borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
+              arcLabelsSkipAngle={5}
+              arcLabelsTextColor="#ffffff"
+              arcLabelsRadiusOffset={0.6}
+              enableArcLinkLabels={true}
+              arcLinkLabelsSkipAngle={5}
+              arcLinkLabelsTextColor={isDark ? '#e5e7eb' : '#333333'}
+              arcLinkLabelsThickness={2}
+              arcLinkLabelsColor={{ from: 'color' }}
+              theme={theme}
+              tooltip={({ datum }: any) => (
+                <PieChartTooltip datum={datum} total={total} isDark={isDark} />
+              )}
+              legends={getLegends(isDark)}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              No hay flujos con prospectos asignados
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
