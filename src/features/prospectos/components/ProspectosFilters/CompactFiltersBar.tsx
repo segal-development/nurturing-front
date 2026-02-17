@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { LoteCombobox } from './LoteCombobox'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import type { OpcionesFiltrado, FiltrosState, LoteOpcion } from '../../types/prospectos'
+import type { OpcionesFiltrado, FiltrosState } from '../../types/prospectos'
 
 /**
  * Props para CompactFiltersBar
@@ -73,22 +74,6 @@ const parseTypeIdSafely = (value: string | null): number | null => {
  */
 const getSelectDisplayValue = (value: number | null | undefined): string | undefined => {
   return value ? value.toString() : undefined
-}
-
-/**
- * Obtiene el ícono de estado del lote
- */
-const getLoteStatusIcon = (estado: LoteOpcion['estado']) => {
-  switch (estado) {
-    case 'completado':
-      return <CheckCircle2 className="h-3 w-3 text-green-500" />
-    case 'procesando':
-      return <Loader2 className="h-3 w-3 text-blue-500 animate-spin" />
-    case 'fallido':
-      return <AlertCircle className="h-3 w-3 text-red-500" />
-    default:
-      return <FileStack className="h-3 w-3 text-gray-400" />
-  }
 }
 
 /**
@@ -142,7 +127,6 @@ export function CompactFiltersBar({
   // ============================================================
   // VALORES MOSTRADOS EN SELECTS
   // ============================================================
-  const selectValueLote = getSelectDisplayValue(filtros.loteId)
   const selectValueEstado = filtros.estado || 'todos-estados'
   const selectValueTipo = getSelectDisplayValue(filtros.tipoProspectoId) || 'todos-tipos'
 
@@ -160,32 +144,12 @@ export function CompactFiltersBar({
           <label className="block text-xs font-semibold text-segal-dark mb-1.5 uppercase tracking-tight dark:text-gray-300">
             Carga <span className="text-segal-red">*</span>
           </label>
-          {opciones?.lotes && opciones.lotes.length > 0 ? (
-            <Select value={selectValueLote} onValueChange={handleLoteChange}>
-              <SelectTrigger className="h-9 w-full text-sm border-segal-blue/30 bg-white focus:border-segal-blue focus:ring-segal-blue/20 truncate dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20">
-                <SelectValue placeholder="Selecciona una carga..." className="truncate" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:focus:border-segal-blue dark:focus:ring-segal-blue/20 max-h-80">
-                {opciones?.lotes?.map((lote) => (
-                  <SelectItem key={lote.id} value={lote.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      {getLoteStatusIcon(lote.estado)}
-                      <span className="text-xs truncate max-w-[200px]">
-                        {lote.nombre}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        ({lote.total_archivos} {lote.total_archivos === 1 ? 'archivo' : 'archivos'} - {formatNumber(lote.total_prospectos)} registros)
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="h-9 px-3 rounded-lg border border-segal-blue/30 bg-white text-xs text-segal-dark/60 flex items-center dark:text-gray-300">
-              {opciones?.lotes?.length === 0 ? 'Sin cargas disponibles' : 'Cargando...'}
-            </div>
-          )}
+          <LoteCombobox
+            lotes={opciones?.lotes}
+            selectedId={filtros.loteId}
+            onChange={(id) => handleLoteChange(id.toString())}
+            placeholder="Buscar por nombre o cantidad..."
+          />
         </div>
 
         {/* Filtro Estado - solo si hay lote seleccionado */}
