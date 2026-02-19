@@ -190,6 +190,23 @@ export const flujosService = {
   },
 
   /**
+   * Toggle auto-asignación de nuevos prospectos
+   * Cuando está activo, los nuevos prospectos del mismo origen se agregan automáticamente al flujo
+   */
+  async toggleAutoAsignar(id: number, enabled: boolean): Promise<FlujoNurturing> {
+    try {
+      const { data } = await apiClient.put<{ data: FlujoNurturing; mensaje: string }>(
+        `/flujos/${id}`,
+        { auto_asignar_nuevos: enabled }
+      )
+      return data.data
+    } catch (error) {
+      logger.error(`flujosService.toggleAutoAsignar(${id}, ${enabled}) failed:`, getApiErrorMessage(error))
+      throw error
+    }
+  },
+
+  /**
    * Actualizar configuración visual y estructura de un flujo (para el flow builder)
    */
   async updateFlowConfiguration(

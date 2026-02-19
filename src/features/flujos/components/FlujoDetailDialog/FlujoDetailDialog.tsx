@@ -30,6 +30,7 @@ import {
   Activity,
   Pause,
   UserPlus,
+  RefreshCw,
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
 import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail } from '@/features/flujos/hooks/useFlowExecutionTracking'
@@ -77,9 +78,10 @@ export function FlujoDetailDialog({
   const [isDeleting, setIsDeleting] = useState(false)
   const [isExecuteModalOpen, setIsExecuteModalOpen] = useState(false)
   const [isAddProspectsModalOpen, setIsAddProspectsModalOpen] = useState(false)
+  const [isTogglingAutoAsignar, setIsTogglingAutoAsignar] = useState(false)
 
   // Obtener flujo detallado del backend si está disponible
-  const { data: detailedFlujo, isLoading } = useFlujosDetail(initialFlujo?.id || null, {
+  const { data: detailedFlujo, isLoading, refetch: refetchFlujo } = useFlujosDetail(initialFlujo?.id || null, {
     enabled: open && initialFlujo !== null,
   })
 
@@ -247,6 +249,36 @@ export function FlujoDetailDialog({
     }
   }
 
+  const handleToggleAutoAsignar = async () => {
+    if (!flujo?.id) return
+
+    const newValue = !flujo.auto_asignar_nuevos
+    setIsTogglingAutoAsignar(true)
+    
+    try {
+      await flujosService.toggleAutoAsignar(flujo.id, newValue)
+      toast.success(
+        newValue 
+          ? 'Auto-asignación activada' 
+          : 'Auto-asignación desactivada',
+        {
+          description: newValue 
+            ? 'Los nuevos prospectos se agregarán automáticamente cada viernes'
+            : 'Los nuevos prospectos ya no se agregarán automáticamente',
+        }
+      )
+      // Refrescar datos del flujo
+      refetchFlujo()
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Error al cambiar configuración'
+      toast.error('Error al cambiar auto-asignación', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsTogglingAutoAsignar(false)
+    }
+  }
+
   if (!flujo) {
     return null
   }
@@ -370,7 +402,50 @@ export function FlujoDetailDialog({
                         {prospectoCount.toLocaleString()}
                       </p>
                     </div>
+
+                    {/* Auto-asignación de nuevos prospectos - Clickeable */}
+                    <button
+                      onClick={handleToggleAutoAsignar}
+                      disabled={isTogglingAutoAsignar}
+                      className={`rounded-lg p-4 border text-left transition-all hover:shadow-md ${
+                        flujo.auto_asignar_nuevos 
+                          ? 'bg-segal-green/5 border-segal-green/20 hover:border-segal-green/40' 
+                          : 'bg-segal-blue/5 border-segal-blue/10 hover:border-segal-blue/30'
+                      } ${isTogglingAutoAsignar ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+                    >
+                      <p className="text-sm text-segal-dark/60 font-semibold mb-1 flex items-center gap-2">
+                        <RefreshCw className={`h-4 w-4 ${isTogglingAutoAsignar ? 'animate-spin' : ''}`} />
+                        Auto-asignación
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {flujo.auto_asignar_nuevos ? (
+                          <>
+                            <CheckCircle2 className="h-5 w-5 text-segal-green" />
+                            <span className="text-lg font-bold text-segal-green">Activa</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-5 w-5 text-segal-dark/40" />
+                            <span className="text-lg font-bold text-segal-dark/60">Inactiva</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-segal-dark/50 mt-1">Click para cambiar</p>
+                    </button>
                   </div>
+
+                  {/* Info: Auto-asignación explicación */}
+                  {flujo.auto_asignar_nuevos && (
+                    <div className="p-4 rounded-lg bg-segal-green/5 border border-segal-green/20 flex items-start gap-3">
+                      <RefreshCw className="h-5 w-5 text-segal-green shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-segal-dark">Auto-asignación activa</p>
+                        <p className="text-sm text-segal-dark/70 mt-1">
+                          Cada viernes después del sync, los nuevos prospectos del origen "{flujo.origen}" se agregarán automáticamente a este flujo, empezando desde la Etapa 1.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Alert: No prospects */}
                   {!hasProspects && (

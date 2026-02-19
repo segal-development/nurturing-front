@@ -275,6 +275,11 @@ export interface FlujoNurturing {
   origen?: string;
   canal_envio?: string;
   activo: boolean;
+  /**
+   * Si true, asigna automáticamente nuevos prospectos del mismo origen/lote.
+   * Los nuevos prospectos siempre empiezan desde la Etapa 1.
+   */
+  auto_asignar_nuevos?: boolean;
   user_id?: number;
   user?: {
     id: number;
