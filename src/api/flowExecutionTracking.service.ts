@@ -166,6 +166,70 @@ class FlowExecutionTrackingService {
     )
     return response.data
   }
+
+  /**
+   * Get execution state for multiple flows in a single request.
+   * 
+   * PERFORMANCE: Reduces N*3 requests to 1 request.
+   * Before: 15 flows = 45 requests (3 per flow)
+   * After: 15 flows = 1 request
+   *
+   * @param flujoIds - Array of flow IDs
+   * @returns Map of flujoId -> execution state
+   *
+   * @example
+   * const states = await flowExecutionTrackingService.getBatchExecutionState([1, 2, 3])
+   * // Returns: { 1: { tiene_ejecucion: true, ... }, 2: { ... }, ... }
+   */
+  async getBatchExecutionState(flujoIds: number[]): Promise<BatchExecutionStateResponse> {
+    if (flujoIds.length === 0) {
+      return { error: false, data: {} }
+    }
+
+    const response = await apiClient.get<BatchExecutionStateResponse>(
+      `${BASE_URL}/ejecuciones-batch`,
+      {
+        params: {
+          ids: flujoIds.join(','),
+        },
+      },
+    )
+    return response.data
+  }
+}
+
+// Types for batch endpoint
+export interface BatchExecutionState {
+  tiene_ejecucion: boolean
+  tiene_ejecucion_activa: boolean
+  puede_ejecutar: boolean
+  ejecucion: {
+    id: number
+    estado: string
+    fecha_inicio_programada: string | null
+    fecha_inicio_real: string | null
+    fecha_fin: string | null
+    prospectos_count: number
+    progreso: {
+      porcentaje: number
+      completadas: number
+      total: number
+      fallidas: number
+    }
+    costo_estimado: number | null
+    costo_real: number | null
+    etapas: Array<{
+      id: number
+      node_id: string
+      estado: string
+      ejecutado: boolean
+    }>
+  } | null
+}
+
+export interface BatchExecutionStateResponse {
+  error: boolean
+  data: Record<number, BatchExecutionState>
 }
 
 export const flowExecutionTrackingService = new FlowExecutionTrackingService()

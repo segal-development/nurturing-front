@@ -4,8 +4,8 @@
  *
  * PERFORMANCE OPTIMIZATIONS:
  * - React.memo to prevent unnecessary re-renders
- * - Single useFlujoExecutionState call per row (was 3!)
- * - Props drilling for execution state to avoid multiple hook calls
+ * - Execution state received as prop from batch fetch (no hook call per row!)
+ * - Before: 15 rows = 45 requests. After: 15 rows = 0 requests (batch in parent)
  */
 
 import { memo } from 'react'
@@ -21,7 +21,7 @@ import {
 import { Edit2, Eye, Loader2, MoreHorizontal, Play, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { FlujoNurturing } from '@/types/flujo'
-import { useFlujoExecutionState, type FlujoExecutionState } from './hooks/useFlujoExecutionState'
+import type { BatchExecutionState } from '../../hooks/useBatchExecutionState'
 import { getTipoProspectoName, calculateStagesCount } from './utils/flujoTableHelpers'
 import { ProgressDisplay, NoExecutionDisplay } from './ProgressDisplay'
 import { formatCurrency } from '@/features/costos/hooks'
@@ -29,6 +29,10 @@ import { getEstadoProcesamientoConfig, isProcesamientoActivo } from '@/types/flu
 
 interface FlujoTableRowProps {
   flujo: FlujoNurturing
+  /** Execution state from batch API (passed from parent) */
+  executionState: BatchExecutionState
+  /** Loading state from batch fetch */
+  isLoadingExecution: boolean
   onViewFlujo?: (id: number) => void
   onEditFlujo?: (id: number) => void
   onDeleteFlujo?: (id: number) => void
@@ -101,11 +105,15 @@ function StagesCell({ count }: { count: number }) {
 
 /**
  * Renders the progress cell with execution state
- * OPTIMIZED: Receives execution state as prop instead of calling hook
+ * OPTIMIZED: Receives execution state as prop from batch API (no hook call per row!)
  */
-function ProgressCell({ executionState }: { executionState: FlujoExecutionState }) {
-  const { displayExecution, isLoading } = executionState
-
+function ProgressCell({ 
+  executionState, 
+  isLoading 
+}: { 
+  executionState: BatchExecutionState
+  isLoading: boolean 
+}) {
   // Show spinner while loading
   if (isLoading) {
     return (
@@ -119,7 +127,7 @@ function ProgressCell({ executionState }: { executionState: FlujoExecutionState 
   }
 
   // Early return: no execution to display
-  if (!displayExecution) {
+  if (!executionState.tiene_ejecucion || !executionState.ejecucion) {
     return (
       <TableCell className="min-w-[150px]">
         <NoExecutionDisplay />
@@ -127,20 +135,39 @@ function ProgressCell({ executionState }: { executionState: FlujoExecutionState 
     )
   }
 
+  // Map batch API progress to ExecutionProgress format expected by ProgressDisplay
+  const batchProgreso = executionState.ejecucion.progreso
+  const progreso = {
+    porcentaje: batchProgreso.porcentaje,
+    completadas: batchProgreso.completadas,
+    total: batchProgreso.total,
+    fallidas: batchProgreso.fallidas,
+    // These fields are not in batch API but required by type - calculate from totals
+    en_ejecucion: 0, // Could be derived from etapas if needed
+    pendientes: batchProgreso.total - batchProgreso.completadas - batchProgreso.fallidas,
+  }
+
   return (
     <TableCell className="min-w-[150px]">
-      <ProgressDisplay estado={displayExecution.estado} progreso={displayExecution.progreso} />
+      <ProgressDisplay 
+        estado={executionState.ejecucion.estado} 
+        progreso={progreso} 
+      />
     </TableCell>
   )
 }
 
 /**
  * Renders the cost cell from latest execution
- * OPTIMIZED: Receives execution state as prop instead of calling hook
+ * OPTIMIZED: Receives execution state as prop from batch API (no hook call per row!)
  */
-function CostoCell({ executionState }: { executionState: FlujoExecutionState }) {
-  const { displayExecution, isLoading } = executionState
-
+function CostoCell({ 
+  executionState, 
+  isLoading 
+}: { 
+  executionState: BatchExecutionState
+  isLoading: boolean 
+}) {
   // Show spinner while loading
   if (isLoading) {
     return (
@@ -151,7 +178,7 @@ function CostoCell({ executionState }: { executionState: FlujoExecutionState }) 
   }
 
   // Early return: no execution
-  if (!displayExecution) {
+  if (!executionState.tiene_ejecucion || !executionState.ejecucion) {
     return (
       <TableCell className="text-segal-dark/50 text-sm">
         -
@@ -159,8 +186,9 @@ function CostoCell({ executionState }: { executionState: FlujoExecutionState }) 
     )
   }
 
-  const costo = displayExecution.costo_real ?? displayExecution.costo_estimado
-  const isEstimated = displayExecution.costo_real === null && displayExecution.costo_estimado !== null
+  const ejecucion = executionState.ejecucion
+  const costo = ejecucion.costo_real ?? ejecucion.costo_estimado
+  const isEstimated = ejecucion.costo_real === null && ejecucion.costo_estimado !== null
 
   if (costo === null || costo === undefined) {
     return (
@@ -313,41 +341,42 @@ function ActionsCell({
  *
  * PERFORMANCE OPTIMIZATIONS:
  * - Wrapped with React.memo to prevent re-renders when props haven't changed
- * - Single useFlujoExecutionState call (was 3 calls before!)
- * - Execution state passed as prop to child components
+ * - Execution state received as prop from parent's batch fetch (no hook call per row!)
+ * - Before: 15 rows = 45 requests. After: 15 rows = 0 requests (batch in parent)
  */
 export const FlujoTableRow = memo(function FlujoTableRow({
   flujo,
+  executionState,
+  isLoadingExecution,
   onViewFlujo,
   onEditFlujo,
   onDeleteFlujo,
   onEjecutarFlujo,
 }: FlujoTableRowProps) {
-  // OPTIMIZED: Single hook call per row (was 3 calls before!)
-  const executionState = useFlujoExecutionState(flujo.id)
-  const { canExecute: canExecuteFromState, displayExecution } = executionState
-
   // Calculate stages count
   const etapasCount = calculateStagesCount(flujo)
 
+  // Get execution info from batch state
+  const ejecucion = executionState.ejecucion
+
   // Check if flow is currently executing (in_progress or paused)
-  const isExecuting = displayExecution?.estado === 'in_progress' || displayExecution?.estado === 'paused'
+  const isExecuting = ejecucion?.estado === 'in_progress' || ejecucion?.estado === 'paused'
 
   // Check if flow is still processing prospect assignment
   const isProcesamientoEnCurso = isProcesamientoActivo(flujo.estado_procesamiento ?? 'completado')
 
   // Flow can only execute if:
-  // 1. No active execution (canExecuteFromState)
+  // 1. No active execution (puede_ejecutar from batch API)
   // 2. Prospect assignment is complete (not processing)
-  const canExecute = canExecuteFromState && !isProcesamientoEnCurso
+  const canExecute = executionState.puede_ejecutar && !isProcesamientoEnCurso
 
   return (
     <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:border-segal-blue">
       <NombreCell nombre={flujo.nombre} estadoProcesamiento={flujo.estado_procesamiento} />
       <TipoProspectoCell tipoProspecto={flujo.tipo_prospecto} />
       <StagesCell count={etapasCount} />
-      <ProgressCell executionState={executionState} />
-      <CostoCell executionState={executionState} />
+      <ProgressCell executionState={executionState} isLoading={isLoadingExecution} />
+      <CostoCell executionState={executionState} isLoading={isLoadingExecution} />
       <StatusCell activo={flujo.activo} />
       <UserCell userName={flujo.user?.name} />
       <CreatedDateCell createdAt={flujo.created_at} />
