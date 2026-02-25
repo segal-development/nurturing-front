@@ -47,6 +47,10 @@ export function useBatchExecutionState(
     refetchInterval: enablePolling ? POLLING_INTERVAL : false,
     staleTime: 2000,
     enabled: flujoIds.length > 0,
+    // Don't retry on error - show error state instead of infinite loading
+    retry: 1,
+    // Return empty object on error so table renders without execution data
+    placeholderData: {},
   });
 }
 
