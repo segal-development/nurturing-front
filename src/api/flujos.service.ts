@@ -34,6 +34,61 @@ export interface NodeStats {
 }
 
 /**
+ * Estadísticas completas del flujo para analytics
+ */
+export interface FlujoAnalytics {
+  resumen: {
+    tasa_apertura: number
+    tasa_click: number
+    tasa_fallo: number
+    costo_total: number
+    costo_por_conversion: number
+    emails_enviados: number
+    sms_enviados: number
+  }
+  funnel: {
+    prospectos: number
+    enviados: number
+    abiertos: number
+    clickeados: number
+    conversiones: number
+    tasa_envio: number
+    tasa_apertura: number
+    tasa_click_sobre_abiertos: number
+    tasa_conversion: number
+  }
+  etapas: Array<{
+    node_id: string
+    label: string
+    tipo_mensaje: 'email' | 'sms' | 'ambos'
+    orden: number
+    enviados: number
+    fallidos: number
+    abiertos: number | null
+    clickeados: number | null
+    tasa_apertura: number | null
+    tasa_click: number | null
+  }>
+  totales: {
+    envios: {
+      total: number
+      enviados: number
+      fallidos: number
+      pendientes: number
+      abiertos: number
+      clickeados: number
+    }
+    prospectos: {
+      total: number
+      completados: number
+      en_proceso: number
+      pendientes: number
+      cancelados: number
+    }
+  }
+}
+
+/**
  * Estructura de opciones para filtrado de flujos
  */
 export interface OpcionesFlujos {
@@ -151,8 +206,24 @@ export const flujosService = {
   },
 
   /**
-   * Payload para crear flujo con prospectos
+   * Obtener estadísticas completas de un flujo para analytics
+   * Incluye: funnel de conversión, tasas, costos, y rendimiento por etapa
+   * 
+   * @param flujoId ID del flujo
+   * @returns Estadísticas completas del flujo
    */
+  async getAnalytics(flujoId: number): Promise<FlujoAnalytics> {
+    try {
+      const { data } = await apiClient.get<{ data: FlujoAnalytics }>(
+        `/flujos/${flujoId}/estadisticas-completas`
+      )
+      return data.data
+    } catch (error) {
+      logger.error(`flujosService.getAnalytics(${flujoId}) failed:`, getApiErrorMessage(error))
+      throw error
+    }
+  },
+
   /**
    * Crear un nuevo flujo con prospectos e información de distribución
    * @param payload Objeto completo con flujo, prospectos, distribución y costos

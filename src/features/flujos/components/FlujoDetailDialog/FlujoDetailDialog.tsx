@@ -606,7 +606,7 @@ export function FlujoDetailDialog({
 
               {/* Tab: Estadísticas */}
               {activeTab === 'estadisticas' && (
-                <FlujoStatisticsPanel estadisticas={flujo.estadisticas} />
+                <FlujoStatisticsPanel flujoId={flujo?.id} />
               )}
 
               {/* Tab: Ejecuciones */}
