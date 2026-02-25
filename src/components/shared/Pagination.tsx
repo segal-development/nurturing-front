@@ -38,6 +38,22 @@ export interface PaginationProps {
 }
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/**
+ * Calcula el ancho mínimo del botón basado en la cantidad de dígitos
+ * Para que números grandes (ej: 23467) no se vean apretados
+ */
+function getButtonMinWidth(page: number): string {
+  const digits = String(page).length
+  if (digits <= 2) return 'min-w-8' // 32px - suficiente para 1-99
+  if (digits === 3) return 'min-w-10' // 40px - para 100-999
+  if (digits === 4) return 'min-w-12' // 48px - para 1000-9999
+  return 'min-w-14' // 56px - para 10000+
+}
+
+// ============================================================================
 // Helper Functions (Pure Functions - SRP)
 // ============================================================================
 
@@ -108,8 +124,8 @@ export function Pagination({
       {/* Información de página */}
       {showPageInfo && (
         <div className="text-sm text-segal-dark/70 w-full text-center dark:text-segal-blue">
-          Página <span className="font-semibold">{currentPage}</span> de{' '}
-          <span className="font-semibold">{totalPages}</span>
+          Página <span className="font-semibold">{currentPage.toLocaleString()}</span> de{' '}
+          <span className="font-semibold">{totalPages.toLocaleString()}</span>
         </div>
       )}
 
@@ -136,12 +152,12 @@ export function Pagination({
               variant="ghost"
               size="sm"
               onClick={() => onPageChange(1)}
-              className="text-segal-blue hover:bg-segal-blue/10 w-8 h-8 p-0"
+              className="text-segal-blue hover:bg-segal-blue/10 min-w-8 h-8 px-2"
             >
               1
             </Button>
             {showFirstPageEllipsis && (
-              <span className="text-segal-dark/40">...</span>
+              <span className="text-segal-dark/40 px-1">...</span>
             )}
           </>
         )}
@@ -149,6 +165,7 @@ export function Pagination({
         {/* Números de página */}
         {pageNumbers.map((page) => {
           const isCurrentPage = currentPage === page
+          const minWidthClass = getButtonMinWidth(page)
           return (
             <Button
               key={page}
@@ -158,11 +175,11 @@ export function Pagination({
               onClick={() => onPageChange(page)}
               className={
                 isCurrentPage
-                  ? 'bg-segal-blue text-white hover:bg-segal-blue/90 w-8 h-8 p-0'
-                  : 'border-segal-blue/20 text-segal-blue hover:bg-segal-blue/10 w-8 h-8 p-0'
+                  ? `bg-segal-blue text-white hover:bg-segal-blue/90 ${minWidthClass} h-8 px-2`
+                  : `border-segal-blue/20 text-segal-blue hover:bg-segal-blue/10 ${minWidthClass} h-8 px-2`
               }
             >
-              {page}
+              {page.toLocaleString()}
             </Button>
           )
         })}
@@ -171,16 +188,16 @@ export function Pagination({
         {showLastPageButton && (
           <>
             {showLastPageEllipsis && (
-              <span className="text-segal-dark/40">...</span>
+              <span className="text-segal-dark/40 px-1">...</span>
             )}
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => onPageChange(totalPages)}
-              className="text-segal-blue hover:bg-segal-blue/10 w-8 h-8 p-0"
+              className={`text-segal-blue hover:bg-segal-blue/10 ${getButtonMinWidth(totalPages)} h-8 px-2`}
             >
-              {totalPages}
+              {totalPages.toLocaleString()}
             </Button>
           </>
         )}
