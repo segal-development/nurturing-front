@@ -120,12 +120,30 @@ export const flujosService = {
   },
 
   /**
-   * Obtener un flujo específico
+   * Obtener un flujo específico con sus estadísticas
    */
   async getById(id: number): Promise<FlujoNurturing> {
     try {
-      const { data } = await apiClient.get<{ data: FlujoNurturing }>(`/flujos/${id}`)
-      return data.data
+      const { data } = await apiClient.get<{ 
+        data: FlujoNurturing
+        estadisticas?: {
+          total_prospectos: number
+          prospectos_pendientes: number
+          prospectos_en_proceso: number
+          prospectos_completados: number
+          prospectos_cancelados: number
+          total_etapas: number
+          total_condiciones: number
+          total_ramificaciones: number
+          total_nodos_finales: number
+        }
+      }>(`/flujos/${id}`)
+      
+      // Merge estadisticas into flujo object
+      return {
+        ...data.data,
+        estadisticas: data.estadisticas,
+      }
     } catch (error) {
       logger.error(`flujosService.getById(${id}) failed:`, getApiErrorMessage(error))
       throw error
