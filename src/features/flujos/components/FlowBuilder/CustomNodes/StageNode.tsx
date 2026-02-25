@@ -313,34 +313,34 @@ export function StageNode({
               )}
 
               {/* Offer */}
-              {localData.oferta && (
-                <div className="text-xs text-segal-green font-medium">📦 {localData.oferta.titulo}</div>
+              {localData.oferta && typeof localData.oferta === 'object' && localData.oferta.titulo && (
+                <div className="text-xs text-segal-green font-medium">📦 {String(localData.oferta.titulo)}</div>
               )}
 
               {/* Execution Stats */}
-              {data.executionState && data.envios && (
+              {data.executionState && data.envios && typeof data.envios === 'object' && (
                 <div className="mt-3 pt-3 border-t border-segal-blue/10 space-y-1">
                   <p className="text-xs font-semibold text-segal-dark">Estadísticas:</p>
                   <div className="grid grid-cols-2 gap-1 text-xs">
-                    {data.envios.enviado > 0 && (
+                    {typeof data.envios.enviado === 'number' && data.envios.enviado > 0 && (
                       <div className="flex items-center gap-1">
                         <Send className="h-3 w-3 text-green-600" />
                         <span className="text-green-600 font-semibold">{data.envios.enviado} enviados</span>
                       </div>
                     )}
-                    {data.envios.fallido > 0 && (
+                    {typeof data.envios.fallido === 'number' && data.envios.fallido > 0 && (
                       <div className="flex items-center gap-1">
                         <AlertCircle className="h-3 w-3 text-red-600" />
                         <span className="text-red-600 font-semibold">{data.envios.fallido} fallidos</span>
                       </div>
                     )}
-                    {data.envios.pendiente > 0 && (
+                    {typeof data.envios.pendiente === 'number' && data.envios.pendiente > 0 && (
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3 text-amber-600" />
                         <span className="text-amber-600 font-semibold">{data.envios.pendiente} pendientes</span>
                       </div>
                     )}
-                    {data.envios.abierto > 0 && (
+                    {typeof data.envios.abierto === 'number' && data.envios.abierto > 0 && (
                       <div className="flex items-center gap-1">
                         <Mail className="h-3 w-3 text-blue-600" />
                         <span className="text-blue-600 font-semibold">{data.envios.abierto} abiertos</span>
@@ -351,7 +351,7 @@ export function StageNode({
               )}
 
               {/* Error Message */}
-              {data.errorMessage && (
+              {data.errorMessage && typeof data.errorMessage === 'string' && (
                 <div className="mt-3 p-2 rounded bg-red-50 border border-red-200">
                   <p className="text-xs text-red-600 font-semibold">Error:</p>
                   <p className="text-xs text-red-600 line-clamp-2">{data.errorMessage}</p>
