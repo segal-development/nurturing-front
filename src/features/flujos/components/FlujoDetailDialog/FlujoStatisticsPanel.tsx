@@ -329,7 +329,6 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
             <FunnelStep 
               label="Enviados" 
               value={funnel.enviados} 
-              rate={funnel.tasa_envio}
               color="bg-segal-blue"
             />
             <FunnelStep 
