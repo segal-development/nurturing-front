@@ -134,15 +134,17 @@ export function FlowStructurePanel({
       {viewMode === 'visual' && (
         <div>
           {hasVisual ? (
-            flujoId && effectiveExecutionId ? (
-              // Durante ejecución: mostrar FlowExecutionViewer con seguimiento en tiempo real
+            // Solo mostrar FlowExecutionViewer si hay ejecución ACTIVA (in_progress/paused)
+            // Para ejecuciones completadas/fallidas, mostrar vista estática
+            flujoId && activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion ? (
+              // Durante ejecución activa: mostrar FlowExecutionViewer con seguimiento en tiempo real
               <FlowExecutionViewerDynamic
                 flujoId={flujoId}
-                ejecucionId={parseInt(effectiveExecutionId)}
+                ejecucionId={activeExecutionData.ejecucion.id}
                 configVisual={config_visual}
               />
             ) : (
-              // Sin ejecución: mostrar visualización estática
+              // Sin ejecución activa: mostrar visualización estática (incluso si hay ejecuciones pasadas)
               <FlowVisualizationViewer configVisual={config_visual} />
             )
           ) : (
