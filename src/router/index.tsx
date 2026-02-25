@@ -1,18 +1,48 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { PageLoader } from '@/components/shared/PageLoader';
+
+// Login se carga síncronamente porque es la primera página que ve el usuario
 import { Login } from '@/features/auth/Login';
-import Dashboard from '@/pages/Dashboard';
-import Prospectos from '@/pages/Prospectos';
-import Flujos from '@/pages/Flujos';
-import Ofertas from '@/pages/Ofertas';
-import Monitor from '@/pages/Monitor';
-import Configuracion from '@/pages/Configuracion';
-import Costos from '@/pages/Costos';
-import { ProfilePage } from '@/pages/Profile';
-import { PlantillasPage } from '@/features/plantillas/pages/PlantillasPage';
-import EnviosPage from '@/pages/Envios';
-import { MetricasPage } from '@/features/metricas';
+
+// ============================================================
+// LAZY LOADED PAGES
+// Cada página se carga solo cuando el usuario navega a ella.
+// Esto reduce el bundle inicial significativamente.
+// ============================================================
+
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const Prospectos = lazy(() => import('@/pages/Prospectos'));
+const Flujos = lazy(() => import('@/pages/Flujos'));
+const Ofertas = lazy(() => import('@/pages/Ofertas'));
+const Monitor = lazy(() => import('@/pages/Monitor'));
+const Configuracion = lazy(() => import('@/pages/Configuracion'));
+const Costos = lazy(() => import('@/pages/Costos'));
+const EnviosPage = lazy(() => import('@/pages/Envios'));
+
+// Features con export nombrado necesitan wrapper
+const ProfilePage = lazy(() =>
+  import('@/pages/Profile').then((module) => ({ default: module.ProfilePage }))
+);
+const PlantillasPage = lazy(() =>
+  import('@/features/plantillas/pages/PlantillasPage').then((module) => ({
+    default: module.PlantillasPage,
+  }))
+);
+const MetricasPage = lazy(() =>
+  import('@/features/metricas').then((module) => ({
+    default: module.MetricasPage,
+  }))
+);
+
+/**
+ * Wrapper que envuelve páginas lazy-loaded con Suspense
+ */
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 export const router = createBrowserRouter([
   {
@@ -29,54 +59,100 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: (
+          <LazyPage>
+            <Dashboard />
+          </LazyPage>
+        ),
       },
       {
         path: 'dashboard',
-        element: <Dashboard />,
+        element: (
+          <LazyPage>
+            <Dashboard />
+          </LazyPage>
+        ),
       },
       {
         path: 'prospectos',
-        element: <Prospectos />,
+        element: (
+          <LazyPage>
+            <Prospectos />
+          </LazyPage>
+        ),
       },
       {
         path: 'flujos',
-        element: <Flujos />,
+        element: (
+          <LazyPage>
+            <Flujos />
+          </LazyPage>
+        ),
       },
       {
         path: 'envios',
-        element: <EnviosPage />,
+        element: (
+          <LazyPage>
+            <EnviosPage />
+          </LazyPage>
+        ),
       },
       {
         path: 'plantillas',
-        element: <PlantillasPage />,
+        element: (
+          <LazyPage>
+            <PlantillasPage />
+          </LazyPage>
+        ),
       },
       {
         path: 'ofertas',
-        element: <Ofertas />,
+        element: (
+          <LazyPage>
+            <Ofertas />
+          </LazyPage>
+        ),
       },
       {
         path: 'monitor',
-        element: <Monitor />,
+        element: (
+          <LazyPage>
+            <Monitor />
+          </LazyPage>
+        ),
       },
       {
         path: 'configuracion',
-        element: <Configuracion />,
+        element: (
+          <LazyPage>
+            <Configuracion />
+          </LazyPage>
+        ),
       },
       {
         path: 'costos',
-        element: <Costos />,
+        element: (
+          <LazyPage>
+            <Costos />
+          </LazyPage>
+        ),
       },
       {
         path: 'metricas',
-        element: <MetricasPage />,
+        element: (
+          <LazyPage>
+            <MetricasPage />
+          </LazyPage>
+        ),
       },
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: (
+          <LazyPage>
+            <ProfilePage />
+          </LazyPage>
+        ),
       },
     ],
   },
 ]);
-
-

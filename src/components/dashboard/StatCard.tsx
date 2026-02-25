@@ -3,8 +3,11 @@
  *
  * SRP: Only renders a single stat card with icon, value, and subtitle.
  * OCP: Extensible via props (cardClassName, iconClassName) without modification.
+ * 
+ * PERFORMANCE: Wrapped with React.memo to prevent re-renders when props are the same.
  */
 
+import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -27,7 +30,7 @@ interface StatCardProps {
 // Component
 // =============================================================================
 
-export function StatCard({
+export const StatCard = memo(function StatCard({
   title,
   value,
   subtitle,
@@ -53,4 +56,4 @@ export function StatCard({
       </CardContent>
     </Card>
   );
-}
+});

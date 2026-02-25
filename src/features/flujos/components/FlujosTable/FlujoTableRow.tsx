@@ -2,16 +2,13 @@
  * Fila individual de la tabla de flujos
  * Refactored following SOLID principles, early returns, and clean architecture
  *
- * Key improvements:
- * - Single Responsibility: Each function/component has one clear purpose
- * - Open/Closed: Extensible through composition
- * - Liskov Substitution: Uses interfaces and abstractions
- * - Interface Segregation: Small, focused interfaces
- * - Dependency Inversion: Depends on abstractions (hooks, utils)
- * - Early returns for better readability
- * - Type-safe with strict TypeScript
+ * PERFORMANCE OPTIMIZATIONS:
+ * - React.memo to prevent unnecessary re-renders
+ * - Single useFlujoExecutionState call per row (was 3!)
+ * - Props drilling for execution state to avoid multiple hook calls
  */
 
+import { memo } from 'react'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,7 +21,7 @@ import {
 import { Edit2, Eye, Loader2, MoreHorizontal, Play, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { FlujoNurturing } from '@/types/flujo'
-import { useFlujoExecutionState } from './hooks/useFlujoExecutionState'
+import { useFlujoExecutionState, type FlujoExecutionState } from './hooks/useFlujoExecutionState'
 import { getTipoProspectoName, calculateStagesCount } from './utils/flujoTableHelpers'
 import { ProgressDisplay, NoExecutionDisplay } from './ProgressDisplay'
 import { formatCurrency } from '@/features/costos/hooks'
@@ -104,9 +101,10 @@ function StagesCell({ count }: { count: number }) {
 
 /**
  * Renders the progress cell with execution state
+ * OPTIMIZED: Receives execution state as prop instead of calling hook
  */
-function ProgressCell({ flujoId }: { flujoId: number }) {
-  const { displayExecution, isLoading } = useFlujoExecutionState(flujoId)
+function ProgressCell({ executionState }: { executionState: FlujoExecutionState }) {
+  const { displayExecution, isLoading } = executionState
 
   // Show spinner while loading
   if (isLoading) {
@@ -138,9 +136,10 @@ function ProgressCell({ flujoId }: { flujoId: number }) {
 
 /**
  * Renders the cost cell from latest execution
+ * OPTIMIZED: Receives execution state as prop instead of calling hook
  */
-function CostoCell({ flujoId }: { flujoId: number }) {
-  const { displayExecution, isLoading } = useFlujoExecutionState(flujoId)
+function CostoCell({ executionState }: { executionState: FlujoExecutionState }) {
+  const { displayExecution, isLoading } = executionState
 
   // Show spinner while loading
   if (isLoading) {
@@ -312,23 +311,21 @@ function ActionsCell({
  * Main FlujoTableRow component
  * Renders a complete row in the flujos table
  *
- * Refactored with:
- * - SOLID principles
- * - Early returns
- * - Small, focused functions
- * - Descriptive names
- * - Type safety
- * - Proper separation of concerns
+ * PERFORMANCE OPTIMIZATIONS:
+ * - Wrapped with React.memo to prevent re-renders when props haven't changed
+ * - Single useFlujoExecutionState call (was 3 calls before!)
+ * - Execution state passed as prop to child components
  */
-export function FlujoTableRow({
+export const FlujoTableRow = memo(function FlujoTableRow({
   flujo,
   onViewFlujo,
   onEditFlujo,
   onDeleteFlujo,
   onEjecutarFlujo,
 }: FlujoTableRowProps) {
-  // Get execution state (includes canExecute logic)
-  const { canExecute: canExecuteFromState, displayExecution } = useFlujoExecutionState(flujo.id)
+  // OPTIMIZED: Single hook call per row (was 3 calls before!)
+  const executionState = useFlujoExecutionState(flujo.id)
+  const { canExecute: canExecuteFromState, displayExecution } = executionState
 
   // Calculate stages count
   const etapasCount = calculateStagesCount(flujo)
@@ -349,8 +346,8 @@ export function FlujoTableRow({
       <NombreCell nombre={flujo.nombre} estadoProcesamiento={flujo.estado_procesamiento} />
       <TipoProspectoCell tipoProspecto={flujo.tipo_prospecto} />
       <StagesCell count={etapasCount} />
-      <ProgressCell flujoId={flujo.id} />
-      <CostoCell flujoId={flujo.id} />
+      <ProgressCell executionState={executionState} />
+      <CostoCell executionState={executionState} />
       <StatusCell activo={flujo.activo} />
       <UserCell userName={flujo.user?.name} />
       <CreatedDateCell createdAt={flujo.created_at} />
@@ -366,4 +363,4 @@ export function FlujoTableRow({
       />
     </TableRow>
   )
-}
+})

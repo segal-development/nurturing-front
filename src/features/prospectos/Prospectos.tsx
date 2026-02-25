@@ -8,7 +8,7 @@
  * - Separation of Concerns: Business logic in hooks, UI in components
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { logger } from '@/lib/logger'
 import { Download, Loader2, AlertCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,6 +22,7 @@ import { useProspectosFilters } from './hooks/useProspectosFilters'
 import { useDeleteProspecto } from './hooks/useDeleteProspecto'
 import { useDeleteLote } from './hooks/useDeleteLote'
 import { usePagination } from '@/hooks/usePagination'
+import { useDebounce } from '@/hooks/useDebounce'
 import { searchProspectos } from './utils/searchProspectos'
 import { Button } from '@/components/ui/button'
 import { setOnLoteComplete } from '@/stores/loteStore'
@@ -42,6 +43,9 @@ export function Prospectos() {
   const [searchTerm, setSearchTerm] = useState('')
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  // Debounce del término de búsqueda para evitar re-renders excesivos
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   // ============================================================
   // DEPENDENCIAS EXTERNAS
@@ -89,9 +93,12 @@ export function Prospectos() {
   })
 
   // ============================================================
-  // DATOS DERIVADOS
+  // DATOS DERIVADOS (memoizados para evitar recálculos innecesarios)
   // ============================================================
-  const filteredProspectos = searchProspectos(prospectos, searchTerm)
+  const filteredProspectos = useMemo(
+    () => searchProspectos(prospectos, debouncedSearchTerm),
+    [prospectos, debouncedSearchTerm]
+  )
 
   const totalPages = calculateTotalPages(total, ITEMS_PER_PAGE)
 
@@ -109,8 +116,15 @@ export function Prospectos() {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)
-    resetPage()
+    // No reseteamos la página aquí - lo haremos cuando el debounce se aplique
   }
+
+  // Reset de página cuando cambia el término de búsqueda debounceado
+  useEffect(() => {
+    if (debouncedSearchTerm !== '') {
+      resetPage()
+    }
+  }, [debouncedSearchTerm, resetPage])
 
   const handleExport = () => {
     logger.log('Exportar prospectos filtrados:', filteredProspectos)
@@ -250,9 +264,9 @@ export function Prospectos() {
                 <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, total)}</span> de{' '}
                 <span className="font-semibold text-segal-blue">{total}</span> registros
               </div>
-              {searchTerm && (
+              {debouncedSearchTerm && (
                 <div className="text-sm text-segal-dark/70">
-                  (Búsqueda: <span className="font-semibold">{searchTerm}</span>)
+                  (Búsqueda: <span className="font-semibold">{debouncedSearchTerm}</span>)
                 </div>
               )}
             </div>
@@ -279,18 +293,18 @@ export function Prospectos() {
             />
           )}
 
-          {prospectos.length === 0 && !searchTerm && (
+          {prospectos.length === 0 && !debouncedSearchTerm && (
             <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-8 text-center">
               <AlertCircle className="h-10 w-10 text-segal-blue/50 mx-auto mb-3" />
               <p className="text-segal-dark/60">No hay prospectos en esta importación</p>
             </div>
           )}
 
-          {filteredProspectos.length === 0 && searchTerm && (
+          {filteredProspectos.length === 0 && debouncedSearchTerm && (
             <div className="rounded-lg border border-segal-blue/20 bg-segal-blue/5 p-8 text-center">
               <AlertCircle className="h-10 w-10 text-segal-blue/50 mx-auto mb-3" />
               <p className="text-segal-dark/60">
-                No se encontraron prospectos con el término de búsqueda "<span className="font-semibold">{searchTerm}</span>"
+                No se encontraron prospectos con el término de búsqueda "<span className="font-semibold">{debouncedSearchTerm}</span>"
               </p>
             </div>
           )}
