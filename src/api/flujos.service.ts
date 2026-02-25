@@ -18,6 +18,22 @@ export interface OrigenFlujo {
 }
 
 /**
+ * Estadísticas de envíos por nodo
+ */
+export interface NodeStats {
+  node_id: string
+  tipo_mensaje: 'email' | 'sms' | 'ambos'
+  label: string
+  total_pendiente: number
+  total_enviado: number
+  total_fallido: number
+  /** Solo para email/ambos */
+  total_abierto: number | null
+  /** Solo para email/ambos */
+  total_clickeado: number | null
+}
+
+/**
  * Estructura de opciones para filtrado de flujos
  */
 export interface OpcionesFlujos {
@@ -187,6 +203,25 @@ export const flujosService = {
       flujo
     )
     return data.data
+  },
+
+  /**
+   * Obtener estadísticas de envíos por nodo para un flujo
+   * Suma todas las ejecuciones del flujo
+   * 
+   * @param flujoId ID del flujo
+   * @returns Array de estadísticas por nodo
+   */
+  async getNodeStats(flujoId: number): Promise<NodeStats[]> {
+    try {
+      const { data } = await apiClient.get<{ data: NodeStats[] }>(
+        `/flujos/${flujoId}/estadisticas-nodos`
+      )
+      return data.data
+    } catch (error) {
+      logger.error(`flujosService.getNodeStats(${flujoId}) failed:`, getApiErrorMessage(error))
+      throw error
+    }
   },
 
   /**

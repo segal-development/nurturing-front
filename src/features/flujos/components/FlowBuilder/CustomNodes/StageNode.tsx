@@ -317,10 +317,10 @@ export function StageNode({
                 <div className="text-xs text-segal-green font-medium">📦 {String(localData.oferta.titulo)}</div>
               )}
 
-              {/* Execution Stats */}
+              {/* Execution Stats (active execution) */}
               {data.executionState && data.envios && typeof data.envios === 'object' && (
                 <div className="mt-3 pt-3 border-t border-segal-blue/10 space-y-1">
-                  <p className="text-xs font-semibold text-segal-dark">Estadísticas:</p>
+                  <p className="text-xs font-semibold text-segal-dark">Ejecución actual:</p>
                   <div className="grid grid-cols-2 gap-1 text-xs">
                     {typeof data.envios.enviado === 'number' && data.envios.enviado > 0 && (
                       <div className="flex items-center gap-1">
@@ -344,6 +344,40 @@ export function StageNode({
                       <div className="flex items-center gap-1">
                         <Mail className="h-3 w-3 text-blue-600" />
                         <span className="text-blue-600 font-semibold">{data.envios.abierto} abiertos</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Aggregated Stats (static view - all executions) */}
+              {!data.executionState && data.aggregatedStats && typeof data.aggregatedStats === 'object' && (data.aggregatedStats.enviado > 0 || data.aggregatedStats.fallido > 0) && (
+                <div className="mt-3 pt-3 border-t border-segal-blue/10 space-y-1">
+                  <p className="text-xs font-semibold text-segal-dark">📊 Total histórico:</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    {typeof data.aggregatedStats.enviado === 'number' && data.aggregatedStats.enviado > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Send className="h-3 w-3 text-green-600" />
+                        <span className="text-green-600 font-semibold">{data.aggregatedStats.enviado.toLocaleString()} enviados</span>
+                      </div>
+                    )}
+                    {typeof data.aggregatedStats.fallido === 'number' && data.aggregatedStats.fallido > 0 && (
+                      <div className="flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3 text-red-600" />
+                        <span className="text-red-600 font-semibold">{data.aggregatedStats.fallido.toLocaleString()} fallidos</span>
+                      </div>
+                    )}
+                    {/* Email-specific stats: only show for email/ambos */}
+                    {typeof data.aggregatedStats.abierto === 'number' && data.aggregatedStats.abierto > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-blue-600" />
+                        <span className="text-blue-600 font-semibold">{data.aggregatedStats.abierto.toLocaleString()} abiertos</span>
+                      </div>
+                    )}
+                    {typeof data.aggregatedStats.clickeado === 'number' && data.aggregatedStats.clickeado > 0 && (
+                      <div className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 text-purple-600" />
+                        <span className="text-purple-600 font-semibold">{data.aggregatedStats.clickeado.toLocaleString()} clicks</span>
                       </div>
                     )}
                   </div>

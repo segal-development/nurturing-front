@@ -2,9 +2,11 @@
  * Componente para visualizar un flujo de forma visual usando ReactFlow
  * Modo de SOLO LECTURA - sin capacidad de edición
  * Reconstruye el flujo desde config_visual (nodes y edges)
+ * 
+ * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-
+import { useEffect, useMemo } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -23,10 +25,13 @@ import { InitialNode } from '../FlowBuilder/CustomNodes/InitialNode'
 import { EndNode } from '../FlowBuilder/CustomNodes/EndNode'
 import { ConditionalNode } from '../FlowBuilder/CustomNodes/ConditionalNode'
 import { N8nStyleEdge } from '../FlowBuilder/CustomEdges/N8nStyleEdge'
+import { useNodeStats } from '../../hooks/useNodeStats'
 import type { ConfigVisual } from '@/types/flujo'
 
 interface FlowVisualizationViewerProps {
   configVisual?: ConfigVisual
+  /** Flujo ID for loading node statistics */
+  flujoId?: number
 }
 
 const nodeTypes = {
@@ -76,39 +81,20 @@ const handleStyles = `
 /**
  * Componente interno que usa ReactFlow
  */
-function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps) {
+function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
+  // Fetch node statistics (aggregated across all executions)
+  const { data: nodeStatsMap } = useNodeStats(flujoId)
+
   // Preparar nodes y edges desde config_visual
-  const initialNodes = (() => {
+  const initialNodes = useMemo(() => {
     if (!configVisual?.nodes || !Array.isArray(configVisual.nodes)) {
       return []
     }
-    logger.log('Nodes cargados:', configVisual.nodes)
 
-    // Log detallado de cada nodo
-    configVisual.nodes.forEach((node: any) => {
-      logger.log(`\n=== NODO ${node.id} (tipo: ${node.type}) ===`)
-      logger.log('data completo:', node.data)
-      logger.log('label:', node.data?.label)
-      logger.log('tipo_mensaje:', node.data?.tipo_mensaje)
-      logger.log('dia_envio:', node.data?.dia_envio)
-      logger.log('plantilla_mensaje:', node.data?.plantilla_mensaje)
-      logger.log('condition:', node.data?.condition)
-    })
-
-    // Enriquecer nodos SOLO con valores por defecto si no existen
+    // Enriquecer nodos con valores por defecto y estadísticas
     const enrichedNodes = (configVisual.nodes as Node[]).map((node) => {
       const nodeData = node.data || {}
-
-      logger.log(`[DEBUG] Nodo ${node.id}:`, {
-        type: node.type,
-        originalData: nodeData,
-        hasLabel: 'label' in nodeData,
-        labelValue: nodeData.label,
-        hasTipoMensaje: 'tipo_mensaje' in nodeData,
-        tipoMensajeValue: nodeData.tipo_mensaje,
-        hasCondition: 'condition' in nodeData,
-        conditionValue: nodeData.condition,
-      })
+      const stats = nodeStatsMap?.[node.id]
 
       // Solo agregar valores por defecto si NO EXISTEN
       const enrichedData = {
@@ -122,18 +108,24 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
         condition: nodeData.condition !== undefined ? nodeData.condition : { type: 'email_opened', label: 'Email abierto' },
         yesLabel: nodeData.yesLabel !== undefined ? nodeData.yesLabel : 'Sí',
         noLabel: nodeData.noLabel !== undefined ? nodeData.noLabel : 'No',
+        // Add aggregated stats from all executions
+        aggregatedStats: stats ? {
+          enviado: stats.total_enviado,
+          fallido: stats.total_fallido,
+          abierto: stats.total_abierto,
+          clickeado: stats.total_clickeado,
+          pendiente: stats.total_pendiente,
+        } : undefined,
       }
 
-      logger.log(`[DEBUG] Nodo ${node.id} enriquecido:`, enrichedData)
       return {
         ...node,
         data: enrichedData,
       } as Node
     })
 
-    logger.log('Nodes enriquecidos (completo):', enrichedNodes)
     return enrichedNodes
-  })()
+  }, [configVisual?.nodes, nodeStatsMap])
 
   const initialEdges = (() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
@@ -147,14 +139,17 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
 
+  // Update nodes when stats change
+  useEffect(() => {
+    if (initialNodes.length > 0) {
+      setNodes(initialNodes)
+    }
+  }, [initialNodes, setNodes])
+
   // Manejar cambios de nodos (permite arrastrar/mover)
   const handleNodesChange = (changes: NodeChange[]) => {
     setNodes((nds) => applyNodeChanges(changes, nds))
   }
-
-  // Log para debugging
-  logger.log('FlowVisualizationContent - nodes:', nodes)
-  logger.log('FlowVisualizationContent - edges:', edges)
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (
@@ -188,11 +183,11 @@ function FlowVisualizationContent({ configVisual }: FlowVisualizationViewerProps
 /**
  * Componente wrapper con ReactFlowProvider
  */
-export function FlowVisualizationViewer({ configVisual }: FlowVisualizationViewerProps) {
+export function FlowVisualizationViewer({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   return (
     <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 border border-segal-blue/10 dark:border-segal-blue/30 rounded-xl overflow-hidden">
       <ReactFlowProvider>
-        <FlowVisualizationContent configVisual={configVisual} />
+        <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} />
       </ReactFlowProvider>
     </div>
   )

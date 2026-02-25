@@ -144,8 +144,8 @@ export function FlowStructurePanel({
                 configVisual={config_visual}
               />
             ) : (
-              // Sin ejecución activa: mostrar visualización estática (incluso si hay ejecuciones pasadas)
-              <FlowVisualizationViewer configVisual={config_visual} />
+              // Sin ejecución activa: mostrar visualización estática con estadísticas agregadas
+              <FlowVisualizationViewer configVisual={config_visual} flujoId={flujoId} />
             )
           ) : (
             <div className="w-full h-[700px] bg-segal-blue/5 border border-dashed border-segal-blue/20 rounded-lg flex flex-col items-center justify-center">
