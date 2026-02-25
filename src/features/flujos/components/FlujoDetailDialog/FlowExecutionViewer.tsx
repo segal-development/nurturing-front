@@ -948,6 +948,18 @@ function FlowExecutionContent({
  * Componente principal con ReactFlowProvider
  */
 export function FlowExecutionViewer({ flujoId, ejecucionId, configVisual }: FlowExecutionViewerProps) {
+  // Guard: Don't render if configVisual is invalid
+  if (!configVisual?.nodes || !Array.isArray(configVisual.nodes) || configVisual.nodes.length === 0) {
+    return (
+      <div className="w-full h-[700px] bg-white border border-segal-blue/10 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-segal-blue mx-auto mb-3" />
+          <p className="text-segal-dark/60">Cargando visualización del flujo...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full h-[700px] bg-white border border-segal-blue/10 rounded-lg overflow-hidden">
       <ReactFlowProvider>
