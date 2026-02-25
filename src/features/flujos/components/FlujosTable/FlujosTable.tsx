@@ -25,7 +25,12 @@ export function FlujosTable({
   const flujoIds = useMemo(() => flujos.map((f) => f.id), [flujos])
 
   // PERFORMANCE: Single batch request for ALL flujos execution state
-  const { data: batchExecutionData, isLoading: isLoadingExecutions } = useBatchExecutionState(flujoIds)
+  // Show loading only on initial fetch, not on polling refetches
+  const { data: batchExecutionData, isLoading, isFetching } = useBatchExecutionState(flujoIds)
+  
+  // Show spinner only when: initial load OR fetching with no real data yet
+  const hasRealData = batchExecutionData && Object.keys(batchExecutionData).length > 0
+  const isLoadingExecutions = isLoading || (isFetching && !hasRealData)
 
   return (
     <div className="border border-segal-blue/10 rounded-lg overflow-hidden">
