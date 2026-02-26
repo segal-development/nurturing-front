@@ -7,13 +7,9 @@
  * 3. Rendimiento por etapa con barras de progreso
  */
 
-/** Threshold above which failure rate triggers a warning alert (percentage) */
-const FAILURE_RATE_WARNING_THRESHOLD = 5
-
 import { 
   BarChart3, 
   TrendingUp, 
-  TrendingDown,
   Mail, 
   MessageSquare, 
   DollarSign,
@@ -26,175 +22,13 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { useFlujoAnalytics } from '../../hooks/useFlujoAnalytics'
+import { MetricCard, FunnelStep, StageRow } from './statistics'
+
+/** Threshold above which failure rate triggers a warning alert (percentage) */
+const FAILURE_RATE_WARNING_THRESHOLD = 5
 
 interface FlujoStatisticsPanelProps {
   flujoId: number | undefined
-}
-
-/**
- * Metric card component for summary stats
- */
-function MetricCard({ 
-  label, 
-  value, 
-  suffix = '',
-  icon: Icon,
-  color = 'blue',
-  subtext,
-}: { 
-  label: string
-  value: string | number
-  suffix?: string
-  icon: React.ElementType
-  color?: 'blue' | 'green' | 'red' | 'purple' | 'amber'
-  subtext?: string
-}) {
-  const colorClasses = {
-    blue: 'from-blue-50 to-blue-100/50 border-blue-200 text-blue-700',
-    green: 'from-emerald-50 to-emerald-100/50 border-emerald-200 text-emerald-700',
-    red: 'from-red-50 to-red-100/50 border-red-200 text-red-700',
-    purple: 'from-purple-50 to-purple-100/50 border-purple-200 text-purple-700',
-    amber: 'from-amber-50 to-amber-100/50 border-amber-200 text-amber-700',
-  }
-
-  const iconColorClasses = {
-    blue: 'text-blue-500',
-    green: 'text-emerald-500',
-    red: 'text-red-500',
-    purple: 'text-purple-500',
-    amber: 'text-amber-500',
-  }
-
-  return (
-    <div className={`bg-gradient-to-br ${colorClasses[color]} rounded-xl p-4 border`}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`h-4 w-4 ${iconColorClasses[color]}`} />
-        <p className="text-xs font-semibold opacity-80">{label}</p>
-      </div>
-      <p className="text-2xl font-bold">
-        {value}{suffix}
-      </p>
-      {subtext && (
-        <p className="text-xs opacity-60 mt-1">{subtext}</p>
-      )}
-    </div>
-  )
-}
-
-/**
- * Funnel step component
- */
-function FunnelStep({
-  label,
-  value,
-  rate,
-  isLast = false,
-  color,
-}: {
-  label: string
-  value: number
-  rate?: number
-  isLast?: boolean
-  color: string
-}) {
-  return (
-    <div className="flex items-center">
-      <div className="flex flex-col items-center">
-        <div className={`w-24 h-16 ${color} rounded-lg flex flex-col items-center justify-center text-white shadow-md`}>
-          <span className="text-lg font-bold">{value.toLocaleString()}</span>
-          <span className="text-xs opacity-90">{label}</span>
-        </div>
-        {rate !== undefined && (
-          <span className="text-xs text-segal-dark/60 mt-1 font-medium">{rate}%</span>
-        )}
-      </div>
-      {!isLast && (
-        <div className="flex items-center mx-2">
-          <div className="w-8 h-0.5 bg-segal-blue/30" />
-          <TrendingDown className="h-4 w-4 text-segal-blue/40 -ml-1" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-/**
- * Stage performance row with progress bar
- */
-function StageRow({
-  label,
-  enviados,
-  abiertos,
-  clickeados,
-  tasaApertura,
-  tasaClick,
-  tipoMensaje,
-  maxEnviados,
-}: {
-  label: string
-  enviados: number
-  abiertos: number | null
-  clickeados: number | null
-  tasaApertura: number | null
-  tasaClick: number | null
-  tipoMensaje: 'email' | 'sms' | 'ambos'
-  maxEnviados: number
-}) {
-  const barWidth = maxEnviados > 0 ? (enviados / maxEnviados) * 100 : 0
-  const isEmail = tipoMensaje === 'email' || tipoMensaje === 'ambos'
-
-  return (
-    <div className="bg-white rounded-lg border border-segal-blue/10 p-4 hover:border-segal-blue/30 transition-colors">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {tipoMensaje === 'sms' ? (
-            <MessageSquare className="h-4 w-4 text-green-500" />
-          ) : tipoMensaje === 'ambos' ? (
-            <div className="flex gap-0.5">
-              <Mail className="h-3 w-3 text-blue-500" />
-              <MessageSquare className="h-3 w-3 text-green-500" />
-            </div>
-          ) : (
-            <Mail className="h-4 w-4 text-blue-500" />
-          )}
-          <span className="font-medium text-segal-dark">{label}</span>
-        </div>
-        <span className="text-sm font-semibold text-segal-blue">{enviados.toLocaleString()} enviados</span>
-      </div>
-      
-      {/* Progress bar */}
-      <div className="w-full bg-segal-blue/10 rounded-full h-2 mb-3">
-        <div 
-          className="bg-gradient-to-r from-segal-blue to-segal-blue/70 h-2 rounded-full transition-all duration-500"
-          style={{ width: `${barWidth}%` }}
-        />
-      </div>
-
-      {/* Stats row */}
-      {isEmail && (
-        <div className="flex gap-4 text-xs">
-          <div className="flex items-center gap-1">
-            <Eye className="h-3 w-3 text-blue-500" />
-            <span className="text-segal-dark/70">
-              {abiertos?.toLocaleString() ?? 0} abiertos
-              {tasaApertura !== null && (
-                <span className="text-blue-600 font-semibold ml-1">({tasaApertura}%)</span>
-              )}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <MousePointerClick className="h-3 w-3 text-purple-500" />
-            <span className="text-segal-dark/70">
-              {clickeados?.toLocaleString() ?? 0} clicks
-              {tasaClick !== null && (
-                <span className="text-purple-600 font-semibold ml-1">({tasaClick}%)</span>
-              )}
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
