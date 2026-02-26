@@ -1,6 +1,13 @@
 /**
  * Metric card component for displaying summary statistics
  * Used in the statistics panel to show key performance indicators
+ * 
+ * Colors follow Segal design system where possible:
+ * - blue: segal-blue (primary brand color)
+ * - green: segal-green (success/conversion)
+ * - red: segal-red (error/failure)
+ * - purple: segal-turquoise (clicks/engagement - closest Segal alternative)
+ * - amber: segal-orange (warning/attention)
  */
 
 export type MetricCardColor = 'blue' | 'green' | 'red' | 'purple' | 'amber'
@@ -15,19 +22,19 @@ export interface MetricCardProps {
 }
 
 const colorClasses: Record<MetricCardColor, string> = {
-  blue: 'from-blue-50 to-blue-100/50 border-blue-200 text-blue-700',
-  green: 'from-emerald-50 to-emerald-100/50 border-emerald-200 text-emerald-700',
-  red: 'from-red-50 to-red-100/50 border-red-200 text-red-700',
-  purple: 'from-purple-50 to-purple-100/50 border-purple-200 text-purple-700',
-  amber: 'from-amber-50 to-amber-100/50 border-amber-200 text-amber-700',
+  blue: 'from-segal-blue/10 to-segal-blue/5 border-segal-blue/30 text-segal-blue',
+  green: 'from-segal-green/10 to-segal-green/5 border-segal-green/30 text-segal-green',
+  red: 'from-segal-red/10 to-segal-red/5 border-segal-red/30 text-segal-red',
+  purple: 'from-segal-turquoise/10 to-segal-turquoise/5 border-segal-turquoise/30 text-segal-turquoise',
+  amber: 'from-segal-orange/10 to-segal-orange/5 border-segal-orange/30 text-segal-orange',
 }
 
 const iconColorClasses: Record<MetricCardColor, string> = {
-  blue: 'text-blue-500',
-  green: 'text-emerald-500',
-  red: 'text-red-500',
-  purple: 'text-purple-500',
-  amber: 'text-amber-500',
+  blue: 'text-segal-blue',
+  green: 'text-segal-green',
+  red: 'text-segal-red',
+  purple: 'text-segal-turquoise',
+  amber: 'text-segal-orange',
 }
 
 export function MetricCard({ 

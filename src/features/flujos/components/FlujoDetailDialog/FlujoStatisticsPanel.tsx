@@ -118,18 +118,18 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
 
         {/* Additional summary row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100 flex items-center gap-3">
-            <Mail className="h-8 w-8 text-blue-500" />
+          <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/20 flex items-center gap-3">
+            <Mail className="h-8 w-8 text-segal-blue" />
             <div>
-              <p className="text-xl font-bold text-blue-700">{resumen.emails_enviados.toLocaleString()}</p>
-              <p className="text-xs text-blue-600/70">Emails enviados</p>
+              <p className="text-xl font-bold text-segal-blue">{resumen.emails_enviados.toLocaleString()}</p>
+              <p className="text-xs text-segal-blue/70">Emails enviados</p>
             </div>
           </div>
-          <div className="bg-green-50/50 rounded-lg p-3 border border-green-100 flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-green-500" />
+          <div className="bg-segal-green/5 rounded-lg p-3 border border-segal-green/20 flex items-center gap-3">
+            <MessageSquare className="h-8 w-8 text-segal-green" />
             <div>
-              <p className="text-xl font-bold text-green-700">{resumen.sms_enviados.toLocaleString()}</p>
-              <p className="text-xs text-green-600/70">SMS enviados</p>
+              <p className="text-xl font-bold text-segal-green">{resumen.sms_enviados.toLocaleString()}</p>
+              <p className="text-xs text-segal-green/70">SMS enviados</p>
             </div>
           </div>
           <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10 flex items-center gap-3">
@@ -139,11 +139,11 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
               <p className="text-xs text-segal-dark/60">Prospectos en flujo</p>
             </div>
           </div>
-          <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+          <div className="bg-segal-green/5 rounded-lg p-3 border border-segal-green/20 flex items-center gap-3">
+            <CheckCircle2 className="h-8 w-8 text-segal-green" />
             <div>
-              <p className="text-xl font-bold text-emerald-700">{totales.prospectos.completados.toLocaleString()}</p>
-              <p className="text-xs text-emerald-600/70">Completados ({funnel.tasa_conversion}%)</p>
+              <p className="text-xl font-bold text-segal-green">{totales.prospectos.completados.toLocaleString()}</p>
+              <p className="text-xs text-segal-green/70">Completados ({funnel.tasa_conversion}%)</p>
             </div>
           </div>
         </div>
@@ -172,19 +172,19 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
               label="Abiertos" 
               value={funnel.abiertos} 
               rate={funnel.tasa_apertura}
-              color="bg-blue-500"
+              color="bg-segal-blue/80"
             />
             <FunnelStep 
               label="Clicks" 
               value={funnel.clickeados} 
               rate={funnel.tasa_click_sobre_abiertos}
-              color="bg-purple-500"
+              color="bg-segal-turquoise"
             />
             <FunnelStep 
               label="Conversión" 
               value={funnel.conversiones} 
               rate={funnel.tasa_conversion}
-              color="bg-emerald-500"
+              color="bg-segal-green"
               isLast
             />
           </div>
@@ -193,19 +193,19 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
           <div className="mt-6 pt-4 border-t border-segal-blue/10">
             <div className="flex flex-wrap justify-center gap-6 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <div className="w-3 h-3 rounded-full bg-segal-blue/80" />
                 <span className="text-segal-dark/70">
                   <span className="font-semibold">{funnel.tasa_apertura}%</span> abrieron
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500" />
+                <div className="w-3 h-3 rounded-full bg-segal-turquoise" />
                 <span className="text-segal-dark/70">
                   <span className="font-semibold">{funnel.tasa_click_sobre_abiertos}%</span> clickearon
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <div className="w-3 h-3 rounded-full bg-segal-green" />
                 <span className="text-segal-dark/70">
                   <span className="font-semibold">{funnel.tasa_conversion}%</span> convirtieron
                 </span>

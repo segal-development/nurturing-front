@@ -54,20 +54,20 @@ export function StageRow({
       {isEmail && (
         <div className="flex gap-4 text-xs">
           <div className="flex items-center gap-1">
-            <Eye className="h-3 w-3 text-blue-500" />
+            <Eye className="h-3 w-3 text-segal-blue" />
             <span className="text-segal-dark/70">
               {abiertos?.toLocaleString() ?? 0} abiertos
               {tasaApertura !== null && (
-                <span className="text-blue-600 font-semibold ml-1">({tasaApertura}%)</span>
+                <span className="text-segal-blue font-semibold ml-1">({tasaApertura}%)</span>
               )}
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <MousePointerClick className="h-3 w-3 text-purple-500" />
+            <MousePointerClick className="h-3 w-3 text-segal-turquoise" />
             <span className="text-segal-dark/70">
               {clickeados?.toLocaleString() ?? 0} clicks
               {tasaClick !== null && (
-                <span className="text-purple-600 font-semibold ml-1">({tasaClick}%)</span>
+                <span className="text-segal-turquoise font-semibold ml-1">({tasaClick}%)</span>
               )}
             </span>
           </div>
@@ -80,17 +80,17 @@ export function StageRow({
 /** Helper component for message type icon */
 function MessageTypeIcon({ tipoMensaje }: { tipoMensaje: MessageType }) {
   if (tipoMensaje === 'sms') {
-    return <MessageSquare className="h-4 w-4 text-green-500" />
+    return <MessageSquare className="h-4 w-4 text-segal-green" />
   }
   
   if (tipoMensaje === 'ambos') {
     return (
       <div className="flex gap-0.5">
-        <Mail className="h-3 w-3 text-blue-500" />
-        <MessageSquare className="h-3 w-3 text-green-500" />
+        <Mail className="h-3 w-3 text-segal-blue" />
+        <MessageSquare className="h-3 w-3 text-segal-green" />
       </div>
     )
   }
   
-  return <Mail className="h-4 w-4 text-blue-500" />
+  return <Mail className="h-4 w-4 text-segal-blue" />
 }
