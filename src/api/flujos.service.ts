@@ -52,7 +52,7 @@ export interface FlujoAnalytics {
     abiertos: number
     clickeados: number
     conversiones: number
-    tasa_envio: number
+    // tasa_envio removed: can exceed 100% since 1 prospect receives N messages (1 per stage)
     tasa_apertura: number
     tasa_click_sobre_abiertos: number
     tasa_conversion: number

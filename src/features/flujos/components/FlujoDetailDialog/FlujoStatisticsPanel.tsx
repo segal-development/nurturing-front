@@ -7,6 +7,9 @@
  * 3. Rendimiento por etapa con barras de progreso
  */
 
+/** Threshold above which failure rate triggers a warning alert (percentage) */
+const FAILURE_RATE_WARNING_THRESHOLD = 5
+
 import { 
   BarChart3, 
   TrendingUp, 
@@ -267,7 +270,7 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
             value={resumen.tasa_fallo}
             suffix="%"
             icon={AlertCircle}
-            color={resumen.tasa_fallo > 5 ? 'red' : 'amber'}
+            color={resumen.tasa_fallo > FAILURE_RATE_WARNING_THRESHOLD ? 'red' : 'amber'}
             subtext={`${totales.envios.fallidos.toLocaleString()} fallidos`}
           />
           <MetricCard
@@ -419,7 +422,7 @@ export function FlujoStatisticsPanel({ flujoId }: FlujoStatisticsPanelProps) {
         </div>
       )}
 
-      {totales.envios.fallidos > 0 && resumen.tasa_fallo > 5 && (
+      {totales.envios.fallidos > 0 && resumen.tasa_fallo > FAILURE_RATE_WARNING_THRESHOLD && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
