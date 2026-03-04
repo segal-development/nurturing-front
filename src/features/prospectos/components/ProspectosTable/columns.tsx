@@ -33,12 +33,9 @@ import {
 import {
   ESTADO_PROSPECTO_OPTIONS,
   ESTADO_PROSPECTO_COLORS,
-  TIPO_DEUDA_OPTIONS,
-  TIPO_DEUDA_COLORS,
 } from '@/lib/constants'
-import { getMontoCategoryKey } from '../../utils/getMontoCategoryKey'
 import type { Prospecto } from '../../types/prospectos'
-import { MoreHorizontal, ArrowUpDown, FileText, Trash2, Eye, Loader2 } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, Trash2, Eye, Loader2 } from 'lucide-react'
 
 /**
  * Componente reutilizable para headers de columnas sortables
@@ -62,13 +59,6 @@ const formatPhoneNumber = (phone: string | undefined): string => {
 }
 
 /**
- * Formatea un monto en moneda chilena
- */
-const formatCurrencyAmount = (amount: number): string => {
-  return `$${amount.toLocaleString('es-CL')}`
-}
-
-/**
  * Obtiene el label de estado con su correspondiente color
  */
 const getEstadoBadge = (estado: string) => {
@@ -77,20 +67,6 @@ const getEstadoBadge = (estado: string) => {
 
   return {
     label: estadoOption?.label || estado,
-    colorClass: colorClass || '',
-  }
-}
-
-/**
- * Obtiene el label de tipo de deuda con su correspondiente color basado en monto
- */
-const getTipoDeudaBadge = (monto: number) => {
-  const montoCategory = getMontoCategoryKey(monto)
-  const tipoOption = TIPO_DEUDA_OPTIONS.find((o) => o.value === montoCategory)
-  const colorClass = TIPO_DEUDA_COLORS[montoCategory as keyof typeof TIPO_DEUDA_COLORS]
-
-  return {
-    label: tipoOption?.label || montoCategory,
     colorClass: colorClass || '',
   }
 }
@@ -128,14 +104,6 @@ const getDeletingId = (table: Table<Prospecto>): number | null => {
  */
 const formatRut = (rut: string | undefined): string => {
   return rut?.trim() ? rut : '-'
-}
-
-/**
- * Abre una URL en una nueva pestaña de forma segura
- */
-const openUrlInNewTab = (url: string | undefined): void => {
-  if (!url?.trim()) return
-  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 export const columns: ColumnDef<Prospecto>[] = [
@@ -222,63 +190,6 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: INFORME
-  // ============================================================
-  {
-    id: 'informe',
-    header: () => (
-      <div className="text-segal-dark dark:text-white font-semibold">
-        Informe
-      </div>
-    ),
-    cell: ({ row }) => {
-      const prospecto = row.original
-      const urlInforme = prospecto.url_informe as string | null | undefined
-      const hasUrl = urlInforme && typeof urlInforme === 'string' && urlInforme.trim().length > 0
-
-      return (
-        <div className="flex items-center justify-center">
-          {hasUrl ? (
-            <button
-              onClick={() => openUrlInNewTab(urlInforme)}
-              className="p-2 rounded-lg hover:bg-segal-blue/10 transition-colors text-segal-blue dark:hover:bg-slate-800 dark:text-segal-turquoise dark:hover:text-white"
-              aria-label="Ver informe"
-              title="Descargar informe"
-            >
-              <FileText className="h-5 w-5" />
-            </button>
-          ) : (
-            <span className="text-segal-dark/30 dark:text-white/30 text-sm">-</span>
-          )}
-        </div>
-      )
-    },
-    enableSorting: false,
-  },
-
-  // ============================================================
-  // COLUMNA: MONTO DEUDA
-  // ============================================================
-  {
-    accessorKey: 'monto_deuda',
-    header: ({ column }) => (
-      <SortableColumnHeader
-        label="Monto Deuda"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      />
-    ),
-    cell: ({ row }) => {
-      const monto = row.getValue('monto_deuda') as number
-      return (
-        <div className="font-medium text-segal-dark dark:text-white">
-          {formatCurrencyAmount(monto)}
-        </div>
-      )
-    },
-    sortingFn: 'basic',
-  },
-
-  // ============================================================
   // COLUMNA: ESTADO
   // ============================================================
   {
@@ -295,30 +206,6 @@ export const columns: ColumnDef<Prospecto>[] = [
 
       return (
         <Badge variant="outline" className={colorClass}>
-          {label}
-        </Badge>
-      )
-    },
-    sortingFn: 'alphanumeric',
-  },
-
-  // ============================================================
-  // COLUMNA: TIPO DE DEUDA
-  // ============================================================
-  {
-    accessorKey: 'tipo_prospecto_id',
-    id: 'tipo',
-    header: ({ column }) => (
-      <SortableColumnHeader
-        label="Tipo"
-        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-      />
-    ),
-    cell: ({ row }) => {
-      const { label, colorClass } = getTipoDeudaBadge(row.original.monto_deuda)
-
-      return (
-        <Badge variant="secondary" className={colorClass}>
           {label}
         </Badge>
       )
