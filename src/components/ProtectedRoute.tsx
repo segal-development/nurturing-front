@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { Loader2 } from 'lucide-react'
 
@@ -8,11 +8,12 @@ interface ProtectedRouteProps {
 
 /**
  * ProtectedRoute component that ensures user is authenticated before accessing routes
- * Redirects to login if not authenticated
+ * Redirects to login if not authenticated, preserving the intended destination
  * Shows loading state while checking authentication
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isInitializing } = useAuth()
+  const location = useLocation()
 
   // Show loading screen while initializing auth from localStorage
   if (isInitializing) {
@@ -26,9 +27,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, preserving the intended URL
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    // Build the return URL from current location (path + search + hash)
+    const returnUrl = location.pathname + location.search + location.hash
+    
+    // Only add returnUrl if it's not the root or dashboard (default destination)
+    const loginPath = returnUrl && returnUrl !== '/' && returnUrl !== '/dashboard'
+      ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+      : '/login'
+    
+    return <Navigate to={loginPath} replace />
   }
 
   // User is authenticated, render the protected component

@@ -1,26 +1,44 @@
-import { useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useLogin } from './hooks/useLogin'
 import { LoginForm } from './components/LoginForm'
 import type { LoginFormData } from './utils/validation'
 
+/**
+ * Validates that a return URL is safe (internal path only)
+ * Prevents open redirect vulnerabilities
+ */
+function isValidReturnUrl(url: string | null): url is string {
+  if (!url) return false
+  // Must start with / and not be // (protocol-relative URL)
+  // Must not contain protocol indicators
+  return url.startsWith('/') && !url.startsWith('//') && !url.includes(':')
+}
+
 export const Login = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { isAuthenticated } = useAuth()
   const { login, isLoading, error } = useLogin()
+
+  // Get and validate the return URL from query params
+  const returnUrl = useMemo(() => {
+    const param = searchParams.get('returnUrl')
+    return isValidReturnUrl(param) ? param : '/dashboard'
+  }, [searchParams])
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate(returnUrl, { replace: true })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, returnUrl])
 
   const handleSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password)
-      navigate('/dashboard')
+      navigate(returnUrl, { replace: true })
     } catch (err) {
       // Error is handled by useLogin hook
     }
