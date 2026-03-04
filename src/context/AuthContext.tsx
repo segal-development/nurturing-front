@@ -167,6 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     dispatch({ type: 'SET_LOADING', payload: true })
 
+    // Clear session flag BEFORE logout to prevent "session expired" message
+    // This distinguishes manual logout from session expiration
+    sessionStorage.removeItem('nurturing_session_active')
+
     try {
       await authService.logout()
       dispatch({ type: 'LOGOUT' })
