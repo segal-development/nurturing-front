@@ -1,6 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { Loader2 } from 'lucide-react'
+
+/** Key used to track if user had an active session */
+const SESSION_ACTIVE_KEY = 'nurturing_session_active'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -14,6 +18,13 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isInitializing } = useAuth()
   const location = useLocation()
+
+  // Track when user has an active session
+  useEffect(() => {
+    if (isAuthenticated) {
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true')
+    }
+  }, [isAuthenticated])
 
   // Show loading screen while initializing auth from localStorage
   if (isInitializing) {
@@ -32,10 +43,27 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Build the return URL from current location (path + search + hash)
     const returnUrl = location.pathname + location.search + location.hash
     
-    // Only add returnUrl if it's not the root or dashboard (default destination)
-    const loginPath = returnUrl && returnUrl !== '/' && returnUrl !== '/dashboard'
-      ? `/login?returnUrl=${encodeURIComponent(returnUrl)}`
-      : '/login'
+    // Check if user had an active session (means it expired)
+    const hadActiveSession = sessionStorage.getItem(SESSION_ACTIVE_KEY) === 'true'
+    
+    // Clear the session flag so we don't show expired message on next direct access
+    sessionStorage.removeItem(SESSION_ACTIVE_KEY)
+    
+    // Build login path with query params
+    const params = new URLSearchParams()
+    
+    // Add returnUrl if it's not the root or dashboard (default destination)
+    if (returnUrl && returnUrl !== '/' && returnUrl !== '/dashboard') {
+      params.set('returnUrl', returnUrl)
+    }
+    
+    // Only mark as session expired if user previously had an active session
+    if (hadActiveSession) {
+      params.set('sessionExpired', 'true')
+    }
+    
+    const queryString = params.toString()
+    const loginPath = queryString ? `/login?${queryString}` : '/login'
     
     return <Navigate to={loginPath} replace />
   }

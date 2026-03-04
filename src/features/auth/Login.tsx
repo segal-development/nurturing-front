@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLogin } from './hooks/useLogin'
 import { LoginForm } from './components/LoginForm'
 import type { LoginFormData } from './utils/validation'
+import { Clock, Info } from 'lucide-react'
 
 /**
  * Validates that a return URL is safe (internal path only)
@@ -21,6 +22,9 @@ export const Login = () => {
   const [searchParams] = useSearchParams()
   const { isAuthenticated } = useAuth()
   const { login, isLoading, error } = useLogin()
+
+  // Check if session expired
+  const sessionExpired = searchParams.get('sessionExpired') === 'true'
 
   // Get and validate the return URL from query params
   const returnUrl = useMemo(() => {
@@ -47,6 +51,23 @@ export const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <main className="w-full max-w-md">
+        {/* Session Expired Banner */}
+        {sessionExpired && (
+          <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+            <div className="flex-shrink-0 mt-0.5">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Tu sesión ha expirado
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                Por seguridad, inicia sesión nuevamente para continuar donde estabas.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 space-y-8 border border-slate-200 dark:border-slate-700">
           {/* Header with Logo */}
           <div className="space-y-6 text-center">
