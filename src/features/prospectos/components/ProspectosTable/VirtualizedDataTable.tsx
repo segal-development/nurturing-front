@@ -182,12 +182,16 @@ export function VirtualizedDataTable<TData extends Prospecto, TValue>({
 
       {/* Tabla virtualizada */}
       <div className="border border-segal-blue/10 rounded-lg overflow-hidden dark:border-slate-700 dark:bg-slate-900">
-        <Table>
+        <Table className="table-fixed w-full">
           <TableHeader className="bg-segal-blue/5 border-b border-segal-blue/10 dark:bg-slate-800 dark:border-slate-700">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-segal-dark font-semibold dark:text-white">
+                  <TableHead 
+                    key={header.id} 
+                    className="text-segal-dark font-semibold dark:text-white"
+                    style={{ width: header.getSize() }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -204,7 +208,7 @@ export function VirtualizedDataTable<TData extends Prospecto, TValue>({
           className="overflow-auto"
           style={{ height: TABLE_HEIGHT, maxHeight: TABLE_HEIGHT }}
         >
-          <Table>
+          <Table className="table-fixed w-full">
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
@@ -236,7 +240,10 @@ export function VirtualizedDataTable<TData extends Prospecto, TValue>({
                         style={{ height: ROW_HEIGHT }}
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
+                          <TableCell 
+                            key={cell.id}
+                            style={{ width: cell.column.getSize() }}
+                          >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         ))}

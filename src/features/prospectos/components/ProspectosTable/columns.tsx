@@ -108,10 +108,11 @@ const formatRut = (rut: string | undefined): string => {
 
 export const columns: ColumnDef<Prospecto>[] = [
   // ============================================================
-  // COLUMNA: NOMBRE
+  // COLUMNA: NOMBRE (25% del ancho)
   // ============================================================
   {
     accessorKey: 'nombre',
+    size: 250,
     header: ({ column }) => (
       <SortableColumnHeader
         label="Nombre"
@@ -119,7 +120,7 @@ export const columns: ColumnDef<Prospecto>[] = [
       />
     ),
     cell: ({ row }) => (
-      <div className="font-medium text-segal-dark dark:text-white">
+      <div className="font-medium text-segal-dark dark:text-white truncate">
         {row.getValue('nombre')}
       </div>
     ),
@@ -127,10 +128,11 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: EMAIL
+  // COLUMNA: EMAIL (25% del ancho)
   // ============================================================
   {
     accessorKey: 'email',
+    size: 250,
     header: ({ column }) => (
       <SortableColumnHeader
         label="Email"
@@ -138,7 +140,7 @@ export const columns: ColumnDef<Prospecto>[] = [
       />
     ),
     cell: ({ row }) => (
-      <div className="text-segal-dark/70 text-sm dark:text-white/70">
+      <div className="text-segal-dark/70 text-sm dark:text-white/70 truncate">
         {row.getValue('email')}
       </div>
     ),
@@ -146,10 +148,11 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: TELÉFONO
+  // COLUMNA: TELÉFONO (15% del ancho)
   // ============================================================
   {
     accessorKey: 'telefono',
+    size: 150,
     header: ({ column }) => (
       <SortableColumnHeader
         label="Teléfono"
@@ -168,10 +171,11 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: RUT
+  // COLUMNA: RUT (15% del ancho)
   // ============================================================
   {
     accessorKey: 'rut',
+    size: 130,
     header: ({ column }) => (
       <SortableColumnHeader
         label="RUT"
@@ -190,10 +194,11 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: ESTADO
+  // COLUMNA: ESTADO (10% del ancho)
   // ============================================================
   {
     accessorKey: 'estado',
+    size: 100,
     header: ({ column }) => (
       <SortableColumnHeader
         label="Estado"
@@ -214,12 +219,13 @@ export const columns: ColumnDef<Prospecto>[] = [
   },
 
   // ============================================================
-  // COLUMNA: ACCIONES
+  // COLUMNA: ACCIONES (ancho fijo)
   // ============================================================
   {
     id: 'acciones',
+    size: 80,
     header: () => (
-      <div className="text-right text-segal-dark dark:text-white font-semibold">
+      <div className="text-center text-segal-dark dark:text-white font-semibold">
         Acciones
       </div>
     ),
@@ -243,7 +249,7 @@ export const columns: ColumnDef<Prospecto>[] = [
       }
 
       return (
-        <div className="text-right">
+        <div className="flex justify-center">
           <AlertDialog>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
