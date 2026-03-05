@@ -73,6 +73,7 @@ export const prospectosService = {
    */
   async getAll(params?: {
     lote_id?: number
+    lote_ids?: number[] // Multiple lote filtering
     importacion_id?: number
     estado?: string
     tipo_prospecto_id?: number
@@ -84,8 +85,14 @@ export const prospectosService = {
     per_page?: number
   }): Promise<PaginatedResponse<Prospecto>> {
     try {
+      // Transform lote_ids array to the format Laravel expects: lote_ids[]=1&lote_ids[]=2
+      const queryParams = { ...params }
+      if (params?.lote_ids && params.lote_ids.length > 0) {
+        // Axios handles array params with brackets automatically
+        // We keep it as-is and it will serialize correctly
+      }
       const response = await apiClient.get<PaginatedResponse<Prospecto>>('/prospectos', {
-        params,
+        params: queryParams,
       })
       return response.data
     } catch (error) {
@@ -146,6 +153,7 @@ export const prospectosService = {
    */
   async getCount(params?: {
     lote_id?: number
+    lote_ids?: number[] // Multiple lote filtering
     importacion_id?: number
     estado?: string
     tipo_prospecto_id?: number
@@ -164,6 +172,7 @@ export const prospectosService = {
    */
   async getConteoPorTipo(params?: {
     lote_id?: number
+    lote_ids?: number[] // Multiple lote filtering
     importacion_id?: number
     estado?: string
     origen?: string

@@ -1,0 +1,313 @@
+/**
+ * Step 1.5: Lote (Batch) Selection
+ * Allows user to select specific lotes from the chosen origin
+ * This is an optional step - user can skip to select all lotes
+ */
+
+import { useState } from 'react'
+import { Loader2, Package, CheckCircle2, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useLotesPorOrigen } from '@/hooks/useLotesPorOrigen'
+import type { LoteFlujo } from '@/api/flujos.service'
+
+interface LoteSelectorProps {
+  originId: string
+  originName: string
+  selectedLoteIds: Set<number>
+  onSelectionChange: (ids: Set<number>) => void
+  onContinue: () => void
+  onSkip: () => void // Skip lote selection, use all lotes
+  onBack: () => void
+  onClose: () => void
+}
+
+export function LoteSelector({
+  originId,
+  originName,
+  selectedLoteIds,
+  onSelectionChange,
+  onContinue,
+  onSkip,
+  onBack,
+  onClose,
+}: LoteSelectorProps) {
+  const { data, isLoading, error } = useLotesPorOrigen({ origen: originId })
+  const [selectAll, setSelectAll] = useState(false)
+
+  const lotes = data?.lotes ?? []
+  const totalProspectos = data?.total_prospectos ?? 0
+
+  /**
+   * Toggle selection of a single lote
+   */
+  const handleToggleLote = (loteId: number) => {
+    const newSelection = new Set(selectedLoteIds)
+    if (newSelection.has(loteId)) {
+      newSelection.delete(loteId)
+    } else {
+      newSelection.add(loteId)
+    }
+    onSelectionChange(newSelection)
+    setSelectAll(newSelection.size === lotes.length)
+  }
+
+  /**
+   * Toggle select all lotes
+   */
+  const handleToggleSelectAll = () => {
+    if (selectAll) {
+      // Deselect all
+      onSelectionChange(new Set())
+      setSelectAll(false)
+    } else {
+      // Select all
+      const allIds = new Set(lotes.map((l) => l.id))
+      onSelectionChange(allIds)
+      setSelectAll(true)
+    }
+  }
+
+  /**
+   * Calculate total prospects from selected lotes
+   */
+  const selectedProspectosCount = lotes
+    .filter((l) => selectedLoteIds.has(l.id))
+    .reduce((acc, l) => acc + l.total_prospectos, 0)
+
+  /**
+   * Format date for display
+   */
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('es-CL', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 p-8">
+            <div className="h-16 w-16 rounded-full bg-segal-blue/10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-segal-blue animate-spin" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-segal-dark">Cargando Lotes</h3>
+              <p className="text-sm text-segal-dark/60">
+                Obteniendo los lotes de {originName}...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col h-full p-6">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-red-600">
+            <p>Error al cargar los lotes</p>
+            <p className="text-sm">{String(error)}</p>
+          </div>
+        </div>
+        <div className="flex justify-between gap-3 pt-6 border-t">
+          <Button variant="outline" onClick={onBack}>
+            Atrás
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // No lotes found
+  if (lotes.length === 0) {
+    return (
+      <div className="flex flex-col h-full p-6">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-segal-dark/60">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No se encontraron lotes para este origen</p>
+          </div>
+        </div>
+        <div className="flex justify-between gap-3 pt-6 border-t">
+          <Button variant="outline" onClick={onBack}>
+            Atrás
+          </Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col p-6 gap-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-segal-dark/60">Origen seleccionado</p>
+            <p className="text-lg font-bold text-segal-dark">{originName}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-segal-dark/60">Total en origen</p>
+            <p className="text-lg font-bold text-segal-blue">
+              {totalProspectos.toLocaleString('es-CL')} prospectos
+            </p>
+          </div>
+        </div>
+
+        {/* Select all / Skip option */}
+        <div className="flex items-center justify-between bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <Checkbox
+              checked={selectAll}
+              onCheckedChange={handleToggleSelectAll}
+              className="border-segal-blue data-[state=checked]:bg-segal-blue"
+            />
+            <span className="text-sm font-medium text-segal-dark">
+              Seleccionar todos los lotes ({lotes.length})
+            </span>
+          </label>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSkip}
+            className="text-segal-blue hover:text-segal-blue/80 hover:bg-segal-blue/10"
+          >
+            Omitir selección
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+
+        {/* Lotes list */}
+        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+          {lotes.map((lote) => (
+            <LoteCard
+              key={lote.id}
+              lote={lote}
+              isSelected={selectedLoteIds.has(lote.id)}
+              onToggle={() => handleToggleLote(lote.id)}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
+
+        {/* Summary */}
+        <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-segal-green" />
+              <span className="font-medium text-segal-dark">
+                {selectedLoteIds.size} lotes seleccionados
+              </span>
+            </div>
+            <span className="text-lg font-bold text-segal-green">
+              {selectedProspectosCount.toLocaleString('es-CL')} prospectos
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-segal-blue/10 bg-white p-6 flex justify-between gap-3">
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+          >
+            Atrás
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+          >
+            Cancelar
+          </Button>
+        </div>
+        <Button
+          onClick={onContinue}
+          disabled={selectedLoteIds.size === 0}
+          className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
+        >
+          Continuar con lotes seleccionados
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Individual lote card component
+ */
+function LoteCard({
+  lote,
+  isSelected,
+  onToggle,
+  formatDate,
+}: {
+  lote: LoteFlujo
+  isSelected: boolean
+  onToggle: () => void
+  formatDate: (date: string) => string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`
+        w-full p-4 rounded-lg border-2 text-left transition-all duration-200
+        ${
+          isSelected
+            ? 'border-segal-blue bg-segal-blue/5 shadow-sm'
+            : 'border-segal-blue/20 bg-white hover:border-segal-blue/40'
+        }
+      `}
+    >
+      <div className="flex items-center gap-4">
+        <Checkbox
+          checked={isSelected}
+          className="border-segal-blue data-[state=checked]:bg-segal-blue pointer-events-none"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-semibold text-segal-dark truncate">{lote.nombre}</h4>
+            <span className="text-lg font-bold text-segal-blue whitespace-nowrap">
+              {lote.total_prospectos.toLocaleString('es-CL')}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-segal-dark/60">
+            {lote.clasificacion_value && (
+              <span className="bg-segal-dark/10 px-2 py-0.5 rounded">
+                {lote.clasificacion_value}
+              </span>
+            )}
+            <span>{formatDate(lote.created_at)}</span>
+            <span
+              className={`px-2 py-0.5 rounded ${
+                lote.estado === 'completado'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {lote.estado}
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+  )
+}

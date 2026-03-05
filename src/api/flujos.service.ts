@@ -97,6 +97,28 @@ export interface OpcionesFlujos {
 }
 
 /**
+ * Estructura de un lote (batch) de prospectos
+ */
+export interface LoteFlujo {
+  id: number
+  nombre: string
+  clasificacion_value: string | null
+  total_prospectos: number
+  estado: string
+  created_at: string
+}
+
+/**
+ * Respuesta del endpoint de lotes por origen
+ */
+export interface LotesPorOrigenResponse {
+  origen: string
+  lotes: LoteFlujo[]
+  total_lotes: number
+  total_prospectos: number
+}
+
+/**
  * Respuesta paginada del backend
  */
 interface FlujoResponse {
@@ -152,6 +174,23 @@ export const flujosService = {
       return { origenes, tipos_deudor }
     } catch (error) {
       logger.error('flujosService.getOpciones() failed:', getApiErrorMessage(error))
+      throw error
+    }
+  },
+
+  /**
+   * Obtener lotes (batches) para un origen específico
+   * Retorna los lotes con conteo de prospectos para selección múltiple
+   */
+  async getLotesPorOrigen(origen: string): Promise<LotesPorOrigenResponse> {
+    try {
+      const response = await apiClient.get<{ data: LotesPorOrigenResponse }>(
+        '/flujos/opciones-lotes',
+        { params: { origen } }
+      )
+      return response.data.data
+    } catch (error) {
+      logger.error('flujosService.getLotesPorOrigen() failed:', getApiErrorMessage(error))
       throw error
     }
   },

@@ -1,7 +1,7 @@
 /**
  * Create Flujo Dialog with Visual FlowBuilder
  * Replaces the old multi-step dialog with an integrated FlowBuilder experience
- * Steps: Origin -> Prospects -> FlowBuilder
+ * Steps: Origin -> Lotes (optional) -> Prospects -> FlowBuilder
  */
 
 import { useState, useEffect } from 'react'
@@ -19,13 +19,14 @@ import type { OpcionesFlujos } from '@/api/flujos.service'
 import type { Prospecto } from '@/types/prospecto'
 import { FlowBuilder } from '../FlowBuilder/FlowBuilder'
 import { OriginSelector } from './steps/OriginSelector'
+import { LoteSelector } from './steps/LoteSelector'
 import { ProspectSelector } from './steps/ProspectSelector'
 import { FlujoProcesamientoIndicator } from '../FlujoProcesamientoIndicator'
 import { useFlujoProcesamiento } from '../../hooks/useFlujoProcesamiento'
 import { prospectosService } from '@/api/prospectos.service'
 import { flujosService } from '@/api/flujos.service'
 
-type Step = 'origin' | 'prospects' | 'builder' | 'processing'
+type Step = 'origin' | 'lotes' | 'prospects' | 'builder' | 'processing'
 
 // =============================================================================
 // SUB-COMPONENTE: ProcessingStep
@@ -126,6 +127,9 @@ export function CreateFlujoWithBuilder({
   const [selectedOriginId, setSelectedOriginId] = useState<string | null>(null)
   const [selectedOriginName, setSelectedOriginName] = useState<string | null>(null)
 
+  // Lotes seleccionados (opcional - si vacío, usa todos los lotes del origen)
+  const [selectedLoteIds, setSelectedLoteIds] = useState<Set<number>>(new Set())
+
   // Prospectos seleccionados
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
@@ -164,6 +168,7 @@ export function CreateFlujoWithBuilder({
       setCurrentStep('origin')
       setSelectedOriginId(null)
       setSelectedOriginName(null)
+      setSelectedLoteIds(new Set())
       setSelectedProspectoIds(new Set())
       setSelectedTipoProspectoId(null)
       setSelectAllFromOrigin(false)
@@ -188,36 +193,58 @@ export function CreateFlujoWithBuilder({
   }
 
   /**
-   * Carga prospectos del origen seleccionado
-   * Early return si hay error de carga
+   * Selecciona un origen y avanza al paso de selección de lotes
    */
-  const handleOriginSelect = async (originId: string) => {
-      setSelectedOriginId(originId)
-      setSelectedOriginName(getOriginNameById(originId))
-      setLoadingProspectos(true)
-      setError(null)
+  const handleOriginSelect = (originId: string) => {
+    setSelectedOriginId(originId)
+    setSelectedOriginName(getOriginNameById(originId))
+    setSelectedLoteIds(new Set()) // Reset lote selection
+    setError(null)
+    setCurrentStep('lotes')
+  }
 
-      try {
-        // Cargar el conteo total primero (sin datos)
-        const totalCount = await prospectosService.getCount({
-          origen: originId,
-        })
-        setTotalProspectosEnBD(totalCount)
+  /**
+   * Continúa desde lotes al paso de prospectos
+   * Carga prospectos filtrados por los lotes seleccionados
+   */
+  const handleLotesContinue = async () => {
+    if (!selectedOriginId) return
 
-        // Cargar solo los primeros 100 para preview
-        const response = await prospectosService.getAll({
-          origen: originId,
-          per_page: 100,
-        })
-        setProspectos(response.data)
-        setCurrentStep('prospects')
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-        setError(`Error al cargar prospectos: ${errorMessage}`)
-        logger.error('Error cargando prospectos:', { originId, error })
-      } finally {
-        setLoadingProspectos(false)
-      }
+    setLoadingProspectos(true)
+    setError(null)
+
+    try {
+      // Get count - if lotes selected, filter by them
+      const loteIdsArray = Array.from(selectedLoteIds)
+      const totalCount = await prospectosService.getCount({
+        origen: selectedOriginId,
+        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
+      })
+      setTotalProspectosEnBD(totalCount)
+
+      // Load preview (first 100)
+      const response = await prospectosService.getAll({
+        origen: selectedOriginId,
+        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
+        per_page: 100,
+      })
+      setProspectos(response.data)
+      setCurrentStep('prospects')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setError(`Error al cargar prospectos: ${errorMessage}`)
+      logger.error('Error cargando prospectos:', { originId: selectedOriginId, error })
+    } finally {
+      setLoadingProspectos(false)
+    }
+  }
+
+  /**
+   * Omite selección de lotes y usa todos los lotes del origen
+   */
+  const handleLotesSkip = async () => {
+    setSelectedLoteIds(new Set()) // Clear any selection = all lotes
+    await handleLotesContinue()
   }
 
   /**
@@ -303,17 +330,24 @@ export function CreateFlujoWithBuilder({
    * Limpia el estado relacionado para permitir re-selección
    */
   const handleBack = () => {
-    if (currentStep === 'prospects') {
-      // Limpiar estado de origen para mostrar el selector
+    if (currentStep === 'lotes') {
+      // Go back to origin selection
       setSelectedOriginId(null)
       setSelectedOriginName(null)
+      setSelectedLoteIds(new Set())
+      setCurrentStep('origin')
+      return
+    }
+
+    if (currentStep === 'prospects') {
+      // Go back to lotes selection (keep origin, clear prospectos)
       setProspectos([])
       setTotalProspectosEnBD(0)
       setSelectedProspectoIds(new Set())
       setSelectedTipoProspectoId(null)
       setSelectAllFromOrigin(false)
       setSelectedCount(0)
-      setCurrentStep('origin')
+      setCurrentStep('lotes')
       return
     }
 
@@ -338,6 +372,8 @@ export function CreateFlujoWithBuilder({
    */
   const buildFlowPayload = (config: any) => {
     const hasProspects = selectedCount > 0 || selectedProspectoIds.size > 0 || selectAllFromOrigin
+    // Convert Set to array for JSON serialization
+    const loteIdsArray = Array.from(selectedLoteIds)
 
     return {
       flujo: {
@@ -349,6 +385,8 @@ export function CreateFlujoWithBuilder({
       },
       origen_id: selectedOriginId,
       origen_nombre: selectedOriginName,
+      // Lote filtering - if empty array, backend uses all lotes from origin
+      lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
       // Only include prospectos if user selected some
       prospectos: hasProspects ? {
         // Use selectedCount which reflects the actual count (all types OR specific tipo)
@@ -357,6 +395,8 @@ export function CreateFlujoWithBuilder({
         total_disponibles: totalProspectosEnBD,
         tipo_prospecto_id: selectedTipoProspectoId,
         select_all_from_origin: selectAllFromOrigin,
+        // Include lote_ids in prospectos for backend filtering
+        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
       } : {
         // Empty flow - no prospects yet
         total_seleccionados: 0,
@@ -372,6 +412,7 @@ export function CreateFlujoWithBuilder({
         fecha_creacion: new Date().toISOString(),
         navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         created_without_prospects: !hasProspects,
+        lotes_seleccionados: loteIdsArray.length > 0 ? loteIdsArray.length : 'todos',
       },
     }
   }
@@ -470,6 +511,7 @@ export function CreateFlujoWithBuilder({
             <div>
               <DialogTitle className="text-2xl font-bold text-segal-dark">
                 {currentStep === 'origin' && 'Crear Nuevo Flujo'}
+                {currentStep === 'lotes' && 'Selecciona Lotes'}
                 {currentStep === 'prospects' && 'Selecciona Prospectos'}
                 {currentStep === 'builder' && 'Constructor de Flujos'}
                 {currentStep === 'processing' && 'Procesando Flujo'}
@@ -477,6 +519,8 @@ export function CreateFlujoWithBuilder({
               <DialogDescription className="text-segal-dark/70 mt-1">
                 {currentStep === 'origin' &&
                   'Selecciona el origen de datos para obtener los prospectos'}
+                {currentStep === 'lotes' &&
+                  `${selectedOriginName} - Selecciona lotes específicos o usa todos`}
                 {currentStep === 'prospects' &&
                   `${selectedOriginName} - Elige qué prospectos incluir en el flujo`}
                 {currentStep === 'builder' &&
@@ -514,6 +558,24 @@ export function CreateFlujoWithBuilder({
               onSelect={handleOriginSelect}
               onSkipToBuilder={handleSkipToBuilder}
               loading={loadingProspectos}
+              onClose={handleClose}
+            />
+          )}
+
+          {currentStep === 'lotes' && selectedOriginId && (
+            <LoteSelector
+              originId={selectedOriginId}
+              originName={selectedOriginName || ''}
+              selectedLoteIds={selectedLoteIds}
+              onSelectionChange={setSelectedLoteIds}
+              onContinue={handleLotesContinue}
+              onSkip={handleLotesSkip}
+              onBack={() => {
+                setSelectedOriginId(null)
+                setSelectedOriginName(null)
+                setSelectedLoteIds(new Set())
+                setCurrentStep('origin')
+              }}
               onClose={handleClose}
             />
           )}
