@@ -191,6 +191,14 @@ export function LoteCombobox({
                           {lote.total_archivos}{' '}
                           {lote.total_archivos === 1 ? 'archivo' : 'archivos'}
                         </span>
+                        {lote.nuevos_ultimo_sync && lote.nuevos_ultimo_sync > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-green-600 dark:text-green-400 font-medium">
+                              +{formatNumber(lote.nuevos_ultimo_sync)} nuevos
+                            </span>
+                          </>
+                        )}
                         {fecha && (
                           <>
                             <span>•</span>

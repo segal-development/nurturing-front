@@ -27,6 +27,7 @@ export interface LoteOpcion {
   total_prospectos: number
   total_registros: number
   registros_exitosos: number
+  nuevos_ultimo_sync?: number
   created_at: string
   importaciones: Array<{
     id: number
