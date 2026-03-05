@@ -75,17 +75,6 @@ export function LoteSelector({
     .filter((l) => selectedLoteIds.has(l.id))
     .reduce((acc, l) => acc + l.total_prospectos, 0)
 
-  /**
-   * Format date for display
-   */
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-CL', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
   // Loading state
   if (isLoading) {
     return (
@@ -199,7 +188,6 @@ export function LoteSelector({
               lote={lote}
               isSelected={selectedLoteIds.has(lote.id)}
               onToggle={() => handleToggleLote(lote.id)}
-              formatDate={formatDate}
             />
           ))}
         </div>
@@ -257,12 +245,10 @@ function LoteCard({
   lote,
   isSelected,
   onToggle,
-  formatDate,
 }: {
   lote: LoteFlujo
   isSelected: boolean
   onToggle: () => void
-  formatDate: (date: string) => string
 }) {
   return (
     <button
@@ -284,26 +270,16 @@ function LoteCard({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-semibold text-segal-dark truncate">{lote.nombre}</h4>
+            <div className="flex items-center gap-3">
+              <h4 className="font-semibold text-segal-dark truncate">{lote.nombre}</h4>
+              {lote.clasificacion_value && (
+                <span className="bg-segal-dark/10 px-2 py-0.5 rounded text-xs text-segal-dark/60">
+                  {lote.clasificacion_value}
+                </span>
+              )}
+            </div>
             <span className="text-lg font-bold text-segal-blue whitespace-nowrap">
               {lote.total_prospectos.toLocaleString('es-CL')}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mt-1 text-xs text-segal-dark/60">
-            {lote.clasificacion_value && (
-              <span className="bg-segal-dark/10 px-2 py-0.5 rounded">
-                {lote.clasificacion_value}
-              </span>
-            )}
-            <span>{formatDate(lote.created_at)}</span>
-            <span
-              className={`px-2 py-0.5 rounded ${
-                lote.estado === 'completado'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {lote.estado}
             </span>
           </div>
         </div>
