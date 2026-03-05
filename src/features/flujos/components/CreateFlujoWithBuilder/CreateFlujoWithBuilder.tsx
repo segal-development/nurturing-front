@@ -634,13 +634,14 @@ export function CreateFlujoWithBuilder({
 
           {currentStep === 'builder' && (
             <FlowBuilder
+              key={`${selectedOriginId}-${totalProspectosEnBD}`}
               onSaveFlow={handleSaveFlow}
               onCancel={handleBack}
               initialName=""
               initialDescription=""
               selectedOriginId={selectedOriginId || ''}
               selectedOriginName={selectedOriginName || ''}
-              selectedProspectoCount={selectedCount || selectedProspectoIds.size}
+              selectedProspectoCount={selectedCount || totalProspectosEnBD || selectedProspectoIds.size}
             />
           )}
 

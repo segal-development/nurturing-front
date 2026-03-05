@@ -365,13 +365,8 @@ function FlowBuilderContent({
     <div className="flex flex-col h-full w-full bg-white gap-4 p-4">
       <style>{HANDLE_STYLES}</style>
 
-      {/* Header */}
+      {/* Form fields */}
       <div className="shrink-0 space-y-3 border-b border-segal-blue/10 pb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-segal-dark">Constructor de Flujos</h2>
-          <p className="text-sm text-segal-dark/60">Diseña tu flujo visualmente</p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Nombre del flujo */}
           <div className="space-y-2">
