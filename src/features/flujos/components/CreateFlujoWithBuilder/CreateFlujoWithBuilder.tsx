@@ -204,8 +204,8 @@ export function CreateFlujoWithBuilder({
   }
 
   /**
-   * Continúa desde lotes al paso de prospectos
-   * Carga prospectos filtrados por los lotes seleccionados
+   * Continúa desde lotes seleccionados directo al FlowBuilder
+   * Ya no pasa por ProspectSelector porque los lotes definen el filtro
    */
   const handleLotesContinue = async () => {
     if (!selectedOriginId) return
@@ -214,22 +214,21 @@ export function CreateFlujoWithBuilder({
     setError(null)
 
     try {
-      // Get count - if lotes selected, filter by them
       const loteIdsArray = Array.from(selectedLoteIds)
+      
+      // Get count of prospectos in selected lotes
       const totalCount = await prospectosService.getCount({
         origen: selectedOriginId,
-        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
+        lote_ids: loteIdsArray,
       })
+      
+      // Set state for FlowBuilder - select all from these lotes
       setTotalProspectosEnBD(totalCount)
-
-      // Load preview (first 100)
-      const response = await prospectosService.getAll({
-        origen: selectedOriginId,
-        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
-        per_page: 100,
-      })
-      setProspectos(response.data)
-      setCurrentStep('prospects')
+      setSelectedCount(totalCount)
+      setSelectAllFromOrigin(true) // Will use lote_ids filter in backend
+      
+      // Skip ProspectSelector, go directly to FlowBuilder
+      setCurrentStep('builder')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       setError(`Error al cargar prospectos: ${errorMessage}`)
@@ -240,11 +239,38 @@ export function CreateFlujoWithBuilder({
   }
 
   /**
-   * Omite selección de lotes y usa todos los lotes del origen
+   * Omite selección de lotes - va al ProspectSelector para elegir por tipo de deuda
    */
   const handleLotesSkip = async () => {
+    if (!selectedOriginId) return
+
     setSelectedLoteIds(new Set()) // Clear any selection = all lotes
-    await handleLotesContinue()
+    setLoadingProspectos(true)
+    setError(null)
+
+    try {
+      // Get total count for origin
+      const totalCount = await prospectosService.getCount({
+        origen: selectedOriginId,
+      })
+      setTotalProspectosEnBD(totalCount)
+
+      // Load preview (first 100)
+      const response = await prospectosService.getAll({
+        origen: selectedOriginId,
+        per_page: 100,
+      })
+      setProspectos(response.data)
+      
+      // Go to ProspectSelector to choose by debt type
+      setCurrentStep('prospects')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setError(`Error al cargar prospectos: ${errorMessage}`)
+      logger.error('Error cargando prospectos:', { originId: selectedOriginId, error })
+    } finally {
+      setLoadingProspectos(false)
+    }
   }
 
   /**
@@ -352,9 +378,16 @@ export function CreateFlujoWithBuilder({
     }
 
     if (currentStep === 'builder') {
-      // If we came from origin (skipped prospects), go back to origin
-      // If we came from prospects, go back to prospects
-      if (selectedOriginId) {
+      // Clear builder-related state
+      setSelectedCount(0)
+      setSelectAllFromOrigin(false)
+      
+      // If we have lotes selected, go back to lotes step
+      // If we came from prospects (no lotes), go back to prospects
+      // If no origin at all, go back to origin
+      if (selectedLoteIds.size > 0) {
+        setCurrentStep('lotes')
+      } else if (selectedOriginId) {
         setCurrentStep('prospects')
       } else {
         setCurrentStep('origin')
