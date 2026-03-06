@@ -70,8 +70,11 @@ export function PlantillasPage() {
         activo: nuevoEstado,
       })
 
-      // Invalidar cache
-      queryClient.invalidateQueries({ queryKey: ['plantillas'] })
+      // Invalidar y refetch todas las queries de plantillas
+      await queryClient.invalidateQueries({ 
+        queryKey: ['plantillas'],
+        refetchType: 'all',
+      })
 
       toast.success(
         `Plantilla ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`

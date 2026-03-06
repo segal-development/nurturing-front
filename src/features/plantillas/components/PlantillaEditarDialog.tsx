@@ -176,8 +176,11 @@ export function PlantillaEditarDialog({
         })
       }
 
-      // Invalidar cache
-      queryClient.invalidateQueries({ queryKey: ['plantillas'] })
+      // Invalidar y refetch todas las queries de plantillas
+      await queryClient.invalidateQueries({ 
+        queryKey: ['plantillas'],
+        refetchType: 'all',
+      })
 
       toast.success(`Plantilla actualizada correctamente`)
       onOpenChange(false)
