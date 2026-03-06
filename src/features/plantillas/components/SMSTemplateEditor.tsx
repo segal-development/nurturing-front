@@ -36,7 +36,9 @@ export function SMSTemplateEditor({
     },
   })
 
-  const contenido = form.watch('contenido')
+  // Watch all relevant fields for changes
+  const formValues = form.watch()
+  const contenido = formValues.contenido || ''
 
   // Calcular información de caracteres
   const infoCaracteres = obtenerInfoCaracteresSMS(contenido)
@@ -49,20 +51,18 @@ export function SMSTemplateEditor({
   }
 
   // Notificar cambios con debounce para evitar re-renders excesivos
-  // Obtener valores del formulario sin observar todos
   useEffect(() => {
     // Si el formulario no es válido, no notificar
     if (!form.formState.isValid) return
 
     // Crear un timer para debounce de 300ms
     const timer = setTimeout(() => {
-      const formValues = form.getValues()
       onDataChange?.(formValues as PlantillaSMSFormData)
     }, 300)
 
     // Limpiar el timer si hay otro cambio antes de que se ejecute
     return () => clearTimeout(timer)
-  }, [contenido, form.formState.isValid, onDataChange, form])
+  }, [formValues.nombre, formValues.descripcion, formValues.contenido, formValues.activo, form.formState.isValid, onDataChange])
 
   return (
     <Form {...form}>
