@@ -2,6 +2,7 @@
  * Step 1.5: Lote (Batch) Selection
  * Allows user to select specific lotes from the chosen origin
  * This is an optional step - user can skip to select all lotes
+ * Now includes nivel_deuda filtering for Sysgal lotes
  */
 
 import { useState } from 'react'
@@ -9,6 +10,7 @@ import { Loader2, Package, CheckCircle2, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLotesPorOrigen } from '@/hooks/useLotesPorOrigen'
+import { NivelDeudaFilter } from './NivelDeudaFilter'
 import type { LoteFlujo } from '@/api/flujos.service'
 
 interface LoteSelectorProps {
@@ -16,7 +18,7 @@ interface LoteSelectorProps {
   originName: string
   selectedLoteIds: Set<number>
   onSelectionChange: (ids: Set<number>) => void
-  onContinue: () => void
+  onContinue: (metadataFilters?: Record<string, string[]>) => void
   onSkip: () => void // Skip lote selection, use all lotes
   onBack: () => void
   onClose: () => void
@@ -34,6 +36,8 @@ export function LoteSelector({
 }: LoteSelectorProps) {
   const { data, isLoading, error } = useLotesPorOrigen({ origen: originId })
   const [selectAll, setSelectAll] = useState(false)
+  // Metadata filters (e.g., nivel_deuda)
+  const [selectedNivelDeuda, setSelectedNivelDeuda] = useState<Set<string>>(new Set())
 
   const lotes = data?.lotes ?? []
   const totalProspectos = data?.total_prospectos ?? 0
@@ -192,6 +196,16 @@ export function LoteSelector({
           ))}
         </div>
 
+        {/* Nivel de Deuda Filter - shows only if lotes are selected */}
+        {selectedLoteIds.size > 0 && (
+          <NivelDeudaFilter
+            loteIds={Array.from(selectedLoteIds)}
+            selectedValues={selectedNivelDeuda}
+            onSelectionChange={setSelectedNivelDeuda}
+            className="mt-2"
+          />
+        )}
+
         {/* Summary */}
         <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -199,6 +213,7 @@ export function LoteSelector({
               <CheckCircle2 className="h-5 w-5 text-segal-green" />
               <span className="font-medium text-segal-dark">
                 {selectedLoteIds.size} lotes seleccionados
+                {selectedNivelDeuda.size > 0 && ` · ${selectedNivelDeuda.size} niveles de deuda`}
               </span>
             </div>
             <span className="text-lg font-bold text-segal-green">
@@ -227,7 +242,14 @@ export function LoteSelector({
           </Button>
         </div>
         <Button
-          onClick={onContinue}
+          onClick={() => {
+            // Build metadata filters if any nivel_deuda is selected
+            const metadataFilters: Record<string, string[]> | undefined =
+              selectedNivelDeuda.size > 0
+                ? { nivel_deuda: Array.from(selectedNivelDeuda) }
+                : undefined
+            onContinue(metadataFilters)
+          }}
           disabled={selectedLoteIds.size === 0}
           className="bg-segal-blue hover:bg-segal-blue/90 text-white disabled:opacity-50"
         >

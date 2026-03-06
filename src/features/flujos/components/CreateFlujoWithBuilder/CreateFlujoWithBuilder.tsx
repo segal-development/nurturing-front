@@ -130,6 +130,11 @@ export function CreateFlujoWithBuilder({
   // Lotes seleccionados (opcional - si vacío, usa todos los lotes del origen)
   const [selectedLoteIds, setSelectedLoteIds] = useState<Set<number>>(new Set())
 
+  // Metadata filters (e.g., nivel_deuda from Sysgal)
+  const [metadataFilters, setMetadataFilters] = useState<Record<string, string[]> | undefined>(
+    undefined
+  )
+
   // Prospectos seleccionados
   const [selectedProspectoIds, setSelectedProspectoIds] = useState<Set<number>>(new Set())
   const [selectedTipoProspectoId, setSelectedTipoProspectoId] = useState<number | null>(null)
@@ -169,6 +174,7 @@ export function CreateFlujoWithBuilder({
       setSelectedOriginId(null)
       setSelectedOriginName(null)
       setSelectedLoteIds(new Set())
+      setMetadataFilters(undefined)
       setSelectedProspectoIds(new Set())
       setSelectedTipoProspectoId(null)
       setSelectAllFromOrigin(false)
@@ -206,8 +212,9 @@ export function CreateFlujoWithBuilder({
   /**
    * Continúa desde lotes seleccionados directo al FlowBuilder
    * Ya no pasa por ProspectSelector porque los lotes definen el filtro
+   * Now supports metadata filters (e.g., nivel_deuda)
    */
-  const handleLotesContinue = async () => {
+  const handleLotesContinue = async (filters?: Record<string, string[]>) => {
     if (!selectedOriginId) return
 
     setLoadingProspectos(true)
@@ -215,18 +222,21 @@ export function CreateFlujoWithBuilder({
 
     try {
       const loteIdsArray = Array.from(selectedLoteIds)
-      
-      // Get count of prospectos in selected lotes
-      const totalCount = await prospectosService.getCount({
-        origen: selectedOriginId,
+
+      // Store metadata filters for later use in payload
+      setMetadataFilters(filters)
+
+      // Get count of prospectos in selected lotes WITH metadata filters
+      const totalCount = await prospectosService.getCountWithMetadata({
         lote_ids: loteIdsArray,
+        metadata_filters: filters,
       })
-      
+
       // Set state for FlowBuilder - select all from these lotes
       setTotalProspectosEnBD(totalCount)
       setSelectedCount(totalCount)
       setSelectAllFromOrigin(true) // Will use lote_ids filter in backend
-      
+
       // Skip ProspectSelector, go directly to FlowBuilder
       setCurrentStep('builder')
     } catch (error) {
@@ -420,24 +430,30 @@ export function CreateFlujoWithBuilder({
       origen_nombre: selectedOriginName,
       // Lote filtering - if empty array, backend uses all lotes from origin
       lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
+      // Metadata filters (e.g., nivel_deuda)
+      metadata_filters: metadataFilters,
       // Only include prospectos if user selected some
-      prospectos: hasProspects ? {
-        // Use selectedCount which reflects the actual count (all types OR specific tipo)
-        total_seleccionados: selectedCount || selectedProspectoIds.size,
-        ids_seleccionados: selectAllFromOrigin ? [] : Array.from(selectedProspectoIds),
-        total_disponibles: totalProspectosEnBD,
-        tipo_prospecto_id: selectedTipoProspectoId,
-        select_all_from_origin: selectAllFromOrigin,
-        // Include lote_ids in prospectos for backend filtering
-        lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
-      } : {
-        // Empty flow - no prospects yet
-        total_seleccionados: 0,
-        ids_seleccionados: [],
-        total_disponibles: totalProspectosEnBD,
-        tipo_prospecto_id: null,
-        select_all_from_origin: false,
-      },
+      prospectos: hasProspects
+        ? {
+            // Use selectedCount which reflects the actual count (all types OR specific tipo)
+            total_seleccionados: selectedCount || selectedProspectoIds.size,
+            ids_seleccionados: selectAllFromOrigin ? [] : Array.from(selectedProspectoIds),
+            total_disponibles: totalProspectosEnBD,
+            tipo_prospecto_id: selectedTipoProspectoId,
+            select_all_from_origin: selectAllFromOrigin,
+            // Include lote_ids in prospectos for backend filtering
+            lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
+            // Include metadata filters for backend filtering
+            metadata_filters: metadataFilters,
+          }
+        : {
+            // Empty flow - no prospects yet
+            total_seleccionados: 0,
+            ids_seleccionados: [],
+            total_disponibles: totalProspectosEnBD,
+            tipo_prospecto_id: null,
+            select_all_from_origin: false,
+          },
       visual: config.visual,
       structure: config.structure,
       stages: config.stages,
@@ -446,6 +462,7 @@ export function CreateFlujoWithBuilder({
         navegador: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         created_without_prospects: !hasProspects,
         lotes_seleccionados: loteIdsArray.length > 0 ? loteIdsArray.length : 'todos',
+        nivel_deuda_filters: metadataFilters?.nivel_deuda,
       },
     }
   }

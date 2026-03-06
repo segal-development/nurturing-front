@@ -194,4 +194,52 @@ export const prospectosService = {
     )
     return data
   },
+
+  /**
+   * Obtener valores únicos de un campo de metadata
+   * Útil para construir filtros dinámicos (ej: nivel_deuda)
+   */
+  async getMetadataValues(
+    campo: string,
+    params?: { lote_ids?: number[] }
+  ): Promise<MetadataValuesResponse> {
+    const { data } = await apiClient.get<{ data: MetadataValuesResponse }>(
+      `/prospectos/metadata-values/${campo}`,
+      { params }
+    )
+    return data.data
+  },
+
+  /**
+   * Obtener conteo de prospectos con filtros de metadata
+   */
+  async getCountWithMetadata(params: {
+    lote_ids?: number[]
+    metadata_filters?: Record<string, string | string[]>
+  }): Promise<number> {
+    // Flatten metadata_filters to query params: metadata_nivel_deuda=alta
+    const queryParams: Record<string, unknown> = { ...params }
+    if (params.metadata_filters) {
+      for (const [key, value] of Object.entries(params.metadata_filters)) {
+        queryParams[`metadata_${key}`] = value
+      }
+      delete queryParams.metadata_filters
+    }
+
+    const { data } = await apiClient.get<{ data: { total: number } }>('/prospectos/count', {
+      params: queryParams,
+    })
+    return data.data.total
+  },
+}
+
+/**
+ * Respuesta del endpoint metadata-values
+ */
+export interface MetadataValuesResponse {
+  campo: string
+  valores: Array<{
+    valor: string
+    total: number
+  }>
 }
