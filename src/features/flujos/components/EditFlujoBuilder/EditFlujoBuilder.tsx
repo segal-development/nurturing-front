@@ -142,7 +142,13 @@ export function EditFlujoBuilder({
       logger.log('Usando configuración visual existente del flujo')
       setFlowName(flujo.nombre)
       setFlowDescription(flujo.descripcion || '')
-      loadFlowConfiguration(flujo.config_visual.nodes as CustomNode[], flujo.config_visual.edges as CustomEdge[])
+      // Inyectar el prospectos_count actualizado al nodo inicial
+      const nodesWithUpdatedCount = (flujo.config_visual.nodes as CustomNode[]).map((node) =>
+        node.type === 'initial'
+          ? { ...node, data: { ...node.data, prospectos_count: flujo.prospectos_en_flujo_count } }
+          : node
+      )
+      loadFlowConfiguration(nodesWithUpdatedCount, flujo.config_visual.edges as CustomEdge[])
       toast.info(`Flujo "${flujo.nombre}" cargado para edición`)
       return
     }
@@ -158,6 +164,7 @@ export function EditFlujoBuilder({
         label: `Inicio - ${flujo.origen || 'Flujo'}`,
         origen_id: flujo.origen_id,
         origen_nombre: flujo.origen,
+        prospectos_count: flujo.prospectos_en_flujo_count,
       },
       position: { x: 400, y: 50 },
       type: 'initial',
