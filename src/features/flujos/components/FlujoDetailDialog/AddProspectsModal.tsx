@@ -154,8 +154,15 @@ export function AddProspectsModal({
       return
     }
 
-    if (!isAllTypes && !selectedTipoId) {
+    // For non-Sysgal origins, require tipo selection
+    if (!showNivelDeudaFilter && !isAllTypes && !selectedTipoId) {
       toast.error('Debes seleccionar un tipo de deuda')
+      return
+    }
+
+    // For Sysgal origins, require nivel_deuda selection
+    if (showNivelDeudaFilter && selectedNivelDeuda.size === 0) {
+      toast.error('Debes seleccionar al menos un nivel de deuda')
       return
     }
 
