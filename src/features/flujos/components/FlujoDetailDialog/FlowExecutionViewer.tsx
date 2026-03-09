@@ -4,7 +4,7 @@
  * Con iconos, colores y animaciones que indican el progreso
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { logger } from '@/lib/logger'
 
 import ReactFlow, {
@@ -339,8 +339,8 @@ function FlowExecutionContent({
   // Get pricing for cost badge display
   const { data: precios } = usePrecios()
 
-  // Create nodeTypes with precios - memoized to avoid re-renders
-  const nodeTypes = {
+  // Create nodeTypes with precios - properly memoized to avoid re-renders
+  const nodeTypes = useMemo(() => ({
     stage: (props: any) => (
       <StageNode
         {...props}
@@ -352,7 +352,7 @@ function FlowExecutionContent({
     initial: InitialNode,
     end: EndNode,
     conditional: ConditionalNode,
-  }
+  }), [precios])
 
   const [nodes, setNodes] = useNodesState(configVisual?.nodes || [])
   const [edges, setEdges] = useEdgesState(configVisual?.edges || [])
@@ -398,8 +398,8 @@ function FlowExecutionContent({
     }
   }, [executionData])
 
-  // Crear mapa de etapas por node_id para acceso rápido
-  const stagesByNodeId = (() => {
+  // Crear mapa de etapas por node_id para acceso rápido - memoizado
+  const stagesByNodeId = useMemo(() => {
     const map = new Map<string, StageExecution>()
     if (executionData?.etapas) {
       executionData.etapas.forEach(stage => {
@@ -407,7 +407,7 @@ function FlowExecutionContent({
       })
     }
     return map
-  })()
+  }, [executionData?.etapas])
 
   // Mapa de node_id -> label para mostrar nombres en badges
   const nodeLabelsByNodeId = useNodeLabelMap(configVisual)
