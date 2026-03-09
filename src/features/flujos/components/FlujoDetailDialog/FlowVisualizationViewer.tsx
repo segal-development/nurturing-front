@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -15,9 +15,8 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
-  applyNodeChanges,
 } from 'reactflow'
-import type { Node, Edge, NodeChange } from 'reactflow'
+import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { AlertCircle } from 'lucide-react'
 import { StageNode } from '../FlowBuilder/CustomNodes/StageNode'
@@ -139,25 +138,9 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
     return configVisual.edges as Edge[]
   })()
 
-  // Estado de ReactFlow - permite mover nodos pero no editar
-  const [nodes, setNodes] = useNodesState(initialNodes)
+  // Estado de ReactFlow - usa key para forzar re-render cuando cambian los datos
+  const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
-
-  // Track previous values to avoid unnecessary updates
-  const prevStatsRef = useRef(nodeStatsMap)
-  
-  // Update nodes only when stats actually change (not on every render)
-  useEffect(() => {
-    if (nodeStatsMap !== prevStatsRef.current && initialNodes.length > 0) {
-      prevStatsRef.current = nodeStatsMap
-      setNodes(initialNodes)
-    }
-  }, [nodeStatsMap, initialNodes, setNodes])
-
-  // Manejar cambios de nodos (permite arrastrar/mover)
-  const handleNodesChange = (changes: NodeChange[]) => {
-    setNodes((nds) => applyNodeChanges(changes, nds))
-  }
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (
@@ -177,7 +160,7 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodesChange={handleNodesChange}
+        onNodesChange={onNodesChange}
         fitView
       >
         <Background />
