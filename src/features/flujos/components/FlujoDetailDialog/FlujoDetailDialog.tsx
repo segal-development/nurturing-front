@@ -601,6 +601,7 @@ export function FlujoDetailDialog({
                   config_visual={flujo.config_visual}
                   flujoId={flujo?.id}
                   executionId={effectiveExecutionId}
+                  prospectosCount={flujo.prospectos_en_flujo_count}
                 />
               )}
 

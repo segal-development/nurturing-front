@@ -32,6 +32,8 @@ interface FlowVisualizationViewerProps {
   configVisual?: ConfigVisual
   /** Flujo ID for loading node statistics */
   flujoId?: number
+  /** Count of prospects assigned to the flow - shown in initial node */
+  prospectosCount?: number
 }
 
 const nodeTypes = {
@@ -81,7 +83,7 @@ const handleStyles = `
 /**
  * Componente interno que usa ReactFlow
  */
-function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
+function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: FlowVisualizationViewerProps) {
   // Fetch node statistics (aggregated across all executions)
   const { data: nodeStatsMap } = useNodeStats(flujoId)
 
@@ -99,6 +101,8 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
       // Solo agregar valores por defecto si NO EXISTEN
       const enrichedData = {
         ...nodeData,
+        // Inyectar prospectos_count en el nodo inicial
+        ...(node.type === 'initial' && prospectosCount !== undefined ? { prospectos_count: prospectosCount } : {}),
         // Usar el valor real si existe, sino usar default
         label: nodeData.label !== undefined ? nodeData.label : `${node.type === 'stage' ? 'Etapa' : node.type === 'conditional' ? 'Condición' : 'Nodo'} ${node.id.substring(0, 5)}`,
         dia_envio: nodeData.dia_envio !== undefined ? nodeData.dia_envio : 1,
@@ -125,7 +129,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
     })
 
     return enrichedNodes
-  }, [configVisual?.nodes, nodeStatsMap])
+  }, [configVisual?.nodes, nodeStatsMap, prospectosCount])
 
   const initialEdges = (() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
@@ -183,11 +187,11 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
 /**
  * Componente wrapper con ReactFlowProvider
  */
-export function FlowVisualizationViewer({ configVisual, flujoId }: FlowVisualizationViewerProps) {
+export function FlowVisualizationViewer({ configVisual, flujoId, prospectosCount }: FlowVisualizationViewerProps) {
   return (
     <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 border border-segal-blue/10 dark:border-segal-blue/30 rounded-xl overflow-hidden">
       <ReactFlowProvider>
-        <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} />
+        <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} prospectosCount={prospectosCount} />
       </ReactFlowProvider>
     </div>
   )
