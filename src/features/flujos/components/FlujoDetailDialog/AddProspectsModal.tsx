@@ -86,29 +86,23 @@ export function AddProspectsModal({
     )
   }, [conteoPorTipo])
 
-  // Calculate selected count considering nivel_deuda filter
+  // Calculate selected count
   const selectedCount = useMemo(() => {
-    let baseCount = 0
-    if (isAllTypes) {
-      baseCount = totalProspectosOrigen
-    } else if (selectedTipoId) {
-      baseCount = conteoByTipoId[selectedTipoId] ?? 0
-    }
-
-    // If nivel_deuda filter is active, estimate the filtered count
+    // For Sysgal: use nivel_deuda counts directly
     if (showNivelDeudaFilter && selectedNivelDeuda.size > 0 && nivelDeudaValores.length > 0) {
-      const totalWithDeuda = nivelDeudaValores.reduce((acc, v) => acc + v.total, 0)
-      const selectedDeudaTotal = nivelDeudaValores
+      return nivelDeudaValores
         .filter(v => selectedNivelDeuda.has(v.valor))
         .reduce((acc, v) => acc + v.total, 0)
-      
-      // Approximate: ratio of selected debt levels
-      if (totalWithDeuda > 0) {
-        return Math.round(baseCount * (selectedDeudaTotal / totalWithDeuda))
-      }
     }
 
-    return baseCount
+    // For non-Sysgal: use tipo counts
+    if (isAllTypes) {
+      return totalProspectosOrigen
+    } else if (selectedTipoId) {
+      return conteoByTipoId[selectedTipoId] ?? 0
+    }
+
+    return 0
   }, [isAllTypes, selectedTipoId, totalProspectosOrigen, conteoByTipoId, showNivelDeudaFilter, selectedNivelDeuda, nivelDeudaValores])
 
   const getTodosTipoId = useCallback((): number | null => {
@@ -215,8 +209,14 @@ export function AddProspectsModal({
 
   if (!flujo) return null
 
-  const isStepTwoComplete = isAllTypes || selectedTipoId !== null
-  const isStepThreeComplete = !showNivelDeudaFilter || selectedNivelDeuda.size > 0
+  // For Sysgal: step 2 is nivel_deuda selection (skip tipo selection)
+  // For others: step 2 is tipo selection
+  const isStepTwoComplete = showNivelDeudaFilter 
+    ? selectedNivelDeuda.size > 0 
+    : (isAllTypes || selectedTipoId !== null)
+  
+  // Step 3 only exists for non-Sysgal (it's merged into step 2 for Sysgal)
+  const isFormComplete = isStepTwoComplete
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -250,8 +250,8 @@ export function AddProspectsModal({
             </div>
           </div>
 
-          {/* Step 2: Select Type (only if origin selected) */}
-          {selectedOriginId && (
+          {/* Step 2: Select Type (only if origin selected AND not Sysgal) */}
+          {selectedOriginId && !showNivelDeudaFilter && (
             <div className="space-y-3">
               <label className="text-sm font-semibold text-segal-dark">2. Selecciona el tipo de prospecto</label>
               
@@ -308,10 +308,10 @@ export function AddProspectsModal({
             </div>
           )}
 
-          {/* Step 3: Nivel de Deuda Filter (only for Sysgal origins) */}
-          {showNivelDeudaFilter && isStepTwoComplete && (
+          {/* Step 2 for Sysgal: Nivel de Deuda Filter (replaces tipo selection) */}
+          {showNivelDeudaFilter && (
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-segal-dark">3. Filtrar por nivel de deuda</label>
+              <label className="text-sm font-semibold text-segal-dark">2. Selecciona el nivel de deuda</label>
               
               {loadingNivelDeuda ? (
                 <div className="flex items-center gap-2 text-sm text-segal-dark/60 p-4">
@@ -385,30 +385,29 @@ export function AddProspectsModal({
           )}
 
           {/* Summary */}
-          {selectedOriginId && isStepTwoComplete && isStepThreeComplete && selectedCount > 0 && (
+          {selectedOriginId && isFormComplete && selectedCount > 0 && (
             <div className="p-3 rounded bg-green-50 border border-green-200">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-green-900">
-                    Se agregarán aproximadamente {selectedCount.toLocaleString()} prospectos
+                    Se agregarán {selectedCount.toLocaleString()} prospectos
                   </p>
                   <p className="text-xs text-green-700 mt-1">
-                    {isAllTypes 
-                      ? 'Todos los tipos de prospecto'
-                      : `Solo prospectos de tipo "${tiposProspecto?.find(t => t.id === selectedTipoId)?.nombre}"`
+                    {showNivelDeudaFilter 
+                      ? `${selectedNivelDeuda.size} nivel(es) de deuda seleccionado(s)`
+                      : isAllTypes 
+                        ? 'Todos los tipos de prospecto'
+                        : `Solo prospectos de tipo "${tiposProspecto?.find(t => t.id === selectedTipoId)?.nombre}"`
                     }
-                    {showNivelDeudaFilter && selectedNivelDeuda.size > 0 && (
-                      <> • Filtrado por {selectedNivelDeuda.size} nivel(es) de deuda</>
-                    )}
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Warning if no selection */}
-          {selectedOriginId && !isStepTwoComplete && (
+          {/* Warning if no selection (non-Sysgal only) */}
+          {selectedOriginId && !showNivelDeudaFilter && !isStepTwoComplete && (
             <div className="p-3 rounded bg-amber-50 border border-amber-200">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
@@ -419,8 +418,8 @@ export function AddProspectsModal({
             </div>
           )}
 
-          {/* Warning for nivel deuda selection */}
-          {showNivelDeudaFilter && isStepTwoComplete && !isStepThreeComplete && (
+          {/* Warning for nivel deuda selection (Sysgal) */}
+          {showNivelDeudaFilter && selectedNivelDeuda.size === 0 && (
             <div className="p-3 rounded bg-amber-50 border border-amber-200">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
@@ -443,7 +442,7 @@ export function AddProspectsModal({
             </Button>
             <Button
               onClick={handleAddProspects}
-              disabled={!selectedOriginId || !isStepTwoComplete || !isStepThreeComplete || isLoading}
+              disabled={!selectedOriginId || !isFormComplete || isLoading}
               className="flex-1 bg-segal-blue hover:bg-segal-blue/90"
             >
               {isLoading ? (
