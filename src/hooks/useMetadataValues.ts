@@ -60,7 +60,7 @@ export const NIVEL_DEUDA_LABELS: Record<string, string> = {
   baja: 'Deuda Baja (< $700k)',
   media: 'Deuda Media ($700k - $1.5M)',
   alta: 'Deuda Alta (> $1.5M)',
-  sin_informacion: 'Sin información',
+  sin_informacion: 'Sin Monto Registrado',
 }
 
 /**
@@ -70,5 +70,5 @@ export const NIVEL_DEUDA_COLORS: Record<string, string> = {
   baja: 'bg-green-100 text-green-800 border-green-200',
   media: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   alta: 'bg-red-100 text-red-800 border-red-200',
-  sin_informacion: 'bg-gray-100 text-gray-600 border-gray-200',
+  sin_informacion: 'bg-blue-100 text-blue-700 border-blue-200',
 }
