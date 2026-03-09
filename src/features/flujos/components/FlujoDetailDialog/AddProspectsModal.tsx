@@ -61,13 +61,13 @@ export function AddProspectsModal({
   })
 
   // Check if we should show nivel_deuda filter
-  const showNivelDeudaFilter = selectedOriginId && isSysgalOrigin(selectedOriginName)
+  const showNivelDeudaFilter = Boolean(selectedOriginId && isSysgalOrigin(selectedOriginName))
 
   // Fetch nivel_deuda values for Sysgal origins
   const { data: nivelDeudaData, isLoading: loadingNivelDeuda } = useMetadataValues(
     'nivel_deuda',
     undefined, // We'll filter by origin, not lote
-    showNivelDeudaFilter
+    showNivelDeudaFilter === true
   )
 
   const nivelDeudaValores = nivelDeudaData?.valores ?? []
