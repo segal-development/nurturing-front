@@ -139,12 +139,13 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
 
-  // Update nodes when stats change
+  // Update nodes when stats change - only trigger on nodeStatsMap changes
   useEffect(() => {
     if (initialNodes.length > 0) {
       setNodes(initialNodes)
     }
-  }, [initialNodes, setNodes])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeStatsMap])
 
   // Manejar cambios de nodos (permite arrastrar/mover)
   const handleNodesChange = (changes: NodeChange[]) => {
