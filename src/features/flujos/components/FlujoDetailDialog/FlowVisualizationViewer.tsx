@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -15,9 +15,8 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
-  applyNodeChanges,
 } from 'reactflow'
-import type { Node, Edge, NodeChange } from 'reactflow'
+import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { AlertCircle } from 'lucide-react'
 import { StageNode } from '../FlowBuilder/CustomNodes/StageNode'
@@ -135,22 +134,9 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
     return configVisual.edges as Edge[]
   })()
 
-  // Estado de ReactFlow - permite mover nodos pero no editar
-  const [nodes, setNodes] = useNodesState(initialNodes)
+  // Estado de ReactFlow - usa key en el wrapper para forzar re-mount cuando cambian los nodos
+  const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
-
-  // Update nodes when stats change - only trigger on nodeStatsMap changes
-  useEffect(() => {
-    if (initialNodes.length > 0) {
-      setNodes(initialNodes)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeStatsMap])
-
-  // Manejar cambios de nodos (permite arrastrar/mover)
-  const handleNodesChange = (changes: NodeChange[]) => {
-    setNodes((nds) => applyNodeChanges(changes, nds))
-  }
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (
@@ -170,7 +156,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodesChange={handleNodesChange}
+        onNodesChange={onNodesChange}
         fitView
       >
         <Background />
