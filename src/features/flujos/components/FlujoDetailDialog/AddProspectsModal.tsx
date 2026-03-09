@@ -1,6 +1,7 @@
 /**
  * Modal para agregar prospectos a un flujo existente
  * Permite seleccionar prospectos de un origen específico
+ * Incluye filtro de nivel de deuda para orígenes de Sysgal
  */
 
 import { useState, useCallback, useMemo } from 'react'
@@ -13,11 +14,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, CheckCircle, Loader2, Users } from 'lucide-react'
+import { AlertCircle, CheckCircle, Filter, Loader2, Users } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { flujosService, type OrigenFlujo } from '@/api/flujos.service'
 import { useFlujoOpciones } from '@/features/flujos/hooks/useFlujoOpciones'
 import { useTiposProspecto } from '@/hooks/useTiposProspecto'
 import { useProspectosConteoPorTipo } from '@/hooks/useProspectosConteoPorTipo'
+import { useMetadataValues, NIVEL_DEUDA_LABELS, NIVEL_DEUDA_COLORS } from '@/hooks/useMetadataValues'
 import type { FlujoNurturing } from '@/types/flujo'
 
 interface AddProspectsModalProps {
@@ -25,6 +28,12 @@ interface AddProspectsModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void
+}
+
+// Helper to detect if origin is Sysgal-related
+function isSysgalOrigin(originName: string): boolean {
+  const lower = originName.toLowerCase()
+  return lower.includes('sysgal') || lower.includes('defensor')
 }
 
 export function AddProspectsModal({
@@ -35,9 +44,11 @@ export function AddProspectsModal({
 }: AddProspectsModalProps) {
   // State
   const [selectedOriginId, setSelectedOriginId] = useState<string | null>(null)
+  const [selectedOriginName, setSelectedOriginName] = useState<string>('')
   const [selectedTipoId, setSelectedTipoId] = useState<number | null>(null)
   const [isAllTypes, setIsAllTypes] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedNivelDeuda, setSelectedNivelDeuda] = useState<Set<string>>(new Set())
 
   // Fetch options
   const { data: opciones } = useFlujoOpciones()
@@ -48,6 +59,18 @@ export function AddProspectsModal({
     origen: selectedOriginId || '',
     enabled: !!selectedOriginId,
   })
+
+  // Check if we should show nivel_deuda filter
+  const showNivelDeudaFilter = selectedOriginId && isSysgalOrigin(selectedOriginName)
+
+  // Fetch nivel_deuda values for Sysgal origins
+  const { data: nivelDeudaData, isLoading: loadingNivelDeuda } = useMetadataValues(
+    'nivel_deuda',
+    undefined, // We'll filter by origin, not lote
+    showNivelDeudaFilter
+  )
+
+  const nivelDeudaValores = nivelDeudaData?.valores ?? []
 
   // Derived state
   const totalProspectosOrigen = conteoPorTipo?.total ?? 0
@@ -63,11 +86,30 @@ export function AddProspectsModal({
     )
   }, [conteoPorTipo])
 
+  // Calculate selected count considering nivel_deuda filter
   const selectedCount = useMemo(() => {
-    if (isAllTypes) return totalProspectosOrigen
-    if (selectedTipoId) return conteoByTipoId[selectedTipoId] ?? 0
-    return 0
-  }, [isAllTypes, selectedTipoId, totalProspectosOrigen, conteoByTipoId])
+    let baseCount = 0
+    if (isAllTypes) {
+      baseCount = totalProspectosOrigen
+    } else if (selectedTipoId) {
+      baseCount = conteoByTipoId[selectedTipoId] ?? 0
+    }
+
+    // If nivel_deuda filter is active, estimate the filtered count
+    if (showNivelDeudaFilter && selectedNivelDeuda.size > 0 && nivelDeudaValores.length > 0) {
+      const totalWithDeuda = nivelDeudaValores.reduce((acc, v) => acc + v.total, 0)
+      const selectedDeudaTotal = nivelDeudaValores
+        .filter(v => selectedNivelDeuda.has(v.valor))
+        .reduce((acc, v) => acc + v.total, 0)
+      
+      // Approximate: ratio of selected debt levels
+      if (totalWithDeuda > 0) {
+        return Math.round(baseCount * (selectedDeudaTotal / totalWithDeuda))
+      }
+    }
+
+    return baseCount
+  }, [isAllTypes, selectedTipoId, totalProspectosOrigen, conteoByTipoId, showNivelDeudaFilter, selectedNivelDeuda, nivelDeudaValores])
 
   const getTodosTipoId = useCallback((): number | null => {
     if (!tiposProspecto || tiposProspecto.length === 0) return null
@@ -76,10 +118,12 @@ export function AddProspectsModal({
   }, [tiposProspecto])
 
   // Handlers
-  const handleSelectOrigin = (originId: string) => {
-    setSelectedOriginId(originId)
+  const handleSelectOrigin = (origen: OrigenFlujo) => {
+    setSelectedOriginId(origen.id)
+    setSelectedOriginName(origen.nombre)
     setSelectedTipoId(null)
     setIsAllTypes(false)
+    setSelectedNivelDeuda(new Set())
   }
 
   const handleSelectAllTypes = () => {
@@ -92,24 +136,49 @@ export function AddProspectsModal({
     setSelectedTipoId(tipoId)
   }
 
+  const handleToggleNivelDeuda = (valor: string) => {
+    const newSelection = new Set(selectedNivelDeuda)
+    if (newSelection.has(valor)) {
+      newSelection.delete(valor)
+    } else {
+      newSelection.add(valor)
+    }
+    setSelectedNivelDeuda(newSelection)
+  }
+
+  const handleSelectAllNivelDeuda = () => {
+    if (selectedNivelDeuda.size === nivelDeudaValores.length) {
+      setSelectedNivelDeuda(new Set())
+    } else {
+      setSelectedNivelDeuda(new Set(nivelDeudaValores.map(v => v.valor)))
+    }
+  }
+
   const handleAddProspects = async () => {
     if (!flujo?.id || !selectedOriginId) {
       toast.error('Error: Faltan datos requeridos')
       return
     }
 
-    if (selectedCount === 0) {
-      toast.error('Debes seleccionar prospectos para agregar')
+    if (!isAllTypes && !selectedTipoId) {
+      toast.error('Debes seleccionar un tipo de deuda')
       return
     }
 
     setIsLoading(true)
     try {
+      // Build metadata filters if nivel_deuda is selected
+      const metadataFilters: Record<string, string[]> = {}
+      if (showNivelDeudaFilter && selectedNivelDeuda.size > 0) {
+        metadataFilters['nivel_deuda'] = Array.from(selectedNivelDeuda)
+      }
+
       const result = await flujosService.agregarProspectos(flujo.id, {
         origen: selectedOriginId,
         tipo_prospecto_id: selectedTipoId,
         select_all_from_origin: true,
         canal_asignado: 'email',
+        metadata_filters: Object.keys(metadataFilters).length > 0 ? metadataFilters : undefined,
       })
 
       if (result.resumen.procesamiento_async) {
@@ -124,8 +193,9 @@ export function AddProspectsModal({
 
       onSuccess?.()
       onClose()
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.mensaje || error.message || 'Error al agregar prospectos'
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { mensaje?: string } }; message?: string }
+      const errorMessage = err.response?.data?.mensaje || err.message || 'Error al agregar prospectos'
       toast.error('Error', { description: errorMessage })
     } finally {
       setIsLoading(false)
@@ -135,21 +205,26 @@ export function AddProspectsModal({
   const handleClose = () => {
     if (!isLoading) {
       setSelectedOriginId(null)
+      setSelectedOriginName('')
       setSelectedTipoId(null)
       setIsAllTypes(false)
+      setSelectedNivelDeuda(new Set())
       onClose()
     }
   }
 
   if (!flujo) return null
 
+  const isStepTwoComplete = isAllTypes || selectedTipoId !== null
+  const isStepThreeComplete = !showNivelDeudaFilter || selectedNivelDeuda.size > 0
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Agregar Prospectos</DialogTitle>
           <DialogDescription>
-            Selecciona el origen y tipo de prospectos para agregar al flujo "{flujo.nombre}"
+            Selecciona el origen y tipo de prospectos para agregar al flujo &quot;{flujo.nombre}&quot;
           </DialogDescription>
         </DialogHeader>
 
@@ -157,13 +232,13 @@ export function AddProspectsModal({
           {/* Step 1: Select Origin */}
           <div className="space-y-3">
             <label className="text-sm font-semibold text-segal-dark">1. Selecciona el origen</label>
-            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
               {opciones?.origenes?.map((origen: OrigenFlujo) => (
                 <Button
                   key={origen.id}
                   variant={selectedOriginId === origen.id ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => handleSelectOrigin(origen.id)}
+                  onClick={() => handleSelectOrigin(origen)}
                   className={selectedOriginId === origen.id 
                     ? 'bg-segal-blue text-white' 
                     : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'
@@ -178,7 +253,7 @@ export function AddProspectsModal({
           {/* Step 2: Select Type (only if origin selected) */}
           {selectedOriginId && (
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-segal-dark">2. Selecciona el tipo de deuda</label>
+              <label className="text-sm font-semibold text-segal-dark">2. Selecciona el tipo de prospecto</label>
               
               {loadingTipos || loadingConteo ? (
                 <div className="flex items-center gap-2 text-sm text-segal-dark/60 p-4">
@@ -233,20 +308,99 @@ export function AddProspectsModal({
             </div>
           )}
 
+          {/* Step 3: Nivel de Deuda Filter (only for Sysgal origins) */}
+          {showNivelDeudaFilter && isStepTwoComplete && (
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-segal-dark">3. Filtrar por nivel de deuda</label>
+              
+              {loadingNivelDeuda ? (
+                <div className="flex items-center gap-2 text-sm text-segal-dark/60 p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando niveles de deuda...
+                </div>
+              ) : nivelDeudaValores.length === 0 ? (
+                <div className="p-3 rounded bg-gray-50 text-sm text-gray-600">
+                  No hay datos de nivel de deuda disponibles para este origen.
+                </div>
+              ) : (
+                <div className="bg-white border border-segal-blue/20 rounded-lg p-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-segal-blue" />
+                      <span className="text-sm font-medium text-segal-dark">Nivel de deuda</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSelectAllNivelDeuda}
+                      className="text-xs text-segal-blue hover:underline"
+                    >
+                      {selectedNivelDeuda.size === nivelDeudaValores.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                    </button>
+                  </div>
+
+                  {/* Filter options */}
+                  <div className="space-y-2">
+                    {nivelDeudaValores.map((item) => {
+                      const isSelected = selectedNivelDeuda.has(item.valor)
+                      const label = NIVEL_DEUDA_LABELS[item.valor] || item.valor
+                      const colorClass = NIVEL_DEUDA_COLORS[item.valor] || 'bg-gray-100 text-gray-600'
+
+                      return (
+                        <label
+                          key={item.valor}
+                          className={`
+                            flex items-center justify-between p-2 rounded-lg border cursor-pointer
+                            transition-all duration-150
+                            ${isSelected ? 'border-segal-blue bg-segal-blue/5' : 'border-gray-200 hover:border-segal-blue/40'}
+                          `}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => handleToggleNivelDeuda(item.valor)}
+                              className="border-segal-blue data-[state=checked]:bg-segal-blue"
+                            />
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
+                              {label}
+                            </span>
+                          </div>
+                          <span className="text-sm font-semibold text-segal-dark">
+                            {item.total.toLocaleString('es-CL')}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+
+                  {/* Help text */}
+                  {selectedNivelDeuda.size === 0 && (
+                    <p className="mt-3 text-xs text-segal-dark/50">
+                      Selecciona uno o más niveles de deuda para filtrar los prospectos.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Summary */}
-          {selectedOriginId && selectedCount > 0 && (
+          {selectedOriginId && isStepTwoComplete && isStepThreeComplete && selectedCount > 0 && (
             <div className="p-3 rounded bg-green-50 border border-green-200">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-green-900">
-                    Se agregarán {selectedCount.toLocaleString()} prospectos
+                    Se agregarán aproximadamente {selectedCount.toLocaleString()} prospectos
                   </p>
                   <p className="text-xs text-green-700 mt-1">
                     {isAllTypes 
-                      ? 'Todos los tipos de deuda del origen seleccionado'
+                      ? 'Todos los tipos de prospecto'
                       : `Solo prospectos de tipo "${tiposProspecto?.find(t => t.id === selectedTipoId)?.nombre}"`
                     }
+                    {showNivelDeudaFilter && selectedNivelDeuda.size > 0 && (
+                      <> • Filtrado por {selectedNivelDeuda.size} nivel(es) de deuda</>
+                    )}
                   </p>
                 </div>
               </div>
@@ -254,12 +408,24 @@ export function AddProspectsModal({
           )}
 
           {/* Warning if no selection */}
-          {selectedOriginId && selectedCount === 0 && (
+          {selectedOriginId && !isStepTwoComplete && (
             <div className="p-3 rounded bg-amber-50 border border-amber-200">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-900">
-                  Selecciona un tipo de deuda o "Todos" para continuar
+                  Selecciona un tipo de prospecto o &quot;Todos&quot; para continuar
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Warning for nivel deuda selection */}
+          {showNivelDeudaFilter && isStepTwoComplete && !isStepThreeComplete && (
+            <div className="p-3 rounded bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900">
+                  Selecciona al menos un nivel de deuda para continuar
                 </p>
               </div>
             </div>
@@ -277,7 +443,7 @@ export function AddProspectsModal({
             </Button>
             <Button
               onClick={handleAddProspects}
-              disabled={!selectedOriginId || selectedCount === 0 || isLoading}
+              disabled={!selectedOriginId || !isStepTwoComplete || !isStepThreeComplete || isLoading}
               className="flex-1 bg-segal-blue hover:bg-segal-blue/90"
             >
               {isLoading ? (

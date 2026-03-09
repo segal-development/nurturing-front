@@ -597,10 +597,12 @@ export const flujosService = {
     flujoId: number,
     payload: {
       prospecto_ids?: number[]
+      lote_ids?: number[]
       origen?: string
       tipo_prospecto_id?: number | null
       select_all_from_origin?: boolean
       canal_asignado?: 'email' | 'sms'
+      metadata_filters?: Record<string, string[]>
     }
   ): Promise<{
     mensaje: string
