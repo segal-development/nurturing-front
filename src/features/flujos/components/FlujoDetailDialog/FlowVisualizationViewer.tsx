@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -143,13 +143,16 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
 
-  // Update nodes when stats or prospectosCount change
+  // Track previous values to avoid unnecessary updates
+  const prevStatsRef = useRef(nodeStatsMap)
+  
+  // Update nodes only when stats actually change (not on every render)
   useEffect(() => {
-    if (initialNodes.length > 0) {
+    if (nodeStatsMap !== prevStatsRef.current && initialNodes.length > 0) {
+      prevStatsRef.current = nodeStatsMap
       setNodes(initialNodes)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeStatsMap, prospectosCount])
+  }, [nodeStatsMap, initialNodes, setNodes])
 
   // Manejar cambios de nodos (permite arrastrar/mover)
   const handleNodesChange = (changes: NodeChange[]) => {
