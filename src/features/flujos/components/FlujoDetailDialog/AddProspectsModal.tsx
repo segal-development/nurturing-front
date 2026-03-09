@@ -70,7 +70,10 @@ export function AddProspectsModal({
     showNivelDeudaFilter === true
   )
 
-  const nivelDeudaValores = nivelDeudaData?.valores ?? []
+  // Filter out "sin_informacion" - those prospects don't have debt data
+  const nivelDeudaValores = (nivelDeudaData?.valores ?? []).filter(
+    v => v.valor !== 'sin_informacion'
+  )
 
   // Derived state
   const totalProspectosOrigen = conteoPorTipo?.total ?? 0
