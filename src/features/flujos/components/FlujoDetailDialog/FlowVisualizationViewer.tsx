@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -15,8 +15,9 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  applyNodeChanges,
 } from 'reactflow'
-import type { Node, Edge } from 'reactflow'
+import type { Node, Edge, NodeChange } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { AlertCircle } from 'lucide-react'
 import { StageNode } from '../FlowBuilder/CustomNodes/StageNode'
@@ -31,8 +32,6 @@ interface FlowVisualizationViewerProps {
   configVisual?: ConfigVisual
   /** Flujo ID for loading node statistics */
   flujoId?: number
-  /** Count of prospects assigned to the flow - shown in initial node */
-  prospectosCount?: number
 }
 
 const nodeTypes = {
@@ -82,7 +81,7 @@ const handleStyles = `
 /**
  * Componente interno que usa ReactFlow
  */
-function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: FlowVisualizationViewerProps) {
+function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   // Fetch node statistics (aggregated across all executions)
   const { data: nodeStatsMap } = useNodeStats(flujoId)
 
@@ -100,8 +99,6 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
       // Solo agregar valores por defecto si NO EXISTEN
       const enrichedData = {
         ...nodeData,
-        // Inyectar prospectos_count en el nodo inicial
-        ...(node.type === 'initial' && prospectosCount !== undefined ? { prospectos_count: prospectosCount } : {}),
         // Usar el valor real si existe, sino usar default
         label: nodeData.label !== undefined ? nodeData.label : `${node.type === 'stage' ? 'Etapa' : node.type === 'conditional' ? 'Condición' : 'Nodo'} ${node.id.substring(0, 5)}`,
         dia_envio: nodeData.dia_envio !== undefined ? nodeData.dia_envio : 1,
@@ -128,7 +125,7 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
     })
 
     return enrichedNodes
-  }, [configVisual?.nodes, nodeStatsMap, prospectosCount])
+  }, [configVisual?.nodes, nodeStatsMap])
 
   const initialEdges = (() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
@@ -138,9 +135,21 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
     return configVisual.edges as Edge[]
   })()
 
-  // Estado de ReactFlow - usa key para forzar re-render cuando cambian los datos
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
+  // Estado de ReactFlow - permite mover nodos pero no editar
+  const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
+
+  // Update nodes when stats change
+  useEffect(() => {
+    if (initialNodes.length > 0) {
+      setNodes(initialNodes)
+    }
+  }, [initialNodes, setNodes])
+
+  // Manejar cambios de nodos (permite arrastrar/mover)
+  const handleNodesChange = (changes: NodeChange[]) => {
+    setNodes((nds) => applyNodeChanges(changes, nds))
+  }
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (
@@ -160,7 +169,7 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        onNodesChange={onNodesChange}
+        onNodesChange={handleNodesChange}
         fitView
       >
         <Background />
@@ -174,11 +183,11 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
 /**
  * Componente wrapper con ReactFlowProvider
  */
-export function FlowVisualizationViewer({ configVisual, flujoId, prospectosCount }: FlowVisualizationViewerProps) {
+export function FlowVisualizationViewer({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   return (
     <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 border border-segal-blue/10 dark:border-segal-blue/30 rounded-xl overflow-hidden">
       <ReactFlowProvider>
-        <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} prospectosCount={prospectosCount} />
+        <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} />
       </ReactFlowProvider>
     </div>
   )

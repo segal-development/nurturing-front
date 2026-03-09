@@ -25,7 +25,6 @@ interface FlowStructurePanelProps {
   config_visual?: ConfigVisual
   flujoId?: number
   executionId?: string
-  prospectosCount?: number
 }
 
 export function FlowStructurePanel({
@@ -37,7 +36,6 @@ export function FlowStructurePanel({
   config_visual,
   flujoId,
   executionId,
-  prospectosCount,
 }: FlowStructurePanelProps) {
   // Verificar si hay visualización disponible desde el principio
   const hasVisualData = config_visual && config_visual.nodes && config_visual.nodes.length > 0
@@ -147,7 +145,7 @@ export function FlowStructurePanel({
               />
             ) : (
               // Sin ejecución activa: mostrar visualización estática con estadísticas agregadas
-              <FlowVisualizationViewer configVisual={config_visual} flujoId={flujoId} prospectosCount={prospectosCount} />
+              <FlowVisualizationViewer configVisual={config_visual} flujoId={flujoId} />
             )
           ) : (
             <div className="w-full h-[700px] bg-segal-blue/5 border border-dashed border-segal-blue/20 rounded-lg flex flex-col items-center justify-center">
