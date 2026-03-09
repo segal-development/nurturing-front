@@ -143,12 +143,13 @@ function FlowVisualizationContent({ configVisual, flujoId, prospectosCount }: Fl
   const [nodes, setNodes] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
 
-  // Update nodes when stats change
+  // Update nodes when stats or prospectosCount change
   useEffect(() => {
     if (initialNodes.length > 0) {
       setNodes(initialNodes)
     }
-  }, [initialNodes, setNodes])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeStatsMap, prospectosCount])
 
   // Manejar cambios de nodos (permite arrastrar/mover)
   const handleNodesChange = (changes: NodeChange[]) => {
