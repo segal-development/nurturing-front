@@ -110,7 +110,7 @@ function toISODateString(date: Date): string {
 }
 
 export function MetricasPage() {
-  const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.MONTH);
+  const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Build MetricsParams based on period selection
