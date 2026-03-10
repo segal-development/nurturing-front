@@ -10,24 +10,34 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { metricasService } from '@/api/metricas.service';
-import type { MetricPeriod } from '@/types/metricas';
+import type { MetricsParams } from '@/types/metricas';
 
 // ============================================================
 // QUERY KEYS
 // ============================================================
 
+/**
+ * Creates a stable key for the metrics params
+ */
+function paramsToKey(params: MetricsParams): string {
+  if (params.fecha_inicio && params.fecha_fin) {
+    return `custom:${params.fecha_inicio}:${params.fecha_fin}`;
+  }
+  return `dias:${params.dias ?? 30}`;
+}
+
 const QUERY_KEYS = {
   base: ['metricas'] as const,
-  dashboard: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'dashboard', dias] as const,
-  resumen: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'resumen', dias] as const,
-  aperturas: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'aperturas', dias] as const,
-  clicks: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'clicks', dias] as const,
-  envios: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'envios', dias] as const,
-  desuscripciones: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'desuscripciones', dias] as const,
-  conversiones: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'conversiones', dias] as const,
-  tendencias: (dias: MetricPeriod) => [...QUERY_KEYS.base, 'tendencias', dias] as const,
-  topFlujos: (dias: MetricPeriod, limit: number) =>
-    [...QUERY_KEYS.base, 'top-flujos', dias, limit] as const,
+  dashboard: (params: MetricsParams) => [...QUERY_KEYS.base, 'dashboard', paramsToKey(params)] as const,
+  resumen: (params: MetricsParams) => [...QUERY_KEYS.base, 'resumen', paramsToKey(params)] as const,
+  aperturas: (params: MetricsParams) => [...QUERY_KEYS.base, 'aperturas', paramsToKey(params)] as const,
+  clicks: (params: MetricsParams) => [...QUERY_KEYS.base, 'clicks', paramsToKey(params)] as const,
+  envios: (params: MetricsParams) => [...QUERY_KEYS.base, 'envios', paramsToKey(params)] as const,
+  desuscripciones: (params: MetricsParams) => [...QUERY_KEYS.base, 'desuscripciones', paramsToKey(params)] as const,
+  conversiones: (params: MetricsParams) => [...QUERY_KEYS.base, 'conversiones', paramsToKey(params)] as const,
+  tendencias: (params: MetricsParams) => [...QUERY_KEYS.base, 'tendencias', paramsToKey(params)] as const,
+  topFlujos: (params: MetricsParams, limit: number) =>
+    [...QUERY_KEYS.base, 'top-flujos', paramsToKey(params), limit] as const,
 };
 
 // ============================================================
@@ -47,13 +57,13 @@ const STALE_TIME = {
 /**
  * Fetches the complete metrics dashboard
  *
- * @param dias - Period in days (default: 30)
+ * @param params - Period in days or custom date range
  * @returns Query result with full dashboard data
  */
-export function useMetricasDashboard(dias: MetricPeriod = 30) {
+export function useMetricasDashboard(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.dashboard(dias),
-    queryFn: () => metricasService.getDashboard(dias),
+    queryKey: QUERY_KEYS.dashboard(params),
+    queryFn: () => metricasService.getDashboard(params),
     staleTime: STALE_TIME.DASHBOARD,
   });
 }
@@ -65,10 +75,10 @@ export function useMetricasDashboard(dias: MetricPeriod = 30) {
 /**
  * Fetches KPI summary metrics
  */
-export function useMetricasResumen(dias: MetricPeriod = 30) {
+export function useMetricasResumen(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.resumen(dias),
-    queryFn: () => metricasService.getResumen(dias),
+    queryKey: QUERY_KEYS.resumen(params),
+    queryFn: () => metricasService.getResumen(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -76,10 +86,10 @@ export function useMetricasResumen(dias: MetricPeriod = 30) {
 /**
  * Fetches email open metrics
  */
-export function useMetricasAperturas(dias: MetricPeriod = 30) {
+export function useMetricasAperturas(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.aperturas(dias),
-    queryFn: () => metricasService.getAperturas(dias),
+    queryKey: QUERY_KEYS.aperturas(params),
+    queryFn: () => metricasService.getAperturas(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -87,10 +97,10 @@ export function useMetricasAperturas(dias: MetricPeriod = 30) {
 /**
  * Fetches click metrics
  */
-export function useMetricasClicks(dias: MetricPeriod = 30) {
+export function useMetricasClicks(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.clicks(dias),
-    queryFn: () => metricasService.getClicks(dias),
+    queryKey: QUERY_KEYS.clicks(params),
+    queryFn: () => metricasService.getClicks(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -98,10 +108,10 @@ export function useMetricasClicks(dias: MetricPeriod = 30) {
 /**
  * Fetches send/delivery metrics
  */
-export function useMetricasEnvios(dias: MetricPeriod = 30) {
+export function useMetricasEnvios(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.envios(dias),
-    queryFn: () => metricasService.getEnvios(dias),
+    queryKey: QUERY_KEYS.envios(params),
+    queryFn: () => metricasService.getEnvios(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -109,10 +119,10 @@ export function useMetricasEnvios(dias: MetricPeriod = 30) {
 /**
  * Fetches unsubscribe metrics
  */
-export function useMetricasDesuscripciones(dias: MetricPeriod = 30) {
+export function useMetricasDesuscripciones(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.desuscripciones(dias),
-    queryFn: () => metricasService.getDesuscripciones(dias),
+    queryKey: QUERY_KEYS.desuscripciones(params),
+    queryFn: () => metricasService.getDesuscripciones(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -120,10 +130,10 @@ export function useMetricasDesuscripciones(dias: MetricPeriod = 30) {
 /**
  * Fetches conversion metrics
  */
-export function useMetricasConversiones(dias: MetricPeriod = 30) {
+export function useMetricasConversiones(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.conversiones(dias),
-    queryFn: () => metricasService.getConversiones(dias),
+    queryKey: QUERY_KEYS.conversiones(params),
+    queryFn: () => metricasService.getConversiones(params),
     staleTime: STALE_TIME.SECTION,
   });
 }
@@ -131,10 +141,10 @@ export function useMetricasConversiones(dias: MetricPeriod = 30) {
 /**
  * Fetches trend comparison data
  */
-export function useMetricasTendencias(dias: MetricPeriod = 30) {
+export function useMetricasTendencias(params: MetricsParams = { dias: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.tendencias(dias),
-    queryFn: () => metricasService.getTendencias(dias),
+    queryKey: QUERY_KEYS.tendencias(params),
+    queryFn: () => metricasService.getTendencias(params),
     staleTime: STALE_TIME.TRENDS,
   });
 }
@@ -142,10 +152,10 @@ export function useMetricasTendencias(dias: MetricPeriod = 30) {
 /**
  * Fetches top performing flows
  */
-export function useMetricasTopFlujos(dias: MetricPeriod = 30, limit = 10) {
+export function useMetricasTopFlujos(params: MetricsParams = { dias: 30 }, limit = 10) {
   return useQuery({
-    queryKey: QUERY_KEYS.topFlujos(dias, limit),
-    queryFn: () => metricasService.getTopFlujos(dias, limit),
+    queryKey: QUERY_KEYS.topFlujos(params, limit),
+    queryFn: () => metricasService.getTopFlujos(params, limit),
     staleTime: STALE_TIME.SECTION,
   });
 }

@@ -5,13 +5,13 @@
  * Uses composition pattern with extracted components.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMetricasDashboard, useRefreshMetricas } from './hooks/useMetricas';
-import { METRIC_PERIOD, type MetricPeriod } from '@/types/metricas';
-import { getPeriodLabel } from './utils/formatters';
+import { METRIC_PERIOD, type MetricPeriod, type DateRange, type MetricsParams } from '@/types/metricas';
+import { getPeriodLabel, formatDateRange } from './utils/formatters';
 import { getApiErrorMessage } from '@/api/client';
 import {
   KpiSummary,
@@ -53,24 +53,37 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 function PageHeader({
   period,
   onPeriodChange,
+  dateRange,
+  onDateRangeChange,
   onRefresh,
   isRefreshing,
 }: {
   period: MetricPeriod;
   onPeriodChange: (value: MetricPeriod) => void;
+  dateRange?: DateRange;
+  onDateRangeChange: (range: DateRange | undefined) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
 }) {
+  // Display period label or custom date range
+  const periodDisplay =
+    period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to
+      ? formatDateRange(dateRange.from, dateRange.to)
+      : getPeriodLabel(period);
+
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Métricas y Analytics</h1>
-        <p className="text-muted-foreground mt-1">
-          Resumen de rendimiento - {getPeriodLabel(period)}
-        </p>
+        <p className="text-muted-foreground mt-1">Resumen de rendimiento - {periodDisplay}</p>
       </div>
       <div className="flex items-center gap-3">
-        <PeriodSelector value={period} onChange={onPeriodChange} />
+        <PeriodSelector
+          value={period}
+          onChange={onPeriodChange}
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
+        />
         <Button
           variant="outline"
           size="icon"
@@ -89,15 +102,34 @@ function PageHeader({
 // MAIN COMPONENT
 // ============================================================
 
+/**
+ * Converts Date to ISO date string (YYYY-MM-DD)
+ */
+function toISODateString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.MONTH);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  // Build MetricsParams based on period selection
+  const metricsParams = useMemo<MetricsParams>(() => {
+    if (period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to) {
+      return {
+        fecha_inicio: toISODateString(dateRange.from),
+        fecha_fin: toISODateString(dateRange.to),
+      };
+    }
+    return { dias: period };
+  }, [period, dateRange]);
 
   const {
     data: dashboard,
     isLoading,
     error,
     refetch,
-  } = useMetricasDashboard(period);
+  } = useMetricasDashboard(metricsParams);
 
   const refreshMutation = useRefreshMetricas();
 
@@ -107,16 +139,20 @@ export function MetricasPage() {
     });
   };
 
+  // Common PageHeader props
+  const pageHeaderProps = {
+    period,
+    onPeriodChange: setPeriod,
+    dateRange,
+    onDateRangeChange: setDateRange,
+    onRefresh: handleRefresh,
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <div className="p-6">
-        <PageHeader
-          period={period}
-          onPeriodChange={setPeriod}
-          onRefresh={handleRefresh}
-          isRefreshing={false}
-        />
+        <PageHeader {...pageHeaderProps} isRefreshing={false} />
         <LoadingState />
       </div>
     );
@@ -126,12 +162,7 @@ export function MetricasPage() {
   if (error) {
     return (
       <div className="p-6">
-        <PageHeader
-          period={period}
-          onPeriodChange={setPeriod}
-          onRefresh={handleRefresh}
-          isRefreshing={false}
-        />
+        <PageHeader {...pageHeaderProps} isRefreshing={false} />
         <ErrorState
           message={getApiErrorMessage(error, 'No se pudieron cargar las métricas')}
           onRetry={() => refetch()}
@@ -144,12 +175,7 @@ export function MetricasPage() {
   if (!dashboard) {
     return (
       <div className="p-6">
-        <PageHeader
-          period={period}
-          onPeriodChange={setPeriod}
-          onRefresh={handleRefresh}
-          isRefreshing={false}
-        />
+        <PageHeader {...pageHeaderProps} isRefreshing={false} />
         <div className="text-center py-12 text-muted-foreground">
           No hay datos disponibles para el período seleccionado
         </div>
@@ -160,12 +186,7 @@ export function MetricasPage() {
   // Success state
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        period={period}
-        onPeriodChange={setPeriod}
-        onRefresh={handleRefresh}
-        isRefreshing={refreshMutation.isPending}
-      />
+      <PageHeader {...pageHeaderProps} isRefreshing={refreshMutation.isPending} />
 
       {/* KPI Summary Cards */}
       <KpiSummary summary={dashboard.resumen} trends={dashboard.tendencias} />

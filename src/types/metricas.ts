@@ -10,13 +10,28 @@
 // ============================================================
 
 export const METRIC_PERIOD = {
+  TODAY: 1,
   WEEK: 7,
   MONTH: 30,
   QUARTER: 90,
   YEAR: 365,
+  CUSTOM: 0, // Indicates custom date range
 } as const;
 
 export type MetricPeriod = (typeof METRIC_PERIOD)[keyof typeof METRIC_PERIOD];
+
+// Custom date range for when METRIC_PERIOD.CUSTOM is selected
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
+// Parameters for metrics API calls
+export interface MetricsParams {
+  dias?: MetricPeriod;
+  fecha_inicio?: string; // ISO date string YYYY-MM-DD
+  fecha_fin?: string; // ISO date string YYYY-MM-DD
+}
 
 export const TREND_DIRECTION = {
   UP: 'up',

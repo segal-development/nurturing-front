@@ -21,7 +21,7 @@ import type {
   TrendsMetrics,
   TopFlujoMetric,
   MetricasApiResponse,
-  MetricPeriod,
+  MetricsParams,
 } from '@/types/metricas';
 
 // ============================================================
@@ -32,19 +32,45 @@ class MetricasService {
   private readonly basePath = '/metricas';
 
   // ============================================================
+  // HELPER METHODS
+  // ============================================================
+
+  /**
+   * Builds query params for API calls
+   * Supports both period-based (dias) and custom date range (fecha_inicio, fecha_fin)
+   */
+  private buildParams(params: MetricsParams): Record<string, string | number> {
+    const queryParams: Record<string, string | number> = {};
+
+    if (params.fecha_inicio && params.fecha_fin) {
+      // Custom date range takes priority
+      queryParams.fecha_inicio = params.fecha_inicio;
+      queryParams.fecha_fin = params.fecha_fin;
+    } else if (params.dias && params.dias > 0) {
+      // Period-based query
+      queryParams.dias = params.dias;
+    } else {
+      // Default to 30 days
+      queryParams.dias = 30;
+    }
+
+    return queryParams;
+  }
+
+  // ============================================================
   // MAIN DASHBOARD
   // ============================================================
 
   /**
    * Fetches the complete metrics dashboard
    *
-   * @param dias - Period in days (7, 30, 90, 365)
+   * @param params - Period in days or custom date range
    * @returns Full dashboard data with all metrics
    */
-  async getDashboard(dias: MetricPeriod = 30): Promise<MetricasDashboard> {
+  async getDashboard(params: MetricsParams = { dias: 30 }): Promise<MetricasDashboard> {
     const response = await apiClient.get<MetricasApiResponse<MetricasDashboard>>(
       `${this.basePath}/dashboard`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -57,10 +83,10 @@ class MetricasService {
   /**
    * Fetches KPI summary metrics
    */
-  async getResumen(dias: MetricPeriod = 30): Promise<MetricSummary> {
+  async getResumen(params: MetricsParams = { dias: 30 }): Promise<MetricSummary> {
     const response = await apiClient.get<MetricasApiResponse<MetricSummary>>(
       `${this.basePath}/resumen`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -69,10 +95,10 @@ class MetricasService {
   /**
    * Fetches email open metrics
    */
-  async getAperturas(dias: MetricPeriod = 30): Promise<AperturasMetrics> {
+  async getAperturas(params: MetricsParams = { dias: 30 }): Promise<AperturasMetrics> {
     const response = await apiClient.get<MetricasApiResponse<AperturasMetrics>>(
       `${this.basePath}/aperturas`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -81,10 +107,10 @@ class MetricasService {
   /**
    * Fetches click metrics
    */
-  async getClicks(dias: MetricPeriod = 30): Promise<ClicksMetrics> {
+  async getClicks(params: MetricsParams = { dias: 30 }): Promise<ClicksMetrics> {
     const response = await apiClient.get<MetricasApiResponse<ClicksMetrics>>(
       `${this.basePath}/clicks`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -93,10 +119,10 @@ class MetricasService {
   /**
    * Fetches send/delivery metrics
    */
-  async getEnvios(dias: MetricPeriod = 30): Promise<EnviosMetrics> {
+  async getEnvios(params: MetricsParams = { dias: 30 }): Promise<EnviosMetrics> {
     const response = await apiClient.get<MetricasApiResponse<EnviosMetrics>>(
       `${this.basePath}/envios`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -105,10 +131,10 @@ class MetricasService {
   /**
    * Fetches unsubscribe metrics
    */
-  async getDesuscripciones(dias: MetricPeriod = 30): Promise<DesuscripcionesMetrics> {
+  async getDesuscripciones(params: MetricsParams = { dias: 30 }): Promise<DesuscripcionesMetrics> {
     const response = await apiClient.get<MetricasApiResponse<DesuscripcionesMetrics>>(
       `${this.basePath}/desuscripciones`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -117,10 +143,10 @@ class MetricasService {
   /**
    * Fetches conversion metrics
    */
-  async getConversiones(dias: MetricPeriod = 30): Promise<ConversionesMetrics> {
+  async getConversiones(params: MetricsParams = { dias: 30 }): Promise<ConversionesMetrics> {
     const response = await apiClient.get<MetricasApiResponse<ConversionesMetrics>>(
       `${this.basePath}/conversiones`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -129,10 +155,10 @@ class MetricasService {
   /**
    * Fetches trend comparison (current vs previous period)
    */
-  async getTendencias(dias: MetricPeriod = 30): Promise<TrendsMetrics> {
+  async getTendencias(params: MetricsParams = { dias: 30 }): Promise<TrendsMetrics> {
     const response = await apiClient.get<MetricasApiResponse<TrendsMetrics>>(
       `${this.basePath}/tendencias`,
-      { params: { dias } }
+      { params: this.buildParams(params) }
     );
 
     return response.data.data;
@@ -141,10 +167,10 @@ class MetricasService {
   /**
    * Fetches top performing flows
    */
-  async getTopFlujos(dias: MetricPeriod = 30, limit = 10): Promise<TopFlujoMetric[]> {
+  async getTopFlujos(params: MetricsParams = { dias: 30 }, limit = 10): Promise<TopFlujoMetric[]> {
     const response = await apiClient.get<MetricasApiResponse<TopFlujoMetric[]>>(
       `${this.basePath}/top-flujos`,
-      { params: { dias, limit } }
+      { params: { ...this.buildParams(params), limit } }
     );
 
     return response.data.data;

@@ -231,6 +231,8 @@ export function truncateUrl(url: string, maxLength = 40): string {
 // ============================================================
 
 const PERIOD_LABELS: Record<number, string> = {
+  0: 'Rango personalizado',
+  1: 'Hoy',
   7: 'Última semana',
   30: 'Últimos 30 días',
   90: 'Últimos 3 meses',
@@ -242,4 +244,14 @@ const PERIOD_LABELS: Record<number, string> = {
  */
 export function getPeriodLabel(dias: number): string {
   return PERIOD_LABELS[dias] || `Últimos ${dias} días`;
+}
+
+/**
+ * Formats a custom date range for display
+ */
+export function formatDateRange(from: Date, to: Date): string {
+  const formatOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+  const fromStr = from.toLocaleDateString('es-CL', formatOpts);
+  const toStr = to.toLocaleDateString('es-CL', formatOpts);
+  return `${fromStr} - ${toStr}`;
 }
