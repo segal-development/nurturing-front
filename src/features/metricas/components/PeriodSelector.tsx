@@ -5,10 +5,12 @@
  * Supports predefined periods (Today, Week, Month, etc.) and custom date range.
  */
 
+import { X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-picker';
 import { METRIC_PERIOD, type MetricPeriod, type DateRange } from '@/types/metricas';
-import { getPeriodLabel, formatDateRange } from '../utils/formatters';
+import { getPeriodLabel } from '../utils/formatters';
 
 // ============================================================
 // TYPES
@@ -80,19 +82,44 @@ export function PeriodSelector({
     }
   };
 
-  // Display value for the select
-  const displayValue =
-    isCustomRange && dateRange?.from && dateRange?.to
-      ? formatDateRange(dateRange.from, dateRange.to)
-      : undefined;
+  const handleExitCustomRange = () => {
+    // Return to default period (Month)
+    onChange(METRIC_PERIOD.MONTH);
+    onDateRangeChange?.(undefined);
+  };
 
+  // When custom range is selected, show only the date pickers
+  if (isCustomRange) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <DateRangePicker
+          from={dateRange?.from}
+          to={dateRange?.to}
+          onFromChange={handleFromChange}
+          onToChange={handleToChange}
+          placeholderFrom="Desde"
+          placeholderTo="Hasta"
+          className="flex-shrink-0"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleExitCustomRange}
+          title="Volver a períodos predefinidos"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  // Default: show the period selector dropdown
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <Select value={value.toString()} onValueChange={handlePeriodChange}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Seleccionar período">
-            {displayValue || getPeriodLabel(value)}
-          </SelectValue>
+          <SelectValue placeholder="Seleccionar período">{getPeriodLabel(value)}</SelectValue>
         </SelectTrigger>
         <SelectContent
           position="popper"
@@ -106,18 +133,6 @@ export function PeriodSelector({
           ))}
         </SelectContent>
       </Select>
-
-      {isCustomRange && (
-        <DateRangePicker
-          from={dateRange?.from}
-          to={dateRange?.to}
-          onFromChange={handleFromChange}
-          onToChange={handleToChange}
-          placeholderFrom="Desde"
-          placeholderTo="Hasta"
-          className="flex-shrink-0"
-        />
-      )}
     </div>
   );
 }
