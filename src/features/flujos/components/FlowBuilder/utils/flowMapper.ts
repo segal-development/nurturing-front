@@ -90,7 +90,7 @@ export function mapStagesToBackend(storeNodes: ReactFlowNode[]): StageData[] {
         id: n.id,
         orden: index,
         label: data.label || `Stage ${index + 1}`,
-        tiempo_espera: data.dia_envio || 0, // Backend expects tiempo_espera (days to wait)
+        tiempo_espera: data.tiempo_espera ?? data.dia_envio ?? 0, // Use tiempo_espera first, fallback to dia_envio for legacy
         tipo_mensaje: data.tipo_mensaje || 'email',
         type: data.tipo_mensaje || 'email', // Backend expects this field
         plantilla_mensaje: data.plantilla_mensaje,
