@@ -15,6 +15,7 @@ import {
   Loader2,
   Mail,
   MessageSquare,
+  PauseCircle,
   Send,
   Settings2,
   Trash2,
@@ -156,11 +157,22 @@ export function StageNode({
             box-shadow: 0 0 35px rgba(59, 130, 246, 0.7), inset 0 0 15px rgba(59, 130, 246, 0.2);
           }
         }
+        @keyframes pulse-orange {
+          0%, 100% {
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4), inset 0 0 8px rgba(249, 115, 22, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.6), inset 0 0 12px rgba(249, 115, 22, 0.15);
+          }
+        }
         .executing-node {
           animation: pulse-glow 2s ease-in-out infinite;
         }
         .next-node {
           animation: pulse-blue 2.5s ease-in-out infinite;
+        }
+        .paused-node {
+          animation: pulse-orange 3s ease-in-out infinite;
         }
       `}</style>
 
@@ -170,17 +182,19 @@ export function StageNode({
           // Estado de ejecución tiene prioridad en los estilos
           data.executionState === 'executing'
             ? 'border-amber-500 ring-2 ring-amber-400/30 executing-node'
-            : data.executionState === 'completed'
-              ? 'border-segal-green ring-2 ring-segal-green/20'
-              : data.executionState === 'failed'
-                ? 'border-segal-red ring-2 ring-segal-red/20'
-                : data.executionState === 'pending'
-                  ? 'border-gray-400 opacity-60'
-                  : isNextNode
-                    ? 'border-segal-blue ring-2 ring-segal-blue/30 next-node'
-                    : isSelected
-                    ? 'border-segal-blue ring-2 ring-segal-blue/20'
-                    : 'border-segal-blue/30'
+            : data.executionState === 'paused'
+              ? 'border-orange-500 ring-2 ring-orange-400/30 paused-node'
+              : data.executionState === 'completed'
+                ? 'border-segal-green ring-2 ring-segal-green/20'
+                : data.executionState === 'failed'
+                  ? 'border-segal-red ring-2 ring-segal-red/20'
+                  : data.executionState === 'pending'
+                    ? 'border-gray-400 opacity-60'
+                    : isNextNode
+                      ? 'border-segal-blue ring-2 ring-segal-blue/30 next-node'
+                      : isSelected
+                        ? 'border-segal-blue ring-2 ring-segal-blue/20'
+                        : 'border-segal-blue/30'
         } ${isEditing ? 'ring-2 ring-segal-green/30' : ''}`}
       >
         {!isEditing ? (
@@ -234,6 +248,40 @@ export function StageNode({
                 {/* Execution State Icon */}
                 {data.executionState === 'executing' && (
                   <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                )}
+                {data.executionState === 'paused' && (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="cursor-help">
+                          <PauseCircle className="h-5 w-5 text-orange-500" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="top" 
+                        className="bg-orange-800 text-white border-orange-700 px-3 py-2 max-w-xs"
+                      >
+                        <div className="space-y-1">
+                          <p className="font-semibold text-sm">⏸️ Pausada por Circuit Breaker</p>
+                          {data.pauseReason && (
+                            <>
+                              <p className="text-xs text-orange-200">
+                                Servicio: {data.pauseReason.service}
+                              </p>
+                              <p className="text-xs text-orange-200">
+                                {data.pauseReason.message}
+                              </p>
+                            </>
+                          )}
+                          {data.autoResumeAt && (
+                            <p className="text-xs text-orange-100 font-medium mt-1">
+                              Se reanudará automáticamente
+                            </p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 {data.executionState === 'completed' && (
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -380,6 +428,28 @@ export function StageNode({
                         <span className="text-purple-600 font-semibold">{data.aggregatedStats.clickeado.toLocaleString()} clicks</span>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Paused State Banner */}
+              {data.executionState === 'paused' && (
+                <div className="mt-3 p-2 rounded bg-orange-50 border border-orange-300">
+                  <div className="flex items-center gap-2">
+                    <PauseCircle className="h-4 w-4 text-orange-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-orange-800">Pausada</p>
+                      {data.pauseReason && (
+                        <p className="text-xs text-orange-700 truncate">
+                          {data.pauseReason.service}: {data.pauseReason.message}
+                        </p>
+                      )}
+                      {data.autoResumeAt && (
+                        <p className="text-xs text-orange-600 mt-0.5">
+                          ⏱️ Se reanudará automáticamente
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

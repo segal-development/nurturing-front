@@ -11,7 +11,7 @@ export type FlowExecutionMainState = 'pending' | 'in_progress' | 'paused' | 'com
 /**
  * Estado de una etapa/nodo individual
  */
-export type StageExecutionState = 'pending' | 'executing' | 'completed' | 'failed'
+export type StageExecutionState = 'pending' | 'executing' | 'completed' | 'failed' | 'paused'
 
 /**
  * Estadísticas de envíos para una etapa
@@ -22,6 +22,17 @@ export interface StageEnvios {
   fallido: number
   abierto: number
   clickeado: number
+}
+
+/**
+ * Circuit breaker pause reason (matches backend's pause_reason JSON structure)
+ */
+export interface PauseReason {
+  type: 'circuit_breaker' | 'manual' | 'rate_limit'
+  service: string // 'email' | 'sms' | 'athena' etc.
+  message: string
+  opened_at: string // ISO datetime when the pause started
+  auto_resume_at?: string // ISO datetime when it will auto-resume
 }
 
 /**
@@ -37,6 +48,10 @@ export interface StageExecution {
   response_athenacampaign?: any
   error_mensaje?: string
   envios?: StageEnvios
+  // Circuit breaker pause fields
+  pause_reason?: PauseReason
+  paused_at?: string
+  auto_resume_at?: string
 }
 
 /**

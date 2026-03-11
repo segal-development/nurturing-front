@@ -15,7 +15,7 @@ import ReactFlow, {
   useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, Play, Trash2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, PauseCircle, Play, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -56,6 +56,8 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
         return <Loader2 className="h-5 w-5 text-amber-600 animate-spin" />
       case 'failed':
         return <AlertCircle className="h-5 w-5 text-red-600" />
+      case 'paused':
+        return <PauseCircle className="h-5 w-5 text-orange-500" />
       default:
         return <AlertCircle className="h-5 w-5 text-gray-400" />
     }
@@ -71,6 +73,8 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
         return 'Completada'
       case 'failed':
         return 'Falló'
+      case 'paused':
+        return 'Pausada (Circuit Breaker)'
       default:
         return 'Desconocido'
     }
@@ -84,6 +88,8 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
         return 'bg-amber-50 border-amber-200'
       case 'failed':
         return 'bg-red-50 border-red-200'
+      case 'paused':
+        return 'bg-orange-50 border-orange-200'
       default:
         return 'bg-gray-50 border-gray-200'
     }
@@ -471,6 +477,10 @@ function FlowExecutionContent({
             stageId: stage.id,
             isNextNode,
             nextExecutionTime,
+            // Circuit breaker pause fields
+            pauseReason: stage.pause_reason,
+            pausedAt: stage.paused_at,
+            autoResumeAt: stage.auto_resume_at,
           },
         }
       })
@@ -565,6 +575,16 @@ function FlowExecutionContent({
               }
             `
             break
+          case 'paused':
+            styles += `
+              ${baseStyle}
+              .react-flow__node[data-id="${nodeId}"] {
+                border-color: #f97316 !important;
+                box-shadow: 0 0 15px rgba(249, 115, 22, 0.5) !important;
+                animation: pulse-paused 3s ease-in-out infinite;
+              }
+            `
+            break
         }
       }
     })
@@ -582,6 +602,10 @@ function FlowExecutionContent({
       @keyframes pulse-selected {
         0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.3); }
         50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8), 0 0 40px rgba(139, 92, 246, 0.4); }
+      }
+      @keyframes pulse-paused {
+        0%, 100% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
+        50% { box-shadow: 0 0 25px rgba(249, 115, 22, 0.7); }
       }
     `
 

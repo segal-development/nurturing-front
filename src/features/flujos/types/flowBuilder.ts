@@ -8,14 +8,28 @@ import type { TipoMensaje } from '@/types/flujo'
 import type { StageEnvios } from '@/types/flowExecutionTracking'
 
 /**
+ * Circuit breaker pause reason (matches backend's pause_reason JSON structure)
+ */
+export interface PauseReason {
+  type: 'circuit_breaker' | 'manual' | 'rate_limit'
+  service: string // 'email' | 'sms' | 'athena' etc.
+  message: string
+  opened_at: string // ISO datetime when the pause started
+  auto_resume_at?: string // ISO datetime when it will auto-resume
+}
+
+/**
  * Base execution state data for all nodes during flow execution
  */
 export interface ExecutionStateData {
-  executionState?: 'pending' | 'executing' | 'completed' | 'failed'
+  executionState?: 'pending' | 'executing' | 'completed' | 'failed' | 'paused'
   executionDate?: string
   errorMessage?: string
   envios?: StageEnvios
   stageId?: number
+  pauseReason?: PauseReason // Present when executionState === 'paused'
+  pausedAt?: string // ISO datetime when paused
+  autoResumeAt?: string // ISO datetime when will auto-resume
 }
 
 /**
