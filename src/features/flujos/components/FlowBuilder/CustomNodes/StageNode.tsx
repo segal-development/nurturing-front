@@ -366,8 +366,8 @@ export function StageNode({
                 <div className="text-xs text-segal-green font-medium">📦 {String(localData.oferta.titulo)}</div>
               )}
 
-              {/* Execution Stats (active execution) */}
-              {data.executionState && data.envios && typeof data.envios === 'object' && (
+              {/* Execution Stats (active execution) - only show for executing/completed/failed, NOT pending */}
+              {data.executionState && data.executionState !== 'pending' && data.envios && typeof data.envios === 'object' && (
                 <div className="mt-3 pt-3 border-t border-segal-blue/10 space-y-1">
                   <p className="text-xs font-semibold text-segal-dark">Ejecución actual:</p>
                   <div className="grid grid-cols-2 gap-1 text-xs">
