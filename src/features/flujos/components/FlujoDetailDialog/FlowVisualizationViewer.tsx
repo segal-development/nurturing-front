@@ -18,7 +18,7 @@ import ReactFlow, {
 } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { StageNode } from '../FlowBuilder/CustomNodes/StageNode'
 import { InitialNode } from '../FlowBuilder/CustomNodes/InitialNode'
 import { EndNode } from '../FlowBuilder/CustomNodes/EndNode'
@@ -83,11 +83,14 @@ const handleStyles = `
  */
 function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   // Fetch node statistics (aggregated across all executions)
-  const { data: nodeStatsMap } = useNodeStats(flujoId)
+  const { data: nodeStatsMap, isLoading: isLoadingStats } = useNodeStats(flujoId)
   
   // Fetch active cohorts data
-  const { data: cohortesData } = useCohortesActivas(flujoId ?? 0, !!flujoId)
+  const { data: cohortesData, isLoading: isLoadingCohorts } = useCohortesActivas(flujoId ?? 0, !!flujoId)
   const resumenPorNodo = cohortesData?.data?.resumen_por_nodo
+
+  // Show loader while fetching initial data
+  const isLoading = isLoadingStats || isLoadingCohorts
 
   // Preparar nodes y edges desde config_visual
   const initialNodes = useMemo(() => {
@@ -144,6 +147,17 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   // Estado de ReactFlow - usa key en el wrapper para forzar re-mount cuando cambian los nodos
   const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
+
+  // Show loading state while fetching statistics
+  if (isLoading && flujoId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-50 to-segal-blue/5">
+        <Loader2 className="h-12 w-12 text-segal-blue animate-spin mb-4" />
+        <p className="text-segal-dark/70 font-medium">Cargando estructura del flujo...</p>
+        <p className="text-sm text-segal-dark/40 mt-1">Obteniendo estadísticas y datos de ejecución</p>
+      </div>
+    )
+  }
 
   if (!configVisual?.nodes || configVisual.nodes.length === 0) {
     return (

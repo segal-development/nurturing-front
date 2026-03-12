@@ -6,7 +6,7 @@
 
 import { logger } from '@/lib/logger'
 import { useState } from 'react'
-import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List } from 'lucide-react'
+import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowVisualizationViewer } from './FlowVisualizationViewer'
 import { FlowExecutionViewer } from './FlowExecutionViewer'
@@ -42,16 +42,19 @@ export function FlowStructurePanel({
   const [viewMode, setViewMode] = useState<'visual' | 'details'>(hasVisualData ? 'visual' : 'details')
 
   // Consultar si hay una ejecución activa desde el backend (in_progress o paused)
-  const { data: activeExecutionData } = useActiveExecution(
+  const { data: activeExecutionData, isLoading: isLoadingActive } = useActiveExecution(
     flujoId || 0,
     !!flujoId && hasVisualData, // Solo consultar si hay flujoId y visualización
   )
 
   // Consultar la última ejecución (cualquier estado) para mostrar historial
-  const { data: latestExecutionData } = useLatestExecution(
+  const { data: latestExecutionData, isLoading: isLoadingLatest } = useLatestExecution(
     flujoId || 0,
     false, // No hacer polling continuo para ejecuciones completadas
   )
+
+  // Estado de carga general
+  const isLoadingExecutionData = hasVisualData && flujoId && (isLoadingActive || isLoadingLatest)
 
   // Determinar el execution ID efectivo con esta prioridad:
   // 1. Ejecución activa (in_progress/paused) - más prioritario
@@ -133,7 +136,14 @@ export function FlowStructurePanel({
       {/* Vista Visual - ReactFlow */}
       {viewMode === 'visual' && (
         <div>
-          {hasVisual ? (
+          {/* Loader mientras se cargan datos de ejecución */}
+          {isLoadingExecutionData ? (
+            <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 border border-segal-blue/10 rounded-xl flex flex-col items-center justify-center">
+              <Loader2 className="h-12 w-12 text-segal-blue animate-spin mb-4" />
+              <p className="text-segal-dark/70 font-medium">Cargando estructura del flujo...</p>
+              <p className="text-sm text-segal-dark/40 mt-1">Obteniendo datos de ejecución</p>
+            </div>
+          ) : hasVisual ? (
             // Solo mostrar FlowExecutionViewer si hay ejecución ACTIVA (in_progress/paused)
             // Para ejecuciones completadas/fallidas, mostrar vista estática
             flujoId && activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion ? (
