@@ -123,8 +123,16 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
 
           {/* Envíos */}
           {stage.envios && (
-            <div className={`rounded-lg border p-4 ${getStateColor()}`}>
-              <p className="font-semibold text-segal-dark mb-3">Estadísticas de Envíos</p>
+            <div className={`rounded-lg border p-4 ${stage.estado === 'pending' ? 'bg-gray-50 border-gray-200' : getStateColor()}`}>
+              {/* Título diferente según el estado */}
+              {stage.estado === 'pending' ? (
+                <div className="mb-3">
+                  <p className="font-semibold text-segal-dark">📊 Histórico de este nodo</p>
+                  <p className="text-xs text-segal-dark/50">Estadísticas de ejecuciones anteriores</p>
+                </div>
+              ) : (
+                <p className="font-semibold text-segal-dark mb-3">Estadísticas de Envíos</p>
+              )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-segal-dark/60">✓ Enviados:</span>
