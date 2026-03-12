@@ -331,3 +331,27 @@ export function useCompleteExecutionTracking(flujoId: number, ejecucionId: numbe
     isCancelLoading: cancelMutation.isPending,
   }
 }
+
+/**
+ * Hook to get active cohorts summary for a flow
+ * Shows all active executions (cohorts) with per-node statistics
+ *
+ * @param flujoId - Flow ID
+ * @param enablePolling - Enable/disable auto-polling (default: true)
+ * @returns Cohorts summary with per-node breakdown
+ *
+ * @example
+ * const { data } = useCohortesActivas(1)
+ * if (data?.total_cohortes > 1) {
+ *   console.log('Multiple cohorts active:', data.cohortes)
+ * }
+ */
+export function useCohortesActivas(flujoId: number, enablePolling: boolean = true) {
+  return useQuery({
+    queryKey: ['flowCohortesActivas', flujoId],
+    queryFn: () => flowExecutionTrackingService.getCohortesActivas(flujoId),
+    refetchInterval: enablePolling ? POLLING_INTERVAL * 2 : false, // 4 seconds, less frequent
+    staleTime: 2000,
+    enabled: !!flujoId,
+  })
+}

@@ -25,6 +25,7 @@ import { EndNode } from '../FlowBuilder/CustomNodes/EndNode'
 import { ConditionalNode } from '../FlowBuilder/CustomNodes/ConditionalNode'
 import { N8nStyleEdge } from '../FlowBuilder/CustomEdges/N8nStyleEdge'
 import { useNodeStats } from '../../hooks/useNodeStats'
+import { useCohortesActivas } from '../../hooks/useFlowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
 
 interface FlowVisualizationViewerProps {
@@ -83,6 +84,10 @@ const handleStyles = `
 function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   // Fetch node statistics (aggregated across all executions)
   const { data: nodeStatsMap } = useNodeStats(flujoId)
+  
+  // Fetch active cohorts data
+  const { data: cohortesData } = useCohortesActivas(flujoId ?? 0, !!flujoId)
+  const resumenPorNodo = cohortesData?.data?.resumen_por_nodo
 
   // Preparar nodes y edges desde config_visual
   const initialNodes = useMemo(() => {
@@ -115,6 +120,8 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
           clickeado: stats.total_clickeado,
           pendiente: stats.total_pendiente,
         } : undefined,
+        // Add cohort summary for this node
+        cohorteResumen: resumenPorNodo?.[node.id],
       }
 
       return {

@@ -328,3 +328,58 @@ export interface FlowExecutionsListResponse {
   data: ExecutionListItem[]
   mensaje?: string
 }
+
+/**
+ * Detalle de una cohorte individual
+ */
+export interface CohorteDetalle {
+  ejecucion_id: number
+  estado: StageExecutionState
+  prospectos: number
+  fecha_programada?: string
+  created_at: string
+}
+
+/**
+ * Resumen de cohortes por nodo (para mostrar en StageNode)
+ */
+export interface CohorteResumenNodo {
+  node_id: string
+  total_cohortes: number
+  cohortes_completadas: number
+  cohortes_procesando: number
+  cohortes_pendientes: number
+  total_prospectos: number
+  prospectos_procesados: number
+  detalle_cohortes: CohorteDetalle[]
+}
+
+/**
+ * Información de una cohorte activa
+ */
+export interface CohorteActiva {
+  id: number
+  created_at: string
+  estado: FlowExecutionMainState
+  estado_legible: string
+  prospectos_count: number
+  progreso: number
+  etapas_completadas: number
+  etapas_total: number
+  nodo_actual?: string
+  proximo_nodo?: string
+  fecha_proximo_nodo?: string
+  origen: string // 'manual' | 'auto_asignar_nuevos'
+}
+
+/**
+ * Response from GET /flujos/:id/cohortes-activas
+ */
+export interface CohortesActivasResponse {
+  error: boolean
+  data: {
+    total_cohortes: number
+    cohortes: CohorteActiva[]
+    resumen_por_nodo: Record<string, CohorteResumenNodo>
+  }
+}

@@ -5,7 +5,7 @@
 
 import type { Node, Edge } from 'reactflow'
 import type { TipoMensaje } from '@/types/flujo'
-import type { StageEnvios } from '@/types/flowExecutionTracking'
+import type { StageEnvios, CohorteResumenNodo } from '@/types/flowExecutionTracking'
 
 /**
  * Circuit breaker pause reason (matches backend's pause_reason JSON structure)
@@ -30,6 +30,8 @@ export interface ExecutionStateData {
   pauseReason?: PauseReason // Present when executionState === 'paused'
   pausedAt?: string // ISO datetime when paused
   autoResumeAt?: string // ISO datetime when will auto-resume
+  // Cohort tracking for perpetual flows
+  cohorteResumen?: CohorteResumenNodo // Summary of cohorts for this node
 }
 
 /**

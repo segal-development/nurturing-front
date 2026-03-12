@@ -18,6 +18,7 @@ import type {
   CancelExecutionResponse,
   ActiveExecutionResponse,
   FlowExecutionsListResponse,
+  CohortesActivasResponse,
 } from '@/types/flowExecutionTracking'
 import { apiClient } from './client'
 
@@ -163,6 +164,26 @@ class FlowExecutionTrackingService {
   async cancelExecution(flujoId: number, ejecucionId: number): Promise<CancelExecutionResponse> {
     const response = await apiClient.delete<CancelExecutionResponse>(
       `${BASE_URL}/${flujoId}/ejecuciones/${ejecucionId}`,
+    )
+    return response.data
+  }
+
+  /**
+   * Get active cohorts summary for a flow
+   * Shows all active executions (cohorts) with per-node statistics
+   *
+   * @param flujoId - Flow ID
+   * @returns Cohorts summary with per-node breakdown
+   *
+   * @example
+   * const cohorts = await flowExecutionTrackingService.getCohortesActivas(1)
+   * if (cohorts.data.total_cohortes > 1) {
+   *   console.log('Multiple active cohorts')
+   * }
+   */
+  async getCohortesActivas(flujoId: number): Promise<CohortesActivasResponse> {
+    const response = await apiClient.get<CohortesActivasResponse>(
+      `${BASE_URL}/${flujoId}/cohortes-activas`,
     )
     return response.data
   }

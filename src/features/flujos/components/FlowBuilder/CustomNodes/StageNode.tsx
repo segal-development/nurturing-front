@@ -19,6 +19,7 @@ import {
   Send,
   Settings2,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
@@ -430,6 +431,67 @@ export function StageNode({
                     )}
                   </div>
                 </div>
+              )}
+
+              {/* Active Cohorts Indicator (for perpetual flows) */}
+              {data.cohorteResumen && data.cohorteResumen.total_cohortes > 0 && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="mt-3 p-2 rounded bg-indigo-50 border border-indigo-200 cursor-help">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-indigo-600 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-indigo-800">
+                              🔄 {data.cohorteResumen.total_cohortes} cohorte{data.cohorteResumen.total_cohortes > 1 ? 's' : ''} activa{data.cohorteResumen.total_cohortes > 1 ? 's' : ''}
+                            </p>
+                            <div className="flex gap-2 text-xs mt-0.5">
+                              {data.cohorteResumen.cohortes_completadas > 0 && (
+                                <span className="text-green-600">✓ {data.cohorteResumen.cohortes_completadas}</span>
+                              )}
+                              {data.cohorteResumen.cohortes_procesando > 0 && (
+                                <span className="text-amber-600">⟳ {data.cohorteResumen.cohortes_procesando}</span>
+                              )}
+                              {data.cohorteResumen.cohortes_pendientes > 0 && (
+                                <span className="text-gray-500">◷ {data.cohorteResumen.cohortes_pendientes}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent 
+                      side="right" 
+                      className="bg-indigo-900 text-white border-indigo-700 px-3 py-2 max-w-xs"
+                    >
+                      <div className="space-y-2">
+                        <p className="font-semibold text-sm">Detalle de cohortes</p>
+                        <div className="text-xs space-y-1">
+                          <p>Total prospectos: {data.cohorteResumen.total_prospectos.toLocaleString()}</p>
+                          <p>Procesados: {data.cohorteResumen.prospectos_procesados.toLocaleString()}</p>
+                        </div>
+                        {data.cohorteResumen.detalle_cohortes.length > 0 && (
+                          <div className="border-t border-indigo-700 pt-2 mt-2">
+                            <p className="text-xs text-indigo-200 mb-1">Por cohorte:</p>
+                            {data.cohorteResumen.detalle_cohortes.slice(0, 3).map((cohorte, idx) => (
+                              <div key={idx} className="text-xs flex justify-between gap-2">
+                                <span className="text-indigo-200">
+                                  {cohorte.estado === 'completed' ? '✓' : cohorte.estado === 'executing' ? '⟳' : '◷'}
+                                  {' '}{cohorte.prospectos.toLocaleString()} prosp.
+                                </span>
+                              </div>
+                            ))}
+                            {data.cohorteResumen.detalle_cohortes.length > 3 && (
+                              <p className="text-xs text-indigo-300 mt-1">
+                                +{data.cohorteResumen.detalle_cohortes.length - 3} más...
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {/* Paused State Banner */}
