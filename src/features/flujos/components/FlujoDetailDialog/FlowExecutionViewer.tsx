@@ -15,7 +15,7 @@ import ReactFlow, {
   useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, PauseCircle, Play, Trash2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, PauseCircle, Play, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,7 @@ import { formatCurrency, useCostoEjecucion, usePrecios } from '@/features/costos
 import type { StageExecution } from '@/types/flowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
 
-import { useCancelExecution, useFlowExecutionDetail, usePauseExecution, useResumeExecution } from '../../hooks/useFlowExecutionTracking'
+import { useCancelExecution, useCohortesActivas, useFlowExecutionDetail, usePauseExecution, useResumeExecution } from '../../hooks/useFlowExecutionTracking'
 import { useNodeLabelMap } from '../../hooks/useNodeLabelMap'
 import { ConditionalNode } from '../FlowBuilder/CustomNodes/ConditionalNode'
 import { EndNode } from '../FlowBuilder/CustomNodes/EndNode'
@@ -352,6 +352,10 @@ function FlowExecutionContent({
 
   // Get pricing for cost badge display
   const { data: precios } = usePrecios()
+
+  // Get cohorts data for "Últimos ingresos" panel
+  const { data: cohortesData } = useCohortesActivas(flujoId, true)
+  const ultimosIngresos = cohortesData?.data?.ultimos_ingresos
 
   // Create nodeTypes with precios - properly memoized to avoid re-renders
   const nodeTypes = useMemo(() => ({
@@ -946,6 +950,42 @@ function FlowExecutionContent({
                   </button>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Panel de Últimos Ingresos - muestra las cohortes más recientes */}
+        {ultimosIngresos && ultimosIngresos.length > 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-3 border border-segal-blue/20 min-w-64 max-w-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <UserPlus className="h-4 w-4 text-indigo-600" />
+              <p className="text-xs font-semibold text-segal-dark">Últimos ingresos</p>
+            </div>
+            <div className="space-y-2">
+              {ultimosIngresos.map((ingreso) => (
+                <div 
+                  key={ingreso.ejecucion_id}
+                  className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg border border-indigo-100"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-indigo-900 truncate">
+                      +{ingreso.prospectos_count.toLocaleString()} prospectos
+                    </p>
+                    <p className="text-xs text-indigo-600">
+                      {ingreso.fecha_legible} • {ingreso.origen_label}
+                    </p>
+                  </div>
+                  <div className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-medium ${
+                    ingreso.estado === 'in_progress' 
+                      ? 'bg-amber-100 text-amber-700' 
+                      : ingreso.estado === 'completed'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {ingreso.estado === 'in_progress' ? '⚡' : ingreso.estado === 'completed' ? '✓' : '○'}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

@@ -373,6 +373,19 @@ export interface CohorteActiva {
 }
 
 /**
+ * Último ingreso de prospectos a un flujo (para mostrar en panel)
+ */
+export interface UltimoIngreso {
+  ejecucion_id: number
+  fecha: string
+  fecha_legible: string
+  prospectos_count: number
+  origen: string
+  origen_label: string
+  estado: string
+}
+
+/**
  * Response from GET /flujos/:id/cohortes-activas
  */
 export interface CohortesActivasResponse {
@@ -381,5 +394,6 @@ export interface CohortesActivasResponse {
     total_cohortes: number
     cohortes: CohorteActiva[]
     resumen_por_nodo: Record<string, CohorteResumenNodo>
+    ultimos_ingresos?: UltimoIngreso[]
   }
 }
