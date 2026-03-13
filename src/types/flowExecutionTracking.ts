@@ -386,6 +386,17 @@ export interface UltimoIngreso {
 }
 
 /**
+ * Nuevos prospectos del último sync de Sysgal para este flujo
+ */
+export interface NuevosUltimoSync {
+  count: number
+  fecha: string
+  fecha_legible: string
+  nivel_deuda: string
+  origen: string
+}
+
+/**
  * Response from GET /flujos/:id/cohortes-activas
  */
 export interface CohortesActivasResponse {
@@ -395,5 +406,6 @@ export interface CohortesActivasResponse {
     cohortes: CohorteActiva[]
     resumen_por_nodo: Record<string, CohorteResumenNodo>
     ultimos_ingresos?: UltimoIngreso[]
+    nuevos_ultimo_sync?: NuevosUltimoSync
   }
 }
