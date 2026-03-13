@@ -181,7 +181,15 @@ export function LoteCombobox({
                     />
                     {getLoteStatusIcon(lote.estado)}
                     <div className="flex flex-col flex-1 min-w-0">
-                      <span className="font-medium text-sm truncate">{displayName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{displayName}</span>
+                        {/* Mostrar fecha del último sync para lotes Sysgal */}
+                        {lote.fecha_ultimo_sync && (
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">
+                            Sync: {lote.fecha_ultimo_sync}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                         <span>
                           {formatNumber(lote.total_prospectos)} prospectos

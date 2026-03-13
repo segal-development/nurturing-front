@@ -35,6 +35,8 @@ export interface LoteOpcion {
     alta: number
     total: number
   }
+  /** Fecha del último sync (solo para lotes Sysgal) */
+  fecha_ultimo_sync?: string
   created_at: string
   importaciones: Array<{
     id: number
