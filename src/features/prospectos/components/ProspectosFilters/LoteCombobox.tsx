@@ -186,11 +186,29 @@ export function LoteCombobox({
                         <span>
                           {formatNumber(lote.total_prospectos)} prospectos
                         </span>
-                        <span>•</span>
-                        <span>
-                          {lote.total_archivos}{' '}
-                          {lote.total_archivos === 1 ? 'archivo' : 'archivos'}
-                        </span>
+                        {/* Mostrar desglose por nivel de deuda si está disponible (Sysgal) */}
+                        {lote.desglose_nivel_deuda ? (
+                          <>
+                            <span>•</span>
+                            <span className="text-blue-600 dark:text-blue-400">
+                              {formatNumber(lote.desglose_nivel_deuda.baja)} baja
+                            </span>
+                            <span className="text-amber-600 dark:text-amber-400">
+                              {formatNumber(lote.desglose_nivel_deuda.media)} media
+                            </span>
+                            <span className="text-red-600 dark:text-red-400">
+                              {formatNumber(lote.desglose_nivel_deuda.alta)} alta
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span>•</span>
+                            <span>
+                              {lote.total_archivos}{' '}
+                              {lote.total_archivos === 1 ? 'archivo' : 'archivos'}
+                            </span>
+                          </>
+                        )}
                         {lote.nuevos_ultimo_sync && lote.nuevos_ultimo_sync > 0 && (
                           <>
                             <span>•</span>

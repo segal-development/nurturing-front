@@ -28,6 +28,13 @@ export interface LoteOpcion {
   total_registros: number
   registros_exitosos: number
   nuevos_ultimo_sync?: number
+  /** Desglose por nivel de deuda (solo para lotes Sysgal) */
+  desglose_nivel_deuda?: {
+    baja: number
+    media: number
+    alta: number
+    total: number
+  }
   created_at: string
   importaciones: Array<{
     id: number
