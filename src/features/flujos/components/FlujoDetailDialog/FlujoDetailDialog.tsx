@@ -31,9 +31,11 @@ import {
   Pause,
   UserPlus,
   RefreshCw,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
-import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail } from '@/features/flujos/hooks/useFlowExecutionTracking'
+import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail, useCohortesActivas } from '@/features/flujos/hooks/useFlowExecutionTracking'
 import { flujosService } from '@/api/flujos.service'
 import { FlujoStatisticsPanel } from './FlujoStatisticsPanel'
 import { FlowStructurePanel } from './FlowStructurePanel'
@@ -126,6 +128,13 @@ export function FlujoDetailDialog({
     initialFlujo?.id || 0,
     latestExecutionId || 0,
     !!latestExecutionId,
+  )
+
+  // Obtener cohortes activas (incluye nuevos_ultimo_sync para flujos perpetuos)
+  // El segundo parámetro controla polling - deshabilitamos cuando el diálogo está cerrado
+  const { data: cohortesActivasData } = useCohortesActivas(
+    open && initialFlujo?.id ? initialFlujo.id : 0,
+    open, // enablePolling solo cuando el diálogo está abierto
   )
 
   // Usar flujo detallado si está disponible, sino usar el flujo inicial
@@ -330,6 +339,38 @@ export function FlujoDetailDialog({
               {/* Tab: General */}
               {activeTab === 'general' && (
                 <>
+                  {/* Banner: Nuevos del Último Sync - para flujos perpetuos */}
+                  {cohortesActivasData?.data?.nuevos_ultimo_sync && cohortesActivasData.data.nuevos_ultimo_sync.count > 0 && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 shadow-sm">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                            <Sparkles className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-green-900 flex items-center gap-2">
+                              <span>+{cohortesActivasData.data.nuevos_ultimo_sync.count.toLocaleString()}</span>
+                              <span className="text-green-700 font-medium">nuevos prospectos del último sync</span>
+                            </h4>
+                            <p className="text-xs text-green-600 mt-0.5">
+                              {cohortesActivasData.data.nuevos_ultimo_sync.fecha_legible} • {cohortesActivasData.data.nuevos_ultimo_sync.origen}
+                            </p>
+                            <p className="text-xs text-green-700 font-medium mt-1">
+                              Segmento: {cohortesActivasData.data.nuevos_ultimo_sync.nivel_deuda}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('monitoreo')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Ver en Monitoreo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Información básica */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10">
@@ -623,6 +664,9 @@ export function FlujoDetailDialog({
                     }
                   }}
                   onRefresh={() => refetchExecutions()}
+                  // Cohort view for perpetual flows
+                  isPerpetual={flujo?.auto_asignar_nuevos === true}
+                  cohortesData={cohortesActivasData?.data}
                 />
               )}
 

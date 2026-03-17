@@ -2,16 +2,20 @@
  * Custom Stage Node for Flow Builder
  * Represents a nurturing stage/etapa in the flow
  * Supports editing inline with real-time updates
+ * 
+ * Phase 3 Enhancement: Cohort badges showing per-node cohort/prospect stats
  */
 
 import { useLayoutEffect, useRef, useState } from 'react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
 import {
   AlertCircle,
   Calendar,
   CheckCircle2,
   Clock,
   DollarSign,
+  Layers,
   Loader2,
   Mail,
   MessageSquare,
@@ -19,11 +23,13 @@ import {
   Send,
   Settings2,
   Trash2,
+  TrendingUp,
   Users,
 } from 'lucide-react'
 import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
 
+import { cn } from '@/lib/utils'
 import { DatePicker } from '@/components/ui/date-picker'
 import {
   Tooltip,
@@ -179,7 +185,8 @@ export function StageNode({
 
       <div
         ref={containerRef}
-        className={`rounded-xl border-2 p-4 min-w-[220px] bg-white shadow-md transition-all duration-200 ${
+        className={cn(
+          'rounded-xl border-2 p-4 min-w-[220px] bg-white shadow-md transition-all duration-200',
           // Estado de ejecución tiene prioridad en los estilos
           data.executionState === 'executing'
             ? 'border-amber-500 ring-2 ring-amber-400/30 executing-node'
@@ -195,8 +202,12 @@ export function StageNode({
                       ? 'border-segal-blue ring-2 ring-segal-blue/30 next-node'
                       : isSelected
                         ? 'border-segal-blue ring-2 ring-segal-blue/20'
-                        : 'border-segal-blue/30'
-        } ${isEditing ? 'ring-2 ring-segal-green/30' : ''}`}
+                        // Cohort-aware color coding: stages with active cohorts get indigo highlight
+                        : data.cohorteResumen && data.cohorteResumen.total_cohortes > 0
+                          ? 'border-indigo-400 ring-1 ring-indigo-200'
+                          : 'border-segal-blue/30',
+          isEditing && 'ring-2 ring-segal-green/30'
+        )}
       >
         {!isEditing ? (
           // View Mode
@@ -433,65 +444,160 @@ export function StageNode({
                 </div>
               )}
 
-              {/* Active Cohorts Indicator (for perpetual flows) */}
+              {/* Active Cohorts Indicator (for perpetual flows) - Phase 3 Enhanced */}
               {data.cohorteResumen && data.cohorteResumen.total_cohortes > 0 && (
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="mt-3 p-2 rounded bg-indigo-50 border border-indigo-200 cursor-help">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-indigo-600 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-indigo-800">
-                              🔄 {data.cohorteResumen.total_cohortes} cohorte{data.cohorteResumen.total_cohortes > 1 ? 's' : ''} activa{data.cohorteResumen.total_cohortes > 1 ? 's' : ''}
-                            </p>
-                            <div className="flex gap-2 text-xs mt-0.5">
+                <div className="mt-3 p-2.5 rounded-lg bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200/80">
+                  {/* Cohort Badges Row */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Cohort Count Badge */}
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-100 border border-indigo-300 cursor-help hover:bg-indigo-200 transition-colors">
+                            <Layers className="h-3 w-3 text-indigo-600" />
+                            <span className="text-xs font-semibold text-indigo-700">
+                              {data.cohorteResumen.total_cohortes}
+                            </span>
+                            <span className="text-xs text-indigo-600">
+                              cohorte{data.cohorteResumen.total_cohortes > 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          className="bg-indigo-900 text-white border-indigo-700 px-3 py-2"
+                        >
+                          <div className="space-y-1">
+                            <p className="font-semibold text-sm">Estado de cohortes</p>
+                            <div className="flex gap-3 text-xs">
                               {data.cohorteResumen.cohortes_completadas > 0 && (
-                                <span className="text-green-600">✓ {data.cohorteResumen.cohortes_completadas}</span>
+                                <span className="text-green-300">✓ {data.cohorteResumen.cohortes_completadas} completadas</span>
                               )}
                               {data.cohorteResumen.cohortes_procesando > 0 && (
-                                <span className="text-amber-600">⟳ {data.cohorteResumen.cohortes_procesando}</span>
+                                <span className="text-amber-300">⟳ {data.cohorteResumen.cohortes_procesando} procesando</span>
                               )}
                               {data.cohorteResumen.cohortes_pendientes > 0 && (
-                                <span className="text-gray-500">◷ {data.cohorteResumen.cohortes_pendientes}</span>
+                                <span className="text-gray-300">◷ {data.cohorteResumen.cohortes_pendientes} pendientes</span>
                               )}
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      side="right" 
-                      className="bg-indigo-900 text-white border-indigo-700 px-3 py-2 max-w-xs"
-                    >
-                      <div className="space-y-2">
-                        <p className="font-semibold text-sm">Detalle de cohortes</p>
-                        <div className="text-xs space-y-1">
-                          <p>Total prospectos: {data.cohorteResumen.total_prospectos.toLocaleString()}</p>
-                          <p>Procesados: {data.cohorteResumen.prospectos_procesados.toLocaleString()}</p>
-                        </div>
-                        {data.cohorteResumen.detalle_cohortes.length > 0 && (
-                          <div className="border-t border-indigo-700 pt-2 mt-2">
-                            <p className="text-xs text-indigo-200 mb-1">Por cohorte:</p>
-                            {data.cohorteResumen.detalle_cohortes.slice(0, 3).map((cohorte, idx) => (
-                              <div key={idx} className="text-xs flex justify-between gap-2">
-                                <span className="text-indigo-200">
-                                  {cohorte.estado === 'completed' ? '✓' : cohorte.estado === 'executing' ? '⟳' : '◷'}
-                                  {' '}{cohorte.prospectos.toLocaleString()} prosp.
-                                </span>
-                              </div>
-                            ))}
-                            {data.cohorteResumen.detalle_cohortes.length > 3 && (
-                              <p className="text-xs text-indigo-300 mt-1">
-                                +{data.cohorteResumen.detalle_cohortes.length - 3} más...
-                              </p>
-                            )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    {/* Prospect Count Badge */}
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-violet-100 border border-violet-300 cursor-help hover:bg-violet-200 transition-colors">
+                            <Users className="h-3 w-3 text-violet-600" />
+                            <span className="text-xs font-semibold text-violet-700">
+                              {data.cohorteResumen.total_prospectos.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-violet-600">prospectos</span>
                           </div>
-                        )}
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          className="bg-violet-900 text-white border-violet-700 px-3 py-2"
+                        >
+                          <div className="space-y-1.5">
+                            <p className="font-semibold text-sm">Prospectos en esta etapa</p>
+                            <div className="text-xs space-y-0.5">
+                              <p className="text-violet-200">
+                                Procesados: {data.cohorteResumen.prospectos_procesados.toLocaleString()}
+                              </p>
+                              <p className="text-violet-200">
+                                Pendientes: {(data.cohorteResumen.total_prospectos - data.cohorteResumen.prospectos_procesados).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+
+                  {/* Progress Bar */}
+                  {data.cohorteResumen.total_prospectos > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-indigo-600 font-medium flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Progreso
+                        </span>
+                        <span className="text-indigo-700 font-semibold">
+                          {Math.round((data.cohorteResumen.prospectos_procesados / data.cohorteResumen.total_prospectos) * 100)}%
+                        </span>
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                      <div className="h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.round((data.cohorteResumen.prospectos_procesados / data.cohorteResumen.total_prospectos) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cohort Details Breakdown (collapsible via tooltip) */}
+                  {data.cohorteResumen.detalle_cohortes.length > 0 && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button className="mt-2 w-full text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center gap-1 py-1 rounded hover:bg-indigo-100/50 transition-colors">
+                            <span>Ver detalle por cohorte</span>
+                            <span className="text-indigo-400">({data.cohorteResumen.detalle_cohortes.length})</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="right" 
+                          className="bg-slate-900 text-white border-slate-700 px-4 py-3 max-w-sm"
+                        >
+                          <div className="space-y-3">
+                            <p className="font-semibold text-sm border-b border-slate-700 pb-2">
+                              Detalle por cohorte
+                            </p>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {data.cohorteResumen.detalle_cohortes.map((cohorte, idx) => (
+                                <div 
+                                  key={cohorte.ejecucion_id || idx} 
+                                  className={cn(
+                                    'flex items-center justify-between gap-3 text-xs p-2 rounded',
+                                    cohorte.estado === 'completed' ? 'bg-green-900/30' :
+                                    cohorte.estado === 'executing' ? 'bg-amber-900/30' : 'bg-slate-800'
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      'w-2 h-2 rounded-full',
+                                      cohorte.estado === 'completed' ? 'bg-green-400' :
+                                      cohorte.estado === 'executing' ? 'bg-amber-400' : 'bg-gray-400'
+                                    )} />
+                                    <div>
+                                      <p className="font-medium text-white">
+                                        {cohorte.prospectos.toLocaleString()} prospectos
+                                      </p>
+                                      <p className="text-slate-400 text-[10px]">
+                                        {cohorte.created_at ? formatDistanceToNow(parseISO(cohorte.created_at), { addSuffix: true, locale: es }) : 'Sin fecha'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className={cn(
+                                    'px-1.5 py-0.5 rounded text-[10px] font-medium',
+                                    cohorte.estado === 'completed' ? 'bg-green-500/20 text-green-300' :
+                                    cohorte.estado === 'executing' ? 'bg-amber-500/20 text-amber-300' : 'bg-gray-500/20 text-gray-300'
+                                  )}>
+                                    {cohorte.estado === 'completed' ? 'Completado' :
+                                     cohorte.estado === 'executing' ? 'Procesando' : 'Pendiente'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               )}
 
               {/* Paused State Banner */}

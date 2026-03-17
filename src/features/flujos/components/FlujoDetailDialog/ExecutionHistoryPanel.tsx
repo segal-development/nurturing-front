@@ -1,81 +1,117 @@
 /**
  * ExecutionHistoryPanel
- * 
+ *
  * Displays the execution history of a flow with expandable cards showing
  * the timeline of each stage/node execution.
- * 
+ *
  * Features:
  * - Collapsible execution cards
  * - Stage timeline with status indicators
  * - Human-readable node labels from configVisual
  * - Duration and prospect count display
- * 
+ * - **COHORT VIEW** for perpetual flows (auto_asignar_nuevos)
+ *   - Groups executions as cohorts (entry date)
+ *   - Shows progress per cohort with stage distribution
+ *   - Visual progress bars and completion rates
+ *
  * @module ExecutionHistoryPanel
  */
 
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { useState } from "react";
+import { toast } from "sonner";
 
-import { 
-  CheckCircle2, 
+import {
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Clock, 
+  Clock,
   DollarSign,
-  Eye, 
+  Eye,
   GitBranch,
   Loader2,
   Mail,
   MessageSquare,
   RefreshCw,
-} from 'lucide-react'
+  Users,
+  Calendar,
+  TrendingUp,
+  Layers,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { formatCurrency, useRecalcularCosto } from '@/features/costos/hooks'
-import type { ExecutionListItem, ExecutionStageItem } from '@/types/flowExecutionTracking'
-import type { ConfigVisual } from '@/types/flujo'
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { formatCurrency, useRecalcularCosto } from "@/features/costos/hooks";
+import type {
+  ExecutionListItem,
+  ExecutionStageItem,
+  CohorteActiva,
+  CohortesActivasResponse,
+} from "@/types/flowExecutionTracking";
+import type { ConfigVisual } from "@/types/flujo";
 
-import { useNodeLabelMap } from '../../hooks/useNodeLabelMap'
+import { useNodeLabelMap } from "../../hooks/useNodeLabelMap";
 import {
   calculateExecutionDuration,
   formatExecutionDate,
   getExecutionStateColor,
   getExecutionStateIcon,
   getExecutionStateLabel,
-} from '../../utils/executionStateHelpers'
+} from "../../utils/executionStateHelpers";
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface ExecutionHistoryPanelProps {
-  ejecuciones: ExecutionListItem[] | undefined
-  isLoading?: boolean
-  onViewExecution?: (ejecucionId: number) => void
-  onRefresh?: () => void
-  configVisual?: ConfigVisual
+  ejecuciones: ExecutionListItem[] | undefined;
+  isLoading?: boolean;
+  onViewExecution?: (ejecucionId: number) => void;
+  onRefresh?: () => void;
+  configVisual?: ConfigVisual;
+  /** If true, renders cohort view instead of flat execution list */
+  isPerpetual?: boolean;
+  /** Cohort data from useCohortesActivas - required for cohort view */
+  cohortesData?: CohortesActivasResponse["data"];
 }
 
 interface StageItemProps {
-  stage: ExecutionStageItem
-  nodeLabel: string
-  isLast: boolean
+  stage: ExecutionStageItem;
+  nodeLabel: string;
+  isLast: boolean;
 }
 
 interface ExecutionCardProps {
-  ejecucion: ExecutionListItem
-  nodeLabelMap: Map<string, string>
-  onViewExecution?: (ejecucionId: number) => void
-  onCostRecalculated?: () => void
-  defaultExpanded?: boolean
+  ejecucion: ExecutionListItem;
+  nodeLabelMap: Map<string, string>;
+  onViewExecution?: (ejecucionId: number) => void;
+  onCostRecalculated?: () => void;
+  defaultExpanded?: boolean;
 }
 
 interface StageStatistics {
-  total: number
-  completed: number
-  failed: number
-  pending: number
-  executing: number
+  total: number;
+  completed: number;
+  failed: number;
+  pending: number;
+  executing: number;
+}
+
+// ============================================================================
+// Cohort View Types
+// ============================================================================
+
+interface CohortCardProps {
+  cohorte: CohorteActiva;
+  nodeLabelMap: Map<string, string>;
+  onViewExecution?: (ejecucionId: number) => void;
+  defaultExpanded?: boolean;
+}
+
+interface CohortSummaryProps {
+  totalCohortes: number;
+  totalProspectos: number;
+  cohortesActivas: number;
+  cohortesCompletadas: number;
 }
 
 // ============================================================================
@@ -86,16 +122,16 @@ interface StageStatistics {
  * Infers the node type icon based on node ID patterns
  */
 function getNodeTypeIcon(nodeId: string) {
-  if (nodeId.includes('email') || nodeId.includes('mail')) {
-    return <Mail className="h-4 w-4" />
+  if (nodeId.includes("email") || nodeId.includes("mail")) {
+    return <Mail className="h-4 w-4" />;
   }
-  if (nodeId.includes('sms') || nodeId.includes('message')) {
-    return <MessageSquare className="h-4 w-4" />
+  if (nodeId.includes("sms") || nodeId.includes("message")) {
+    return <MessageSquare className="h-4 w-4" />;
   }
-  if (nodeId.includes('condition') || nodeId.includes('branch')) {
-    return <GitBranch className="h-4 w-4" />
+  if (nodeId.includes("condition") || nodeId.includes("branch")) {
+    return <GitBranch className="h-4 w-4" />;
   }
-  return <CheckCircle2 className="h-4 w-4" />
+  return <CheckCircle2 className="h-4 w-4" />;
 }
 
 /**
@@ -103,122 +139,454 @@ function getNodeTypeIcon(nodeId: string) {
  */
 function sortStagesByDate(stages: ExecutionStageItem[]): ExecutionStageItem[] {
   return [...stages].sort((a, b) => {
-    const dateA = new Date(a.fecha_programada).getTime()
-    const dateB = new Date(b.fecha_programada).getTime()
-    return dateA - dateB
-  })
+    const dateA = new Date(a.fecha_programada).getTime();
+    const dateB = new Date(b.fecha_programada).getTime();
+    return dateA - dateB;
+  });
 }
 
 /**
  * Calculates statistics from stages array
  */
-function calculateStageStatistics(stages: ExecutionStageItem[]): StageStatistics | null {
-  if (stages.length === 0) return null
-  
+function calculateStageStatistics(
+  stages: ExecutionStageItem[],
+): StageStatistics | null {
+  if (stages.length === 0) return null;
+
   return {
     total: stages.length,
-    completed: stages.filter(s => s.estado === 'completed').length,
-    failed: stages.filter(s => s.estado === 'failed').length,
-    pending: stages.filter(s => s.estado === 'pending').length,
-    executing: stages.filter(s => s.estado === 'executing').length,
+    completed: stages.filter((s) => s.estado === "completed").length,
+    failed: stages.filter((s) => s.estado === "failed").length,
+    pending: stages.filter((s) => s.estado === "pending").length,
+    executing: stages.filter((s) => s.estado === "executing").length,
+  };
+}
+
+/**
+ * Formats a cohort entry date for display
+ */
+function formatCohortDate(fecha: string): string {
+  const date = new Date(fecha);
+  if (Number.isNaN(date.getTime())) return "---";
+
+  return date.toLocaleDateString("es-CL", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/**
+ * Gets a descriptive label for the cohort origin
+ */
+function getOrigenLabel(origen: string): { label: string; color: string } {
+  if (origen === "auto_asignar_nuevos") {
+    return {
+      label: "Sync SYSGAL",
+      color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    };
   }
+  if (origen === "manual") {
+    return {
+      label: "Manual",
+      color: "bg-blue-100 text-blue-700 border-blue-200",
+    };
+  }
+  return {
+    label: origen,
+    color: "bg-slate-100 text-slate-700 border-slate-200",
+  };
 }
 
 // ============================================================================
-// Sub-Components
+// Cohort View Components
+// ============================================================================
+
+/**
+ * Summary header showing aggregate cohort statistics
+ */
+function CohortSummary({
+  totalCohortes,
+  totalProspectos,
+  cohortesActivas,
+  cohortesCompletadas,
+}: CohortSummaryProps) {
+  const completionRate =
+    totalCohortes > 0
+      ? Math.round((cohortesCompletadas / totalCohortes) * 100)
+      : 0;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+        <div className="flex items-center gap-2 text-segal-blue mb-1">
+          <Layers className="h-4 w-4" />
+          <span className="text-xs font-medium">Total Cohortes</span>
+        </div>
+        <p className="text-2xl font-bold text-segal-dark">{totalCohortes}</p>
+      </div>
+
+      <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+        <div className="flex items-center gap-2 text-segal-blue mb-1">
+          <Users className="h-4 w-4" />
+          <span className="text-xs font-medium">Total Prospectos</span>
+        </div>
+        <p className="text-2xl font-bold text-segal-dark">
+          {totalProspectos.toLocaleString()}
+        </p>
+      </div>
+
+      <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+        <div className="flex items-center gap-2 text-amber-600 mb-1">
+          <Loader2 className="h-4 w-4" />
+          <span className="text-xs font-medium">En Progreso</span>
+        </div>
+        <p className="text-2xl font-bold text-amber-700">{cohortesActivas}</p>
+      </div>
+
+      <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+        <div className="flex items-center gap-2 text-green-600 mb-1">
+          <TrendingUp className="h-4 w-4" />
+          <span className="text-xs font-medium">Completados</span>
+        </div>
+        <p className="text-2xl font-bold text-green-700">
+          {cohortesCompletadas}
+          <span className="text-sm font-normal text-green-600 ml-1">
+            ({completionRate}%)
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Individual cohort card with expandable details
+ */
+function CohortCard({
+  cohorte,
+  nodeLabelMap,
+  onViewExecution,
+  defaultExpanded = false,
+}: CohortCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  const colorClass = getExecutionStateColor(cohorte.estado);
+  const origenInfo = getOrigenLabel(cohorte.origen);
+
+  // Calculate progress bar color based on state
+  const progressColor =
+    cohorte.estado === "completed"
+      ? "bg-green-500"
+      : cohorte.estado === "failed"
+        ? "bg-red-500"
+        : "bg-segal-blue";
+
+  return (
+    <div className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors">
+      {/* Header - Always visible */}
+      <button
+        type="button"
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="w-full p-4 flex items-start justify-between gap-4 hover:bg-segal-blue/5 transition-colors"
+      >
+        <div className="flex items-start gap-3 flex-1">
+          {/* Icon and main info */}
+          <div className={cn("p-2 rounded-lg border", colorClass)}>
+            <Calendar className="h-5 w-5" />
+          </div>
+
+          <div className="text-left flex-1">
+            {/* Cohort title with date */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-semibold text-segal-dark">
+                Cohorte {formatCohortDate(cohorte.created_at)}
+              </p>
+              <span
+                className={cn(
+                  "px-2 py-0.5 text-xs font-medium rounded-full border",
+                  origenInfo.color,
+                )}
+              >
+                {origenInfo.label}
+              </span>
+            </div>
+
+            {/* Key metrics row */}
+            <div className="flex items-center gap-4 mt-2 text-sm text-segal-dark/70">
+              <span className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <strong>
+                  {cohorte.prospectos_count.toLocaleString()}
+                </strong>{" "}
+                prospectos
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                {cohorte.etapas_completadas}/{cohorte.etapas_total} etapas
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full transition-all duration-500",
+                    progressColor,
+                  )}
+                  style={{ width: `${cohorte.progreso}%` }}
+                />
+              </div>
+              <span className="text-sm font-semibold text-segal-dark min-w-[3rem] text-right">
+                {cohorte.progreso}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side: status and expand button */}
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border",
+              colorClass,
+            )}
+          >
+            {getExecutionStateIcon(cohorte.estado, "h-3 w-3")}
+            <span className="ml-1">{cohorte.estado_legible}</span>
+          </span>
+
+          {onViewExecution && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewExecution(cohorte.id);
+              }}
+              className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+              title="Ver monitoreo visual"
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              Ver
+            </Button>
+          )}
+
+          {isExpanded ? (
+            <ChevronDown className="h-5 w-5 text-segal-dark/40" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-segal-dark/40" />
+          )}
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="border-t border-segal-blue/10 p-4 bg-segal-blue/5">
+          {/* Current stage info */}
+          {cohorte.nodo_actual && (
+            <div className="bg-white rounded-lg p-4 border border-segal-blue/10 mb-4">
+              <h4 className="text-sm font-semibold text-segal-dark mb-2">
+                Estado Actual
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-segal-dark/60 mb-1">
+                    Etapa actual
+                  </p>
+                  <p className="font-medium text-segal-dark">
+                    {nodeLabelMap.get(cohorte.nodo_actual) ||
+                      cohorte.nodo_actual}
+                  </p>
+                </div>
+                {cohorte.proximo_nodo && (
+                  <div>
+                    <p className="text-xs text-segal-dark/60 mb-1">
+                      Próxima etapa
+                    </p>
+                    <p className="font-medium text-segal-dark">
+                      {nodeLabelMap.get(cohorte.proximo_nodo) ||
+                        cohorte.proximo_nodo}
+                      {cohorte.fecha_proximo_nodo && (
+                        <span className="text-xs text-segal-dark/50 ml-2">
+                          ({formatExecutionDate(cohorte.fecha_proximo_nodo)})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stage progress visual */}
+          <div className="bg-white rounded-lg p-4 border border-segal-blue/10">
+            <h4 className="text-sm font-semibold text-segal-dark mb-3">
+              Progreso por Etapas
+            </h4>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: cohorte.etapas_total }).map((_, idx) => {
+                const isCompleted = idx < cohorte.etapas_completadas;
+                const isCurrent =
+                  idx === cohorte.etapas_completadas &&
+                  cohorte.estado !== "completed";
+
+                return (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "flex-1 h-3 rounded-sm transition-colors",
+                      isCompleted && "bg-green-500",
+                      isCurrent && "bg-amber-400 animate-pulse",
+                      !isCompleted && !isCurrent && "bg-slate-200",
+                    )}
+                    title={`Etapa ${idx + 1}`}
+                  />
+                );
+              })}
+            </div>
+            <div className="flex justify-between mt-2 text-xs text-segal-dark/50">
+              <span>Etapa 1</span>
+              <span>Etapa {cohorte.etapas_total}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Empty state for cohort view
+ */
+function CohortEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center p-12 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
+      <Layers className="h-12 w-12 text-segal-blue/40 mb-3" />
+      <p className="text-segal-dark/60 font-medium">Sin cohortes registradas</p>
+      <p className="text-sm text-segal-dark/40 mt-1">
+        Las cohortes aparecerán cuando el flujo reciba prospectos del sync de
+        SYSGAL
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// Sub-Components (Legacy View)
 // ============================================================================
 
 function StageItem({ stage, nodeLabel, isLast }: StageItemProps) {
-  const colorClass = getExecutionStateColor(stage.estado)
-  
+  const colorClass = getExecutionStateColor(stage.estado);
+
   return (
     <div className="relative pl-8">
       {/* Timeline line */}
       {!isLast && (
         <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-gray-200" />
       )}
-      
+
       {/* Timeline dot */}
-      <div className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 flex items-center justify-center ${colorClass}`}>
-        {getExecutionStateIcon(stage.estado, 'h-3 w-3')}
+      <div
+        className={`absolute left-0 top-1 w-6 h-6 rounded-full border-2 flex items-center justify-center ${colorClass}`}
+      >
+        {getExecutionStateIcon(stage.estado, "h-3 w-3")}
       </div>
-      
+
       {/* Content */}
-      <div className={`pb-4 ${isLast ? '' : 'border-b border-gray-100 mb-4'}`}>
+      <div className={`pb-4 ${isLast ? "" : "border-b border-gray-100 mb-4"}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
             <div className="flex items-center gap-2">
               {getNodeTypeIcon(stage.node_id)}
               <span className="font-medium text-segal-dark">{nodeLabel}</span>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}
+              >
                 {getExecutionStateLabel(stage.estado)}
               </span>
             </div>
-            
+
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-segal-dark/60">
               <div>
-                <span className="font-medium">Programada:</span>{' '}
+                <span className="font-medium">Programada:</span>{" "}
                 {formatExecutionDate(stage.fecha_programada)}
               </div>
               {stage.fecha_ejecucion && (
                 <div>
-                  <span className="font-medium">Ejecutada:</span>{' '}
+                  <span className="font-medium">Ejecutada:</span>{" "}
                   {formatExecutionDate(stage.fecha_ejecucion)}
                 </div>
               )}
             </div>
-            
+
             {stage.error_mensaje && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                <span className="font-medium">Error:</span> {stage.error_mensaje}
+                <span className="font-medium">Error:</span>{" "}
+                {stage.error_mensaje}
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalculated, defaultExpanded = false }: ExecutionCardProps) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-  const recalcularCosto = useRecalcularCosto()
-  
-  const colorClass = getExecutionStateColor(ejecucion.estado)
-  const fechaInicio = ejecucion.fecha_inicio_real ?? ejecucion.fecha_inicio_programada ?? ejecucion.created_at
-  const duracion = calculateExecutionDuration(fechaInicio, ejecucion.fecha_fin)
-  
-  const etapasOrdenadas = ejecucion.etapas ? sortStagesByDate(ejecucion.etapas) : []
-  
-  const estadisticas = calculateStageStatistics(etapasOrdenadas)
+function ExecutionCard({
+  ejecucion,
+  nodeLabelMap,
+  onViewExecution,
+  onCostRecalculated,
+  defaultExpanded = false,
+}: ExecutionCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const recalcularCosto = useRecalcularCosto();
 
-  const handleToggleExpand = () => setIsExpanded(prev => !prev)
-  
+  const colorClass = getExecutionStateColor(ejecucion.estado);
+  const fechaInicio =
+    ejecucion.fecha_inicio_real ??
+    ejecucion.fecha_inicio_programada ??
+    ejecucion.created_at;
+  const duracion = calculateExecutionDuration(fechaInicio, ejecucion.fecha_fin);
+
+  const etapasOrdenadas = ejecucion.etapas
+    ? sortStagesByDate(ejecucion.etapas)
+    : [];
+
+  const estadisticas = calculateStageStatistics(etapasOrdenadas);
+
+  const handleToggleExpand = () => setIsExpanded((prev) => !prev);
+
   const handleViewClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onViewExecution?.(ejecucion.id)
-  }
+    e.stopPropagation();
+    onViewExecution?.(ejecucion.id);
+  };
 
   const handleRecalcularCosto = (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     recalcularCosto.mutate(ejecucion.id, {
       onSuccess: (data) => {
-        toast.success('Costo recalculado correctamente', {
+        toast.success("Costo recalculado correctamente", {
           description: `Nuevo costo: ${formatCurrency(data.costo_total)}`,
-        })
-        onCostRecalculated?.()
+        });
+        onCostRecalculated?.();
       },
       onError: (error: Error) => {
-        toast.error('Error al recalcular el costo', {
+        toast.error("Error al recalcular el costo", {
           description: error.message,
-        })
+        });
       },
-    })
-  }
+    });
+  };
 
   // Show recalculate button only for completed executions
-  const canRecalculate = ejecucion.estado === 'completed'
-  
+  const canRecalculate = ejecucion.estado === "completed";
+
   return (
     <div className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors">
       {/* Header - Always visible */}
@@ -240,7 +608,7 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* Mini stats */}
           {estadisticas && (
@@ -255,11 +623,13 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
               )}
             </div>
           )}
-          
-          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
+
+          <span
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${colorClass}`}
+          >
             {getExecutionStateLabel(ejecucion.estado)}
           </span>
-          
+
           {onViewExecution && (
             <Button
               size="sm"
@@ -272,7 +642,7 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
               Ver
             </Button>
           )}
-          
+
           {isExpanded ? (
             <ChevronDown className="h-5 w-5 text-segal-dark/40" />
           ) : (
@@ -280,12 +650,14 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
           )}
         </div>
       </button>
-      
+
       {/* Expanded content - Stages */}
       {isExpanded && (
         <ExpandedContent
           duracion={duracion}
-          prospectosCount={ejecucion.prospectos_count ?? ejecucion.prospectos_ids?.length}
+          prospectosCount={
+            ejecucion.prospectos_count ?? ejecucion.prospectos_ids?.length
+          }
           etapasOrdenadas={etapasOrdenadas}
           nodeLabelMap={nodeLabelMap}
           costoReal={ejecucion.costo_real}
@@ -298,38 +670,38 @@ function ExecutionCard({ ejecucion, nodeLabelMap, onViewExecution, onCostRecalcu
         />
       )}
     </div>
-  )
+  );
 }
 
 interface ExpandedContentProps {
-  duracion: string
-  prospectosCount?: number
-  etapasOrdenadas: ExecutionStageItem[]
-  nodeLabelMap: Map<string, string>
-  costoReal?: number | null
-  costoEstimado?: number | null
-  totalEmailsEnviados?: number | null
-  totalSmsEnviados?: number | null
-  canRecalculate?: boolean
-  isRecalculating?: boolean
-  onRecalculate?: (e: React.MouseEvent) => void
+  duracion: string;
+  prospectosCount?: number;
+  etapasOrdenadas: ExecutionStageItem[];
+  nodeLabelMap: Map<string, string>;
+  costoReal?: number | null;
+  costoEstimado?: number | null;
+  totalEmailsEnviados?: number | null;
+  totalSmsEnviados?: number | null;
+  canRecalculate?: boolean;
+  isRecalculating?: boolean;
+  onRecalculate?: (e: React.MouseEvent) => void;
 }
 
-function ExpandedContent({ 
-  duracion, 
-  prospectosCount, 
-  etapasOrdenadas, 
+function ExpandedContent({
+  duracion,
+  prospectosCount,
+  etapasOrdenadas,
   nodeLabelMap,
   costoReal,
   costoEstimado,
   totalEmailsEnviados,
-  totalSmsEnviados,
+  // totalSmsEnviados - available for future use
   canRecalculate,
   isRecalculating,
   onRecalculate,
 }: ExpandedContentProps) {
-  const costo = costoReal ?? costoEstimado
-  const isEstimado = costoReal === null && costoEstimado !== null
+  const costo = costoReal ?? costoEstimado;
+  const isEstimado = costoReal === null && costoEstimado !== null;
 
   return (
     <div className="border-t border-segal-blue/10 p-4 bg-segal-blue/5">
@@ -341,29 +713,35 @@ function ExpandedContent({
           </span>
           {prospectosCount !== undefined && (
             <span>
-              <span className="font-medium">Prospectos:</span> {prospectosCount.toLocaleString()}
+              <span className="font-medium">Prospectos:</span>{" "}
+              {prospectosCount.toLocaleString()}
             </span>
           )}
         </div>
-        
+
         {/* Cost info with recalculate button */}
-        {(costo !== null && costo !== undefined) && (
+        {costo !== null && costo !== undefined && (
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-segal-blue/10">
               <DollarSign className="h-4 w-4 text-emerald-600" />
-              <span className={`font-semibold ${isEstimado ? 'text-emerald-600/70' : 'text-emerald-700'}`}>
+              <span
+                className={`font-semibold ${isEstimado ? "text-emerald-600/70" : "text-emerald-700"}`}
+              >
                 {formatCurrency(costo)}
               </span>
               {isEstimado && (
                 <span className="text-xs text-segal-dark/50">(estimado)</span>
               )}
-              {!isEstimado && totalEmailsEnviados !== null && totalEmailsEnviados !== undefined && totalEmailsEnviados > 0 && (
-                <span className="text-xs text-segal-dark/50">
-                  ({totalEmailsEnviados.toLocaleString()} emails)
-                </span>
-              )}
+              {!isEstimado &&
+                totalEmailsEnviados !== null &&
+                totalEmailsEnviados !== undefined &&
+                totalEmailsEnviados > 0 && (
+                  <span className="text-xs text-segal-dark/50">
+                    ({totalEmailsEnviados.toLocaleString()} emails)
+                  </span>
+                )}
             </div>
-            
+
             {canRecalculate && onRecalculate && (
               <Button
                 size="sm"
@@ -384,7 +762,7 @@ function ExpandedContent({
           </div>
         )}
       </div>
-      
+
       {/* Stages timeline */}
       {etapasOrdenadas.length > 0 ? (
         <div className="bg-white rounded-lg p-4 border border-segal-blue/10">
@@ -408,7 +786,7 @@ function ExpandedContent({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ============================================================================
@@ -421,47 +799,119 @@ function LoadingState() {
       <Loader2 className="h-12 w-12 text-segal-blue/40 mb-3 animate-spin" />
       <p className="text-segal-dark/60 font-medium">Cargando ejecuciones...</p>
     </div>
-  )
+  );
 }
 
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center p-12 bg-segal-blue/5 rounded-lg border border-segal-blue/10">
       <Clock className="h-12 w-12 text-segal-blue/40 mb-3" />
-      <p className="text-segal-dark/60 font-medium">No hay ejecuciones registradas</p>
-      <p className="text-sm text-segal-dark/40 mt-1">Este flujo aun no ha sido ejecutado</p>
+      <p className="text-segal-dark/60 font-medium">
+        No hay ejecuciones registradas
+      </p>
+      <p className="text-sm text-segal-dark/40 mt-1">
+        Este flujo aun no ha sido ejecutado
+      </p>
     </div>
-  )
+  );
 }
 
 // ============================================================================
 // Main Component
 // ============================================================================
 
-export function ExecutionHistoryPanel({ 
-  ejecuciones, 
-  isLoading, 
+export function ExecutionHistoryPanel({
+  ejecuciones,
+  isLoading,
   onViewExecution,
   onRefresh,
-  configVisual 
+  configVisual,
+  isPerpetual = false,
+  cohortesData,
 }: ExecutionHistoryPanelProps) {
-  const nodeLabelMap = useNodeLabelMap(configVisual)
+  const nodeLabelMap = useNodeLabelMap(configVisual);
 
   if (isLoading) {
-    return <LoadingState />
+    return <LoadingState />;
   }
 
+  // =========================================================================
+  // COHORT VIEW (for perpetual flows)
+  // =========================================================================
+  if (isPerpetual && cohortesData) {
+    const { cohortes, total_cohortes } = cohortesData;
+
+    // Calculate aggregate stats
+    const totalProspectos = cohortes.reduce(
+      (acc, c) => acc + c.prospectos_count,
+      0,
+    );
+    const cohortesActivas = cohortes.filter(
+      (c) => c.estado === "in_progress" || c.estado === "paused",
+    ).length;
+    const cohortesCompletadas = cohortes.filter(
+      (c) => c.estado === "completed",
+    ).length;
+
+    if (total_cohortes === 0 || cohortes.length === 0) {
+      return <CohortEmptyState />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-segal-blue" />
+            <h3 className="text-lg font-bold text-segal-dark">
+              Cohortes del Flujo
+            </h3>
+          </div>
+          <span className="text-sm text-segal-dark/60 bg-segal-blue/10 px-2 py-1 rounded-full">
+            Flujo Perpetuo
+          </span>
+        </div>
+
+        {/* Cohort Summary Stats */}
+        <CohortSummary
+          totalCohortes={total_cohortes}
+          totalProspectos={totalProspectos}
+          cohortesActivas={cohortesActivas}
+          cohortesCompletadas={cohortesCompletadas}
+        />
+
+        {/* Cohort Cards */}
+        <div className="space-y-3">
+          {cohortes.map((cohorte, index) => (
+            <CohortCard
+              key={cohorte.id}
+              cohorte={cohorte}
+              nodeLabelMap={nodeLabelMap}
+              onViewExecution={onViewExecution}
+              defaultExpanded={index === 0}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // LEGACY VIEW (for non-perpetual flows)
+  // =========================================================================
   if (!ejecuciones || ejecuciones.length === 0) {
-    return <EmptyState />
+    return <EmptyState />;
   }
 
-  const ejecutionCount = ejecuciones.length
-  const pluralSuffix = ejecutionCount !== 1 ? 'es' : ''
+  const ejecutionCount = ejecuciones.length;
+  const pluralSuffix = ejecutionCount !== 1 ? "es" : "";
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-segal-dark">Historial de Ejecuciones</h3>
+        <h3 className="text-lg font-bold text-segal-dark">
+          Historial de Ejecuciones
+        </h3>
         <span className="text-sm text-segal-dark/60">
           {ejecutionCount} ejecucion{pluralSuffix}
         </span>
@@ -480,5 +930,5 @@ export function ExecutionHistoryPanel({
         ))}
       </div>
     </div>
-  )
+  );
 }
