@@ -79,22 +79,24 @@ export function EndNode({
               <p className="text-xs text-segal-dark/70 italic">{localData.description}</p>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t border-segal-green/10">
-              <button
-                onClick={handleEdit}
-                className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium text-segal-green border border-segal-green/20 hover:bg-segal-green/5 transition-colors"
-              >
-                <Settings2 className="h-3 w-3" />
-                Editar
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex items-center justify-center px-2 py-1.5 rounded text-xs font-medium text-segal-red border border-segal-red/20 hover:bg-segal-red/5 transition-colors"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
+            {/* Actions - Hidden when in read-only mode (flow is executing) */}
+            {!data.isReadOnly && (
+              <div className="flex gap-2 pt-2 border-t border-segal-green/10">
+                <button
+                  onClick={handleEdit}
+                  className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium text-segal-green border border-segal-green/20 hover:bg-segal-green/5 transition-colors"
+                >
+                  <Settings2 className="h-3 w-3" />
+                  Editar
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center justify-center px-2 py-1.5 rounded text-xs font-medium text-segal-red border border-segal-red/20 hover:bg-segal-red/5 transition-colors"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           // Edit Mode

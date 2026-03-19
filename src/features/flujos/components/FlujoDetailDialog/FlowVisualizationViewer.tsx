@@ -106,6 +106,8 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
       // Solo agregar valores por defecto si NO EXISTEN
       const enrichedData = {
         ...nodeData,
+        // Read-only mode: hide edit/delete buttons in visualization viewer
+        isReadOnly: true,
         // Usar el valor real si existe, sino usar default
         label: nodeData.label !== undefined ? nodeData.label : `${node.type === 'stage' ? 'Etapa' : node.type === 'conditional' ? 'Condición' : 'Nodo'} ${node.id.substring(0, 5)}`,
         dia_envio: nodeData.dia_envio !== undefined ? nodeData.dia_envio : 1,

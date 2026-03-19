@@ -472,6 +472,7 @@ function FlowExecutionContent({
             ...node,
             data: {
               ...node.data,
+              isReadOnly: true, // Flow is executing, disable edit/delete
               isNextNode,
               nextExecutionTime,
             },
@@ -482,6 +483,7 @@ function FlowExecutionContent({
           ...node,
           data: {
             ...node.data,
+            isReadOnly: true, // Flow is executing, disable edit/delete
             executionState: stage.estado,
             executionDate: stage.fecha_ejecucion,
             errorMessage: stage.error_mensaje,
