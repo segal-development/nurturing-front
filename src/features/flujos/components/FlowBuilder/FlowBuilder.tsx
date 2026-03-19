@@ -286,9 +286,10 @@ function FlowBuilderContent({
   /**
    * Valida el flujo antes de guardar
    * Early return para fallos de validación
+   * @param isDraft - Si es true, no valida plantillas (permite guardar borradores)
    */
-  const validateBeforeSave = (): boolean => {
-    const validation = validateFlow(flowName, storeNodes)
+  const validateBeforeSave = (isDraft = false): boolean => {
+    const validation = validateFlow(flowName, storeNodes, { isDraft })
     if (!validation.isValid) {
       alert(validation.message)
       return false
@@ -299,10 +300,11 @@ function FlowBuilderContent({
   /**
    * Handle save flow
    * Refactorizado con early returns y funciones pequeñas
+   * @param isDraft - Si es true, guarda como borrador sin validar plantillas
    */
-  const handleSaveFlow = async (): Promise<void> => {
+  const handleSaveFlow = async (isDraft = false): Promise<void> => {
     // Early return si la validación falla
-    if (!validateBeforeSave()) return
+    if (!validateBeforeSave(isDraft)) return
 
     try {
       // Construir configuración completa
@@ -493,12 +495,22 @@ function FlowBuilderContent({
           {/* Actions */}
           <div className="space-y-2 border-t border-segal-blue/10 pt-4">
             <Button
-              onClick={handleSaveFlow}
+              onClick={() => handleSaveFlow(false)}
               disabled={!isFlowValid}
               className="w-full bg-segal-green hover:bg-segal-green/90 text-white disabled:opacity-50 font-semibold flex items-center justify-center gap-2 h-10"
             >
               <Save className="h-4 w-4" />
               Guardar
+            </Button>
+
+            <Button
+              onClick={() => handleSaveFlow(true)}
+              disabled={!isFlowValid}
+              variant="outline"
+              className="w-full border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100 font-semibold flex items-center justify-center gap-2 h-10"
+            >
+              <Save className="h-4 w-4" />
+              Guardar Borrador
             </Button>
 
             <Button

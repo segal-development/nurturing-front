@@ -77,16 +77,27 @@ export function validateStagePlantillas(storeNodes: ReactFlowNode[]): FlowValida
 
 /**
  * Ejecuta validaciones en orden
+ * @param flowName - Nombre del flujo
+ * @param storeNodes - Nodos del flujo
+ * @param options - Opciones de validación
+ * @param options.isDraft - Si es true, no valida plantillas (permite guardar borradores)
  */
-export function validateFlow(flowName: string, storeNodes: ReactFlowNode[]): FlowValidationError {
+export function validateFlow(
+  flowName: string,
+  storeNodes: ReactFlowNode[],
+  options: { isDraft?: boolean } = {}
+): FlowValidationError {
   const nameValidation = validateFlowName(flowName)
   if (!nameValidation.isValid) return nameValidation
 
   const stagesValidation = validateHasStages(storeNodes)
   if (!stagesValidation.isValid) return stagesValidation
 
-  const plantillasValidation = validateStagePlantillas(storeNodes)
-  if (!plantillasValidation.isValid) return plantillasValidation
+  // Skip plantilla validation for drafts
+  if (!options.isDraft) {
+    const plantillasValidation = validateStagePlantillas(storeNodes)
+    if (!plantillasValidation.isValid) return plantillasValidation
+  }
 
   return { isValid: true, code: 'VALID' }
 }
