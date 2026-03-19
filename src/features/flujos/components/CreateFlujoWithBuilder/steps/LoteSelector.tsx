@@ -130,15 +130,24 @@ export function LoteSelector({
           <div className="text-center text-segal-dark/60">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron lotes para este origen</p>
+            <p className="text-sm mt-2">Podés continuar sin seleccionar lotes y agregarlos después</p>
           </div>
         </div>
         <div className="flex justify-between gap-3 pt-6 border-t">
           <Button variant="outline" onClick={onBack}>
             Atrás
           </Button>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={onSkip}
+              className="bg-segal-blue hover:bg-segal-blue/90 text-white"
+            >
+              Continuar sin lotes
+            </Button>
+          </div>
         </div>
       </div>
     )
