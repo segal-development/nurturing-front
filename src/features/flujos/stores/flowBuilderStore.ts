@@ -65,11 +65,33 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   flowName: '',
   flowDescription: '',
 
+  // Helper to find the rightmost node position
+  _getNextNodePosition: (): { x: number; y: number } => {
+    const state = get()
+    const nonInitialNodes = state.nodes.filter((n) => n.type !== 'initial')
+    
+    if (nonInitialNodes.length === 0) {
+      // First node after initial - position to the right of initial
+      return { x: 400, y: 200 }
+    }
+    
+    // Find the rightmost node
+    const rightmostNode = nonInitialNodes.reduce((prev, curr) => 
+      curr.position.x > prev.position.x ? curr : prev
+    )
+    
+    // Position new node to the right of the rightmost node
+    return {
+      x: rightmostNode.position.x + 250,
+      y: rightmostNode.position.y,
+    }
+  },
+
   // Node actions
   addStageNode: () => {
     const state = get()
     const stageCount = state.nodes.filter((n) => n.type === 'stage').length
-    const newY = 250 + stageCount * 200
+    const position = (get() as any)._getNextNodePosition()
 
     const newNode: CustomNode = {
       id: `stage-${nanoid()}`,
@@ -81,7 +103,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
         plantilla_type: 'inline',
         activo: true,
       } as StageNodeData,
-      position: { x: 400, y: newY },
+      position,
       type: 'stage',
     }
 
@@ -91,9 +113,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   },
 
   addConditionalNode: () => {
-    const state = get()
-    const nodeCount = state.nodes.length
-    const newY = 250 + nodeCount * 150
+    const position = (get() as any)._getNextNodePosition()
 
     const newNode: CustomNode = {
       id: `conditional-${nanoid()}`,
@@ -108,7 +128,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
         yesLabel: 'Sí',
         noLabel: 'No',
       } as ConditionalNodeData,
-      position: { x: 600, y: newY },
+      position,
       type: 'conditional',
     }
 
@@ -120,12 +140,12 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   addEndNode: () => {
     const state = get()
     const endNodeCount = state.nodes.filter((n) => n.type === 'end').length
-    const newY = 250 + endNodeCount * 200
+    const position = (get() as any)._getNextNodePosition()
 
     const newNode: CustomNode = {
       id: `end-${nanoid()}`,
       data: { label: `Fin ${endNodeCount > 0 ? endNodeCount + 1 : ''}` },
-      position: { x: 400, y: newY },
+      position,
       type: 'end',
     }
 
