@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
   Background,
+  BackgroundVariant,
   ReactFlowProvider,
   MiniMap,
   useNodesState,
@@ -46,7 +47,7 @@ const edgeTypes = {
   animated: N8nStyleEdge,
 }
 
-// Estilos para handles (mismo que en FlowBuilder)
+// Estilos para handles y nodos (mismo que en FlowBuilder)
 const handleStyles = `
   .react-flow__handle {
     background: #1e3a8a;
@@ -69,13 +70,47 @@ const handleStyles = `
     background: #16a34a;
   }
 
-  /* Deshabilitar interacción en modo lectura */
+  /* Node wrapper transparent — visual styling is on the inner CompactNodeWrapper */
   .react-flow__node {
     pointer-events: auto;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .react-flow__node.selected {
+    box-shadow: none !important;
   }
 
   .react-flow__handle {
     pointer-events: none;
+  }
+
+  /* Dark theme controls & minimap */
+  .react-flow__minimap {
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+  }
+
+  .react-flow__controls {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .react-flow__controls-button {
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .react-flow__controls-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .react-flow__controls-button svg {
+    fill: #94a3b8;
   }
 `
 
@@ -171,10 +206,10 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   // Show loading state while fetching statistics
   if (isLoading && flujoId) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-50 to-segal-blue/5">
-        <Loader2 className="h-12 w-12 text-segal-blue animate-spin mb-4" />
-        <p className="text-segal-dark/70 font-medium">Cargando estructura del flujo...</p>
-        <p className="text-sm text-segal-dark/40 mt-1">Obteniendo estadísticas y datos de ejecución</p>
+      <div className="flex flex-col items-center justify-center h-full bg-slate-900">
+        <Loader2 className="h-12 w-12 text-blue-400 animate-spin mb-4" />
+        <p className="text-slate-300 font-medium">Cargando estructura del flujo...</p>
+        <p className="text-sm text-slate-500 mt-1">Obteniendo estadísticas y datos de ejecución</p>
       </div>
     )
   }
@@ -193,18 +228,16 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   // the Zustand store which viewers don't use, so we apply CSS-based selection ring)
   const selectionStyles = selectedNodeId
     ? `
-      .react-flow__node[data-id="${selectedNodeId}"] > div > div {
-        ring: 2px;
+      .react-flow__node[data-id="${selectedNodeId}"] > div > div.relative {
         box-shadow: 0 0 0 2px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.3) !important;
-        border-radius: 8px;
       }
     `
     : ''
 
   return (
     <div className="flex h-full w-full">
-      {/* Canvas area */}
-      <div className="flex-1 relative">
+      {/* Canvas area — dark theme matching FlowBuilder */}
+      <div className="flex-1 relative bg-slate-900">
         <style>{handleStyles}{selectionStyles}</style>
         <ReactFlow
           nodes={nodes}
@@ -216,7 +249,12 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
           onPaneClick={handlePaneClick}
           fitView
         >
-          <Background />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={22}
+            size={1.2}
+            color="rgba(255,255,255,0.05)"
+          />
           <Controls showInteractive={false} />
           <MiniMap />
         </ReactFlow>
@@ -244,7 +282,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
  */
 export function FlowVisualizationViewer({ configVisual, flujoId }: FlowVisualizationViewerProps) {
   return (
-    <div className="w-full h-[700px] bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 border border-segal-blue/10 dark:border-segal-blue/30 rounded-xl overflow-hidden">
+    <div className="w-full h-[700px] bg-slate-900 border border-slate-700/50 rounded-xl overflow-hidden">
       <ReactFlowProvider>
         <FlowVisualizationContent configVisual={configVisual} flujoId={flujoId} />
       </ReactFlowProvider>

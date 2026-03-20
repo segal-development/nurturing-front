@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger'
 
 import ReactFlow, {
   Background,
+  BackgroundVariant,
   Controls,
   ReactFlowProvider,
   useEdgesState,
@@ -500,14 +501,52 @@ function FlowExecutionContent({
     return executionData.timeline.sort((a, b) => a.orden_ejecucion - b.orden_ejecucion)
   })()
 
+  // CSS selector for the inner icon box (64x64 CompactNodeWrapper card)
+  // Structure: .react-flow__node > div(outer flex) > div.relative(icon box)
+  const nodeBox = (nodeId: string) => `.react-flow__node[data-id="${nodeId}"] > div > div.relative`
+
   // Generar estilos dinámicos basados en estado de ejecución
+  // Styles target the INNER icon box, not the outer ReactFlow wrapper
   const executionStyles = (() => {
-    let styles = ''
+    let styles = `
+      /* Make ReactFlow node wrapper transparent — visual styling on inner box only */
+      .react-flow__node {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .react-flow__node.selected {
+        box-shadow: none !important;
+      }
+
+      /* Dark theme controls & minimap */
+      .react-flow__minimap {
+        background: rgba(15, 23, 42, 0.9) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 8px;
+      }
+      .react-flow__controls {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .react-flow__controls-button {
+        background: transparent;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .react-flow__controls-button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .react-flow__controls-button svg {
+        fill: #94a3b8;
+      }
+    `
 
     stagesByNodeId.forEach((stage, nodeId) => {
+      const box = nodeBox(nodeId)
       const baseStyle = `
-        .react-flow__node[data-id="${nodeId}"] {
-          border-width: 3px !important;
+        ${box} {
           transition: all 0.3s ease;
         }
       `
@@ -521,12 +560,15 @@ function FlowExecutionContent({
         // Nodo actual: doble efecto de glow
         styles += `
           ${baseStyle}
-          .react-flow__node[data-id="${nodeId}"] {
+          ${box} {
             border-color: #f59e0b !important;
+            border-width: 2px !important;
             box-shadow:
-              0 0 20px rgba(245, 158, 11, 0.8),
-              inset 0 0 10px rgba(245, 158, 11, 0.4) !important;
+              0 0 12px rgba(245, 158, 11, 0.6),
+              inset 0 0 6px rgba(245, 158, 11, 0.3) !important;
             animation: pulse-execution 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+          .react-flow__node[data-id="${nodeId}"] {
             z-index: 10;
           }
         `
@@ -534,10 +576,11 @@ function FlowExecutionContent({
         // Próximo nodo: efecto de anticipación
         styles += `
           ${baseStyle}
-          .react-flow__node[data-id="${nodeId}"] {
+          ${box} {
             border-color: #3b82f6 !important;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6) !important;
-            border-style: dashed;
+            border-width: 2px !important;
+            border-style: dashed !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
             animation: pulse-next 2s ease-in-out infinite;
           }
         `
@@ -545,9 +588,10 @@ function FlowExecutionContent({
         // Nodos en el camino que ya se ejecutaron
         styles += `
           ${baseStyle}
-          .react-flow__node[data-id="${nodeId}"] {
+          ${box} {
             border-color: #16a34a !important;
-            box-shadow: 0 0 15px rgba(22, 163, 74, 0.4) !important;
+            border-width: 2px !important;
+            box-shadow: 0 0 8px rgba(22, 163, 74, 0.3) !important;
           }
         `
       } else {
@@ -556,18 +600,20 @@ function FlowExecutionContent({
           case 'completed':
             styles += `
               ${baseStyle}
-              .react-flow__node[data-id="${nodeId}"] {
+              ${box} {
                 border-color: #16a34a !important;
-                box-shadow: 0 0 15px rgba(22, 163, 74, 0.6) !important;
+                border-width: 2px !important;
+                box-shadow: 0 0 8px rgba(22, 163, 74, 0.4) !important;
               }
             `
             break
           case 'failed':
             styles += `
               ${baseStyle}
-              .react-flow__node[data-id="${nodeId}"] {
+              ${box} {
                 border-color: #dc2626 !important;
-                box-shadow: 0 0 15px rgba(220, 38, 38, 0.6) !important;
+                border-width: 2px !important;
+                box-shadow: 0 0 8px rgba(220, 38, 38, 0.4) !important;
               }
             `
             break
@@ -575,7 +621,6 @@ function FlowExecutionContent({
             styles += `
               ${baseStyle}
               .react-flow__node[data-id="${nodeId}"] {
-                border-color: #9ca3af !important;
                 opacity: 0.5;
               }
             `
@@ -583,9 +628,10 @@ function FlowExecutionContent({
           case 'paused':
             styles += `
               ${baseStyle}
-              .react-flow__node[data-id="${nodeId}"] {
+              ${box} {
                 border-color: #f97316 !important;
-                box-shadow: 0 0 15px rgba(249, 115, 22, 0.5) !important;
+                border-width: 2px !important;
+                box-shadow: 0 0 10px rgba(249, 115, 22, 0.4) !important;
                 animation: pulse-paused 3s ease-in-out infinite;
               }
             `
@@ -597,31 +643,33 @@ function FlowExecutionContent({
     // Agregar animaciones
     styles += `
       @keyframes pulse-execution {
-        0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), inset 0 0 10px rgba(245, 158, 11, 0.4); }
-        50% { box-shadow: 0 0 40px rgba(245, 158, 11, 1), inset 0 0 20px rgba(245, 158, 11, 0.6); }
+        0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.6), inset 0 0 6px rgba(245, 158, 11, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), inset 0 0 10px rgba(245, 158, 11, 0.5); }
       }
       @keyframes pulse-next {
-        0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+        0%, 100% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
+        50% { box-shadow: 0 0 14px rgba(59, 130, 246, 0.6); }
       }
       @keyframes pulse-selected {
-        0%, 100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.3); }
-        50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8), 0 0 40px rgba(139, 92, 246, 0.4); }
+        0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+        50% { box-shadow: 0 0 16px rgba(139, 92, 246, 0.7); }
       }
       @keyframes pulse-paused {
-        0%, 100% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); }
-        50% { box-shadow: 0 0 25px rgba(249, 115, 22, 0.7); }
+        0%, 100% { box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
+        50% { box-shadow: 0 0 16px rgba(249, 115, 22, 0.6); }
       }
     `
 
-    // Estilo para nodo seleccionado (click del usuario)
+    // Estilo para nodo seleccionado (click del usuario) — on inner box
     if (selectedNodeId) {
       styles += `
-        .react-flow__node[data-id="${selectedNodeId}"] {
+        ${nodeBox(selectedNodeId)} {
           border-color: #8b5cf6 !important;
-          border-width: 3px !important;
-          box-shadow: 0 0 20px rgba(139, 92, 246, 0.7), 0 0 40px rgba(139, 92, 246, 0.3) !important;
+          border-width: 2px !important;
+          box-shadow: 0 0 12px rgba(139, 92, 246, 0.5) !important;
           animation: pulse-selected 1.5s ease-in-out infinite;
+        }
+        .react-flow__node[data-id="${selectedNodeId}"] {
           z-index: 20 !important;
         }
       `
@@ -972,16 +1020,21 @@ function FlowExecutionContent({
       </div>
 
       {/* Flow visualization */}
-      <ReactFlow 
-        nodes={nodes} 
-        edges={edges} 
-        nodeTypes={nodeTypes} 
-        edgeTypes={edgeTypes} 
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         fitView
       >
-        <Background />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={22}
+          size={1.2}
+          color="rgba(255,255,255,0.05)"
+        />
         <Controls showInteractive={false} />
       </ReactFlow>
 
@@ -1003,17 +1056,17 @@ export function FlowExecutionViewer({ flujoId, ejecucionId, configVisual }: Flow
   // Guard: Don't render if configVisual is invalid
   if (!configVisual?.nodes || !Array.isArray(configVisual.nodes) || configVisual.nodes.length === 0) {
     return (
-      <div className="w-full h-[700px] bg-white border border-segal-blue/10 rounded-lg overflow-hidden flex items-center justify-center">
+      <div className="w-full h-[700px] bg-slate-900 border border-slate-700/50 rounded-lg overflow-hidden flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-segal-blue mx-auto mb-3" />
-          <p className="text-segal-dark/60">Cargando visualización del flujo...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-3" />
+          <p className="text-slate-400">Cargando visualización del flujo...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full h-[700px] bg-white border border-segal-blue/10 rounded-lg overflow-hidden">
+    <div className="w-full h-[700px] bg-slate-900 border border-slate-700/50 rounded-lg overflow-hidden">
       <ReactFlowProvider>
         <FlowExecutionContent configVisual={configVisual} flujoId={flujoId} ejecucionId={ejecucionId} />
       </ReactFlowProvider>
