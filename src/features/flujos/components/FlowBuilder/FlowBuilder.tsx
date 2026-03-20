@@ -4,7 +4,7 @@
  * Features: Drag-and-drop stage creation, real-time validation, visual preview
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -13,6 +13,10 @@ import ReactFlow, {
   useEdgesState,
   MiniMap,
   ReactFlowProvider,
+  useReactFlow,
+  BackgroundVariant,
+  Panel,
+  ConnectionLineType,
 } from 'reactflow'
 import type { Connection, NodeChange, EdgeChange } from 'reactflow'
 import 'reactflow/dist/style.css'
@@ -23,16 +27,25 @@ import {
   RotateCcw,
   Eye,
   GitBranch,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Move,
+  Grid3X3,
+  MousePointer2,
 } from 'lucide-react'
 
-// Style handles - n8n style (small, discrete, only visible on hover)
-const HANDLE_STYLES = `
+// Enhanced n8n-style CSS with better visibility and connection indicators
+const ENHANCED_FLOW_STYLES = `
+  /* ===== HANDLES - n8n style ===== */
   .react-flow__handle {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    opacity: 0.7;
+    opacity: 0.8;
     transition: all 0.2s ease;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
 
   .react-flow__node:hover .react-flow__handle {
@@ -42,23 +55,124 @@ const HANDLE_STYLES = `
 
   .react-flow__handle:hover {
     opacity: 1;
-    transform: scale(1.4);
-    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.2);
+    transform: scale(1.5);
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.3), 0 2px 8px rgba(0,0,0,0.2);
   }
 
   .react-flow__handle.connectingFrom,
   .react-flow__handle.connectingTo {
     background: #16a34a !important;
     opacity: 1;
-    transform: scale(1.3);
+    transform: scale(1.4);
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.4);
   }
   
-  /* Hide target handles when not connecting */
   .react-flow__handle-left,
   .react-flow__handle-right {
     z-index: 10;
   }
+
+  /* ===== CONNECTION LINE - Visual guide while dragging ===== */
+  .react-flow__connection-line {
+    stroke: #1e3a8a;
+    stroke-width: 2.5;
+    stroke-dasharray: 5 5;
+    animation: dash 0.5s linear infinite;
+  }
+
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -10;
+    }
+  }
+
+  /* ===== NODES - Enhanced borders and shadows ===== */
+  .react-flow__node {
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+  }
+
+  .react-flow__node:hover {
+    z-index: 100 !important;
+  }
+
+  .react-flow__node.selected {
+    box-shadow: 0 0 0 2px #1e3a8a, 0 4px 20px rgba(30, 58, 138, 0.3) !important;
+  }
+
+  /* ===== MINIMAP - Enhanced colors ===== */
+  .react-flow__minimap {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(30, 58, 138, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .react-flow__minimap-mask {
+    fill: rgba(30, 58, 138, 0.1);
+  }
+
+  /* ===== CONTROLS - More visible ===== */
+  .react-flow__controls {
+    background: white;
+    border: 1px solid rgba(30, 58, 138, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .react-flow__controls-button {
+    background: white;
+    border: none;
+    border-bottom: 1px solid rgba(30, 58, 138, 0.1);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+  }
+
+  .react-flow__controls-button:hover {
+    background: rgba(30, 58, 138, 0.1);
+  }
+
+  .react-flow__controls-button:last-child {
+    border-bottom: none;
+  }
+
+  .react-flow__controls-button svg {
+    fill: #1e3a8a;
+  }
+
+  /* ===== BACKGROUND GRID ===== */
+  .react-flow__background {
+    background-color: #fafbfc;
+  }
+
+  /* ===== SELECTION BOX ===== */
+  .react-flow__selection {
+    background: rgba(30, 58, 138, 0.08);
+    border: 1px dashed #1e3a8a;
+  }
+
+  /* ===== EDGE SELECTION ===== */
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke: #1e3a8a;
+    stroke-width: 3;
+  }
+
+  /* ===== PANE (Canvas) ===== */
+  .react-flow__pane {
+    cursor: grab;
+  }
+
+  .react-flow__pane:active {
+    cursor: grabbing;
+  }
 `
+
+// Grid snap size in pixels
+const GRID_SNAP_SIZE = 20
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -141,7 +255,11 @@ function FlowBuilderContent({
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges)
   const [previewMode, setPreviewMode] = useState(false)
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false)
+  const [snapToGrid, setSnapToGrid] = useState(true)
   const flowContainerRef = useRef<HTMLDivElement>(null)
+  
+  // ReactFlow instance for programmatic control
+  const reactFlowInstance = useReactFlow()
 
   // Node & edge types — created ONCE to avoid React Flow re-processing on every render.
   // Callbacks (removeNode, updateNode) are passed via node.data instead of wrapper closures.
@@ -361,11 +479,52 @@ function FlowBuilderContent({
   // Contadores
   const stageCount = storeNodes.filter((n) => n.type === 'stage').length
   const conditionalCount = storeNodes.filter((n) => n.type === 'conditional').length
+  const endNodeCount = storeNodes.filter((n) => n.type === 'end').length
   const isFlowValid = stageCount > 0
+
+  // Zoom controls
+  const handleZoomIn = useCallback(() => {
+    reactFlowInstance.zoomIn({ duration: 300 })
+  }, [reactFlowInstance])
+
+  const handleZoomOut = useCallback(() => {
+    reactFlowInstance.zoomOut({ duration: 300 })
+  }, [reactFlowInstance])
+
+  const handleFitView = useCallback(() => {
+    reactFlowInstance.fitView({ padding: 0.2, duration: 500 })
+  }, [reactFlowInstance])
+
+  const handleCenterView = useCallback(() => {
+    const centerNode = nodes.find(n => n.type === 'initial') || nodes[0]
+    if (centerNode) {
+      reactFlowInstance.setCenter(
+        centerNode.position.x + 100,
+        centerNode.position.y + 50,
+        { zoom: 1, duration: 500 }
+      )
+    }
+  }, [reactFlowInstance, nodes])
+
+  // MiniMap node color based on type
+  const getMinimapNodeColor = useCallback((node: any) => {
+    switch (node.type) {
+      case 'initial':
+        return '#6366f1' // Indigo
+      case 'stage':
+        return '#1e3a8a' // Segal blue
+      case 'conditional':
+        return '#f59e0b' // Amber
+      case 'end':
+        return '#10b981' // Green
+      default:
+        return '#64748b' // Slate
+    }
+  }, [])
 
   return (
     <div className="flex flex-col h-full w-full bg-white gap-4 p-4">
-      <style>{HANDLE_STYLES}</style>
+      <style>{ENHANCED_FLOW_STYLES}</style>
 
       {/* Form fields */}
       <div className="shrink-0 space-y-3 border-b border-segal-blue/10 pb-4">
@@ -423,47 +582,137 @@ function FlowBuilderContent({
               nodeTypes={memoizedNodeTypes}
               edgeTypes={memoizedEdgeTypes}
               fitView
+              fitViewOptions={{ padding: 0.2, maxZoom: 1.5 }}
               deleteKeyCode={['Backspace', 'Delete']}
               nodesConnectable={true}
+              snapToGrid={snapToGrid}
+              snapGrid={[GRID_SNAP_SIZE, GRID_SNAP_SIZE]}
+              connectionLineType={ConnectionLineType.SmoothStep}
+              connectionLineStyle={{ stroke: '#1e3a8a', strokeWidth: 2 }}
+              defaultEdgeOptions={{ type: 'animated' }}
+              minZoom={0.1}
+              maxZoom={2}
+              attributionPosition="bottom-left"
             >
-              <Background />
-              <Controls position="top-left" />
-              <MiniMap position="bottom-right" />
+              {/* Background with grid */}
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={GRID_SNAP_SIZE}
+                size={1}
+                color="#cbd5e1"
+              />
+              
+              {/* Enhanced Controls - Hidden, using custom */}
+              <Controls 
+                position="top-left" 
+                showZoom={false}
+                showFitView={false}
+                showInteractive={false}
+                className="hidden"
+              />
+              
+              {/* Custom Floating Toolbar */}
+              <Panel position="top-left" className="m-2">
+                <div className="flex flex-col gap-1 bg-white rounded-lg border border-segal-blue/20 shadow-lg p-1">
+                  <button
+                    onClick={handleZoomIn}
+                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    title="Acercar (Zoom In)"
+                  >
+                    <ZoomIn className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                  </button>
+                  <button
+                    onClick={handleZoomOut}
+                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    title="Alejar (Zoom Out)"
+                  >
+                    <ZoomOut className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                  </button>
+                  <div className="h-px bg-segal-blue/10 my-1" />
+                  <button
+                    onClick={handleFitView}
+                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    title="Ajustar Vista (Fit All)"
+                  >
+                    <Maximize2 className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                  </button>
+                  <button
+                    onClick={handleCenterView}
+                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    title="Centrar en Inicio"
+                  >
+                    <MousePointer2 className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                  </button>
+                  <div className="h-px bg-segal-blue/10 my-1" />
+                  <button
+                    onClick={() => setSnapToGrid(!snapToGrid)}
+                    className={`p-2 rounded transition-colors group ${snapToGrid ? 'bg-segal-blue/10' : 'hover:bg-segal-blue/5'}`}
+                    title={snapToGrid ? 'Desactivar Grid Snap' : 'Activar Grid Snap'}
+                  >
+                    <Grid3X3 className={`h-4 w-4 transition-transform ${snapToGrid ? 'text-segal-blue' : 'text-gray-400'}`} />
+                  </button>
+                </div>
+              </Panel>
+
+              {/* Floating Add Node Toolbar */}
+              <Panel position="top-center" className="m-2">
+                <div className="flex gap-2 bg-white rounded-lg border border-segal-blue/20 shadow-lg p-2">
+                  <button
+                    onClick={addStageNode}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-segal-blue text-white text-sm font-medium hover:bg-segal-blue/90 transition-colors"
+                    title="Agregar Etapa"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Etapa
+                  </button>
+                  <button
+                    onClick={addConditionalNode}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-400 text-amber-600 text-sm font-medium hover:bg-amber-50 transition-colors"
+                    title="Agregar Condición"
+                  >
+                    <GitBranch className="h-4 w-4" />
+                    Condición
+                  </button>
+                  <button
+                    onClick={addEndNode}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-segal-green text-segal-green text-sm font-medium hover:bg-segal-green/5 transition-colors"
+                    title="Agregar Fin"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Fin
+                  </button>
+                </div>
+              </Panel>
+
+              {/* Node Counter Badge */}
+              <Panel position="top-right" className="m-2">
+                <div className="flex gap-2 bg-white/90 backdrop-blur rounded-lg border border-segal-blue/20 shadow-sm px-3 py-1.5 text-xs font-medium">
+                  <span className="text-segal-blue">{stageCount} etapas</span>
+                  <span className="text-segal-blue/30">|</span>
+                  <span className="text-amber-600">{conditionalCount} cond.</span>
+                  <span className="text-segal-blue/30">|</span>
+                  <span className="text-segal-green">{endNodeCount} fin</span>
+                </div>
+              </Panel>
+              
+              {/* Enhanced MiniMap with node colors */}
+              <MiniMap 
+                position="bottom-right"
+                nodeColor={getMinimapNodeColor}
+                nodeStrokeColor={(node) => getMinimapNodeColor(node)}
+                nodeBorderRadius={4}
+                maskColor="rgba(30, 58, 138, 0.1)"
+                className="!bg-white/95 !border-segal-blue/20 !rounded-lg !shadow-lg"
+                style={{ width: 180, height: 120 }}
+                zoomable
+                pannable
+              />
             </ReactFlow>
           </div>
         </div>
 
         {/* Sidebar - Tools & Options - Scrollable */}
         <div className="w-72 rounded-lg border border-segal-blue/10 bg-white p-4 shadow-sm overflow-y-auto flex flex-col gap-4">
-          {/* Add Node Buttons */}
-          <div className="space-y-2">
-            <Button
-              onClick={addStageNode}
-              className="w-full bg-segal-blue hover:bg-segal-blue/90 text-white font-semibold flex items-center justify-center gap-2 h-10"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar Etapa
-            </Button>
-
-            <Button
-              onClick={addConditionalNode}
-              variant="outline"
-              className="w-full border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5 font-semibold flex items-center justify-center gap-2 h-10"
-            >
-              <GitBranch className="h-4 w-4" />
-              Agregar Condición
-            </Button>
-
-            <Button
-              onClick={addEndNode}
-              variant="outline"
-              className="w-full border-segal-green/30 text-segal-green hover:bg-segal-green/5 font-semibold flex items-center justify-center gap-2 h-10"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Agregar Fin
-            </Button>
-          </div>
-
           {/* Flow Stats */}
           <div className="space-y-3 border-t border-segal-blue/10 pt-4">
             <h3 className="font-bold text-sm text-segal-dark">Resumen</h3>
