@@ -403,18 +403,20 @@ function FlowBuilderContent({
   }
 
   /**
-   * Handle node click — select the clicked node
+   * Handle node click — select the clicked node.
+   * Wrapped in useCallback so ReactFlow always receives a stable reference.
    */
-  const handleNodeClick = (_event: React.MouseEvent, node: ReactFlowNode): void => {
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: ReactFlowNode): void => {
     setSelectedNodeId(node.id)
-  }
+  }, [setSelectedNodeId])
 
   /**
-   * Handle pane click — deselect any selected node
+   * Handle pane click — deselect any selected node.
+   * Wrapped in useCallback so ReactFlow always receives a stable reference.
    */
-  const handlePaneClick = (): void => {
+  const handlePaneClick = useCallback((): void => {
     setSelectedNodeId(null)
-  }
+  }, [setSelectedNodeId])
 
   /**
    * Valida el flujo antes de guardar

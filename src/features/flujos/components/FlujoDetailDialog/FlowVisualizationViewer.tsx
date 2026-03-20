@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -179,17 +179,28 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
     return enrichedNodes
   }, [configVisual?.nodes, nodeStatsMap, resumenPorNodo])
 
-  const initialEdges = (() => {
+  const initialEdges = useMemo(() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
       return []
     }
     logger.log('Edges cargados:', configVisual.edges)
     return configVisual.edges as Edge[]
-  })()
+  }, [configVisual?.edges])
 
-  // Estado de ReactFlow - usa key en el wrapper para forzar re-mount cuando cambian los nodos
-  const [nodes, , onNodesChange] = useNodesState(initialNodes)
-  const [edges] = useEdgesState(initialEdges)
+  // Estado de ReactFlow — synced from computed initialNodes/initialEdges.
+  // useNodesState only uses the initial value on mount; we sync via useEffect
+  // so stats/cohort enrichments and late-arriving configVisual propagate.
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [edges, setEdges] = useEdgesState(initialEdges)
+
+  // Keep ReactFlow state in sync when enriched data changes
+  useEffect(() => {
+    setNodes(initialNodes)
+  }, [initialNodes, setNodes])
+
+  useEffect(() => {
+    setEdges(initialEdges)
+  }, [initialEdges, setEdges])
 
   // Node click handlers for selection
   // IMPORTANT: ALL hooks must be called before any early return to avoid React error #310
