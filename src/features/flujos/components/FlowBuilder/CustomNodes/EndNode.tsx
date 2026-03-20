@@ -14,7 +14,7 @@ export function EndNode({ id, data }: NodeProps<EndNodeData>) {
   return (
     <CompactNodeWrapper
       nodeId={id}
-      icon={<Flag className="h-3.5 w-3.5" />}
+      icon={<Flag className="h-5 w-5" />}
       label={data.label || 'Fin'}
       iconBgColor="bg-green-500"
     >

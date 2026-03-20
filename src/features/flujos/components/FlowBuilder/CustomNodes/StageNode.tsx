@@ -13,18 +13,18 @@ import { CompactNodeWrapper } from './CompactNodeWrapper'
 function getStageIcon(tipoMensaje?: string) {
   switch (tipoMensaje) {
     case 'email':
-      return <Mail className="h-3.5 w-3.5" />
+      return <Mail className="h-5 w-5" />
     case 'sms':
-      return <MessageSquare className="h-3.5 w-3.5" />
+      return <MessageSquare className="h-5 w-5" />
     case 'ambos':
       return (
         <div className="flex gap-0.5">
-          <Mail className="h-2.5 w-2.5" />
-          <MessageSquare className="h-2.5 w-2.5" />
+          <Mail className="h-4 w-4" />
+          <MessageSquare className="h-4 w-4" />
         </div>
       )
     default:
-      return <Zap className="h-3.5 w-3.5" />
+      return <Zap className="h-5 w-5" />
   }
 }
 

@@ -19,7 +19,7 @@ export function ConditionalNode({ id, data }: NodeProps<ConditionalNodeData>) {
   return (
     <CompactNodeWrapper
       nodeId={id}
-      icon={<GitBranch className="h-3.5 w-3.5" />}
+      icon={<GitBranch className="h-5 w-5" />}
       label={data.label || 'Condicion'}
       iconBgColor="bg-amber-500"
     >

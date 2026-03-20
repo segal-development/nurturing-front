@@ -14,7 +14,7 @@ export function InitialNode({ id, data }: NodeProps<InitialNodeData>) {
   return (
     <CompactNodeWrapper
       nodeId={id}
-      icon={<Play className="h-3.5 w-3.5" />}
+      icon={<Play className="h-5 w-5" />}
       label={data.label || 'Inicio'}
       iconBgColor="bg-indigo-500"
       executionState={data.executionState}

@@ -1,7 +1,8 @@
 /**
- * CompactNodeWrapper — shared compact node shell (~80x60px)
+ * CompactNodeWrapper — shared compact node shell (n8n style)
  * All 4 node types use this to render consistent compact nodes.
- * Handles: execution state border, icon, truncated label, selection ring,
+ * Layout: 64x64 icon box with label centered below (outside the box).
+ * Handles: execution state border, icon, label, selection ring,
  * active/inactive opacity, and optional badge slot.
  */
 
@@ -19,7 +20,7 @@ const EXECUTION_STATE = {
 
 type ExecutionState = (typeof EXECUTION_STATE)[keyof typeof EXECUTION_STATE]
 
-const MAX_LABEL_LENGTH = 12
+const MAX_LABEL_LENGTH = 24
 
 interface CompactNodeWrapperProps {
   nodeId: string
@@ -69,44 +70,43 @@ export function CompactNodeWrapper({
   const isSelected = selectedNodeId === nodeId
 
   return (
-    <div className="relative">
-      {/* Badge slot — top-left */}
+    <div className={cn('relative flex flex-col items-center', !isActive && 'opacity-50')}>
+      {/* Badge slot — top-left of the icon box */}
       {badge && (
         <div className="absolute -top-2 -left-2 z-10">
           {badge}
         </div>
       )}
 
-      {/* Compact node body */}
+      {/* Icon box — n8n style square with only the icon */}
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm transition-all duration-150',
-          'w-[80px] min-h-[60px] flex-col justify-center',
+          'flex items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-150',
+          'w-[64px] h-[64px]',
           'border-l-4',
           getExecutionBorderClass(executionState),
           isSelected && 'ring-2 ring-blue-500 ring-offset-1 shadow-md',
-          !isActive && 'opacity-50'
         )}
       >
         {/* Icon circle */}
         <div
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
             iconBgColor,
             iconTextColor
           )}
         >
           {icon}
         </div>
-
-        {/* Truncated label */}
-        <span
-          className="text-[10px] font-medium leading-tight text-center text-gray-700 select-none"
-          title={label}
-        >
-          {truncateLabel(label)}
-        </span>
       </div>
+
+      {/* Label — outside, below the icon box (n8n style) */}
+      <span
+        className="mt-1.5 max-w-[90px] text-xs font-medium leading-tight text-center text-gray-700 select-none truncate"
+        title={label}
+      >
+        {truncateLabel(label)}
+      </span>
 
       {/* ReactFlow handles are passed as children */}
       {children}
