@@ -43,8 +43,10 @@ import { ExecutionHistoryPanel } from './ExecutionHistoryPanel'
 import { ExecuteFlowModal } from './ExecuteFlowModal'
 import { FlowExecutionViewer } from './FlowExecutionViewer'
 import { AddProspectsModal } from './AddProspectsModal'
-import type { FlujoNurturing, EtapaFlujo } from '@/types/flujo'
-import { getCanalEnvioReal, getCanalEnvioLabel, getCanalEnvioIcon } from '@/types/flujo'
+import type { FlujoNurturing, EtapaFlujo, NivelDeuda } from '@/types/flujo'
+import { getCanalEnvioReal, getCanalEnvioLabel, getCanalEnvioIcon, NIVEL_DEUDA } from '@/types/flujo'
+import { Checkbox } from '@/components/ui/checkbox'
+import { NIVEL_DEUDA_LABELS, NIVEL_DEUDA_COLORS } from '@/hooks/useMetadataValues'
 
 type TabType = 'general' | 'estructura' | 'estadisticas' | 'ejecuciones' | 'monitoreo'
 
@@ -81,6 +83,9 @@ export function FlujoDetailDialog({
   const [isExecuteModalOpen, setIsExecuteModalOpen] = useState(false)
   const [isAddProspectsModalOpen, setIsAddProspectsModalOpen] = useState(false)
   const [isTogglingAutoAsignar, setIsTogglingAutoAsignar] = useState(false)
+  const [isEditingNivelDeuda, setIsEditingNivelDeuda] = useState(false)
+  const [editNivelDeudaValues, setEditNivelDeudaValues] = useState<Set<string>>(new Set())
+  const [isSavingNivelDeuda, setIsSavingNivelDeuda] = useState(false)
 
   // Obtener flujo detallado del backend si está disponible
   const { data: detailedFlujo, isLoading, refetch: refetchFlujo } = useFlujosDetail(initialFlujo?.id || null, {
@@ -288,6 +293,47 @@ export function FlujoDetailDialog({
     }
   }
 
+  const handleStartEditNivelDeuda = () => {
+    const currentValues = flujo?.nivel_deuda_target ?? []
+    setEditNivelDeudaValues(new Set(currentValues))
+    setIsEditingNivelDeuda(true)
+  }
+
+  const handleCancelEditNivelDeuda = () => {
+    setIsEditingNivelDeuda(false)
+    setEditNivelDeudaValues(new Set())
+  }
+
+  const handleToggleNivelDeudaValue = (valor: string) => {
+    const next = new Set(editNivelDeudaValues)
+    if (next.has(valor)) {
+      next.delete(valor)
+    } else {
+      next.add(valor)
+    }
+    setEditNivelDeudaValues(next)
+  }
+
+  const handleSaveNivelDeuda = async () => {
+    if (!flujo?.id) return
+
+    setIsSavingNivelDeuda(true)
+    try {
+      const values = Array.from(editNivelDeudaValues) as NivelDeuda[]
+      await flujosService.update(flujo.id, {
+        nivel_deuda_target: values.length > 0 ? values : null,
+      })
+      toast.success('Filtro de nivel de deuda actualizado')
+      setIsEditingNivelDeuda(false)
+      refetchFlujo()
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Error al guardar'
+      toast.error('Error al actualizar filtro de deuda', { description: errorMessage })
+    } finally {
+      setIsSavingNivelDeuda(false)
+    }
+  }
+
   if (!flujo) {
     return null
   }
@@ -485,6 +531,112 @@ export function FlujoDetailDialog({
                           Cada viernes después del sync, los nuevos prospectos del origen "{flujo.origen}" se agregarán automáticamente a este flujo, empezando desde la Etapa 1.
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Nivel de Deuda Target — display + edit */}
+                  {flujo.auto_asignar_nuevos && (
+                    <div className="p-4 rounded-lg bg-segal-blue/5 border border-segal-blue/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-semibold text-segal-dark/60">
+                          Filtro de Nivel de Deuda (auto-asignación)
+                        </p>
+                        {!isEditingNivelDeuda && (
+                          <button
+                            type="button"
+                            onClick={handleStartEditNivelDeuda}
+                            className="text-xs text-segal-blue hover:underline"
+                          >
+                            Editar
+                          </button>
+                        )}
+                      </div>
+
+                      {isEditingNivelDeuda ? (
+                        /* Edit mode: static checkboxes for all 4 values */
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            {Object.values(NIVEL_DEUDA).map((valor) => {
+                              const isSelected = editNivelDeudaValues.has(valor)
+                              const label = NIVEL_DEUDA_LABELS[valor] || valor
+                              const colorClass = NIVEL_DEUDA_COLORS[valor] || 'bg-gray-100 text-gray-600'
+                              return (
+                                <label
+                                  key={valor}
+                                  className={`
+                                    flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all duration-150
+                                    ${isSelected ? 'border-segal-blue bg-segal-blue/5' : 'border-gray-200 hover:border-segal-blue/40'}
+                                  `}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => handleToggleNivelDeudaValue(valor)}
+                                    className="border-segal-blue data-[state=checked]:bg-segal-blue"
+                                  />
+                                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${colorClass}`}>
+                                    {label}
+                                  </span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <Button
+                              size="sm"
+                              onClick={handleSaveNivelDeuda}
+                              disabled={isSavingNivelDeuda}
+                              className="bg-segal-blue hover:bg-segal-blue/90 text-white"
+                            >
+                              {isSavingNivelDeuda ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Guardando...
+                                </>
+                              ) : (
+                                'Guardar'
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleCancelEditNivelDeuda}
+                              disabled={isSavingNivelDeuda}
+                              className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                          {editNivelDeudaValues.size === 0 && (
+                            <p className="text-xs text-segal-dark/50">
+                              Sin selección = sin filtro (se asignan todos los niveles de deuda)
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        /* Read-only mode: badges */
+                        <>
+                          {flujo.nivel_deuda_target && flujo.nivel_deuda_target.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {flujo.nivel_deuda_target.map((nivel: NivelDeuda) => {
+                                const label = NIVEL_DEUDA_LABELS[nivel] || nivel
+                                const colorClass = NIVEL_DEUDA_COLORS[nivel] || 'bg-gray-100 text-gray-600 border-gray-200'
+                                return (
+                                  <span
+                                    key={nivel}
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${colorClass}`}
+                                  >
+                                    {label}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-segal-dark/50">
+                              Sin filtro — se asignan prospectos de todos los niveles de deuda
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 

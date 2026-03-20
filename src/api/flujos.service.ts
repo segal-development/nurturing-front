@@ -5,7 +5,7 @@
 
 import { apiClient, getApiErrorMessage } from './client'
 import { logger } from '@/lib/logger'
-import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure } from '@/types/flujo'
+import type { FlujoNurturing, FlujoFormData, EjecucionFlujo, ConfigVisual, ConfigStructure, NivelDeuda } from '@/types/flujo'
 import type { FlujoProgresoResponse, FlujoCreacionResponse } from '@/types/flujoAsignacion'
 
 /**
@@ -281,6 +281,7 @@ export const flujosService = {
     };
     origen_id?: string | null;
     origen_nombre?: string | null;
+    nivel_deuda_target?: NivelDeuda[] | null;
     prospectos?: {
       total_seleccionados: number;
       ids_seleccionados: number[];
@@ -325,7 +326,7 @@ export const flujosService = {
   /**
    * Actualizar un flujo
    */
-  async update(id: number, flujo: Partial<FlujoFormData>): Promise<FlujoNurturing> {
+  async update(id: number, flujo: Partial<FlujoFormData> & { nivel_deuda_target?: NivelDeuda[] | null }): Promise<FlujoNurturing> {
     const { data } = await apiClient.put<{ data: FlujoNurturing; mensaje: string }>(
       `/flujos/${id}`,
       flujo
@@ -552,6 +553,7 @@ export const flujosService = {
     }
     origen_id?: string | null
     origen_nombre?: string | null
+    nivel_deuda_target?: NivelDeuda[] | null
     prospectos: {
       total_seleccionados: number
       ids_seleccionados: number[]

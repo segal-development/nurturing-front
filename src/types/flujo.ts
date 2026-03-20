@@ -9,6 +9,30 @@ import type { Prospecto } from './prospecto'
  * Tipos de mensaje/canal de envío disponibles.
  * Mantener sincronizado con App\Enums\CanalEnvio en el backend.
  */
+// ============================================================================
+// Nivel de Deuda Types & Utils
+// ============================================================================
+
+/**
+ * Possible nivel_deuda values for auto-assignment filtering.
+ * Kept in sync with backend validation: 'baja', 'media', 'alta', 'sin_informacion'.
+ */
+const NIVEL_DEUDA = {
+  BAJA: 'baja',
+  MEDIA: 'media',
+  ALTA: 'alta',
+  SIN_INFORMACION: 'sin_informacion',
+} as const
+
+type NivelDeuda = (typeof NIVEL_DEUDA)[keyof typeof NIVEL_DEUDA]
+
+export { NIVEL_DEUDA }
+export type { NivelDeuda }
+
+// ============================================================================
+// Canal de Envío Types & Utils
+// ============================================================================
+
 export type CanalEnvio = 'email' | 'sms' | 'ambos'
 
 /** @deprecated Use CanalEnvio instead */
@@ -280,6 +304,12 @@ export interface FlujoNurturing {
    * Los nuevos prospectos siempre empiezan desde la Etapa 1.
    */
   auto_asignar_nuevos?: boolean;
+  /**
+   * Target nivel_deuda values for auto-assignment filtering.
+   * When set, only prospects matching these debt levels are auto-assigned.
+   * null means no filter (all prospects regardless of debt level).
+   */
+  nivel_deuda_target?: NivelDeuda[] | null;
   user_id?: number;
   user?: {
     id: number;

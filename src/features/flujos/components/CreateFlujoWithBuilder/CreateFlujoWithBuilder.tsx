@@ -421,6 +421,11 @@ export function CreateFlujoWithBuilder({
     // Convert Set to array for JSON serialization
     const loteIdsArray = Array.from(selectedLoteIds)
 
+    // Derive nivel_deuda_target from metadata filters for flujo-level persistence
+    const nivelDeudaTarget = metadataFilters?.nivel_deuda?.length
+      ? metadataFilters.nivel_deuda
+      : undefined
+
     return {
       flujo: {
         nombre: config.nombre,
@@ -431,6 +436,8 @@ export function CreateFlujoWithBuilder({
       },
       origen_id: selectedOriginId,
       origen_nombre: selectedOriginName,
+      // Persist nivel_deuda selection as a flujo-level property for auto-assignment
+      nivel_deuda_target: nivelDeudaTarget,
       // Lote filtering - if empty array, backend uses all lotes from origin
       lote_ids: loteIdsArray.length > 0 ? loteIdsArray : undefined,
       // Metadata filters (e.g., nivel_deuda)
