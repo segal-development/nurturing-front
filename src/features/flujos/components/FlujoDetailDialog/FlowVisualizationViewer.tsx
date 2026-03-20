@@ -140,7 +140,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
     })
 
     return enrichedNodes
-  }, [configVisual?.nodes, nodeStatsMap])
+  }, [configVisual?.nodes, nodeStatsMap, resumenPorNodo])
 
   const initialEdges = (() => {
     if (!configVisual?.edges || !Array.isArray(configVisual.edges)) {
@@ -153,6 +153,20 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   // Estado de ReactFlow - usa key en el wrapper para forzar re-mount cuando cambian los nodos
   const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges] = useEdgesState(initialEdges)
+
+  // Node click handlers for selection
+  // IMPORTANT: ALL hooks must be called before any early return to avoid React error #310
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id)
+  }, [])
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null)
+  }, [])
+
+  // No-op handlers for read-only panel (edit/delete disabled)
+  const noopDelete = useCallback((_nodeId: string) => {}, [])
+  const noopUpdate = useCallback((_nodeId: string, _data: Partial<unknown>) => {}, [])
 
   // Show loading state while fetching statistics
   if (isLoading && flujoId) {
@@ -174,19 +188,6 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
       </div>
     )
   }
-
-  // Node click handlers for selection
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id)
-  }, [])
-
-  const handlePaneClick = useCallback(() => {
-    setSelectedNodeId(null)
-  }, [])
-
-  // No-op handlers for read-only panel (edit/delete disabled)
-  const noopDelete = useCallback((_nodeId: string) => {}, [])
-  const noopUpdate = useCallback((_nodeId: string, _data: Partial<unknown>) => {}, [])
 
   // Dynamic selection styles for the selected node (CompactNodeWrapper reads from
   // the Zustand store which viewers don't use, so we apply CSS-based selection ring)
