@@ -18,6 +18,7 @@ interface FlowBuilderStore {
   edges: CustomEdge[]
   flowName: string
   flowDescription: string
+  selectedNodeId: string | null
 
   // Node actions
   addStageNode: () => void
@@ -26,6 +27,9 @@ interface FlowBuilderStore {
   removeNode: (nodeId: string) => void
   updateNode: (nodeId: string, data: Partial<any>) => void
   setNodePosition: (nodeId: string, position: { x: number; y: number }) => void
+
+  // Selection actions
+  setSelectedNodeId: (id: string | null) => void
 
   // Edge actions
   addEdge: (edge: CustomEdge) => void
@@ -64,6 +68,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   edges: [],
   flowName: '',
   flowDescription: '',
+  selectedNodeId: null,
 
   // Helper to find the rightmost node position
   _getNextNodePosition: (): { x: number; y: number } => {
@@ -160,6 +165,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
       edges: state.edges.filter(
         (e) => e.source !== nodeId && e.target !== nodeId
       ),
+      selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
     }))
   },
 
@@ -177,6 +183,11 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
         n.id === nodeId ? { ...n, position } : n
       ),
     }))
+  },
+
+  // Selection actions
+  setSelectedNodeId: (id: string | null) => {
+    set({ selectedNodeId: id })
   },
 
   // Edge actions
@@ -222,6 +233,7 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
       edges: [],
       flowName: '',
       flowDescription: '',
+      selectedNodeId: null,
     })
   },
 

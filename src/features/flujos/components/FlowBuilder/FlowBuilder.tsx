@@ -18,7 +18,7 @@ import ReactFlow, {
   Panel,
   ConnectionLineType,
 } from 'reactflow'
-import type { Connection, NodeChange, EdgeChange } from 'reactflow'
+import type { Connection, NodeChange, EdgeChange, Node as ReactFlowNode } from 'reactflow'
 import 'reactflow/dist/style.css'
 import {
   Plus,
@@ -30,7 +30,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Move,
+
   Grid3X3,
   MousePointer2,
 } from 'lucide-react'
@@ -190,6 +190,7 @@ import { InitialNode } from './CustomNodes/InitialNode'
 import { EndNode } from './CustomNodes/EndNode'
 import { ConditionalNode } from './CustomNodes/ConditionalNode'
 import { N8nStyleEdge } from './CustomEdges/N8nStyleEdge'
+import { NodeDetailPanel } from './NodeDetailPanel'
 import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import type { CustomEdge } from '../../types/flowBuilder'
 
@@ -245,6 +246,7 @@ function FlowBuilderContent({
     setFlowDescription,
     resetFlow,
     initializeWithOrigin,
+    setSelectedNodeId,
   } = useFlowBuilderStore()
 
   // Get pricing for cost display
@@ -262,7 +264,7 @@ function FlowBuilderContent({
   const reactFlowInstance = useReactFlow()
 
   // Node & edge types — created ONCE to avoid React Flow re-processing on every render.
-  // Callbacks (removeNode, updateNode) are passed via node.data instead of wrapper closures.
+  // Compact nodes render only icon+label; editing happens in NodeDetailPanel.
   const memoizedNodeTypes = useMemo(() => ({
     stage: StageNode,
     initial: InitialNode,
@@ -276,22 +278,10 @@ function FlowBuilderContent({
 
   // Sincronizar Zustand store con ReactFlow cuando cambian
   // Esta es la ÚNICA fuente de verdad para ReactFlow
-  // Inyectamos callbacks (removeNode, updateNode) y precios en node.data
-  // para que los custom nodes puedan accederlos sin wrapper closures.
+  // Compact nodes no longer read callbacks from node.data — editing happens in NodeDetailPanel.
   // IMPORTANTE: No incluir setNodes/setEdges en dependencias (causan loop infinito)
   useEffect(() => {
-    // Inyectar callbacks y precios en node.data para cada nodo
-    const nodesWithCallbacks = storeNodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onDelete: removeNode,
-        onUpdate: updateNode,
-        precios: precios ?? undefined,
-      },
-    }))
-
-    setNodes(nodesWithCallbacks)
+    setNodes(storeNodes)
 
     // Actualizar edges con tipo asegurado
     const edgesWithType = storeEdges.map((edge) => ({
@@ -301,7 +291,7 @@ function FlowBuilderContent({
 
     setEdges(edgesWithType)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeNodes, storeEdges, precios])
+  }, [storeNodes, storeEdges])
 
   // Initialize form values
   useEffect(() => {
@@ -399,6 +389,20 @@ function FlowBuilderContent({
 
     // Agregar a Zustand - ReactFlow se actualizará automáticamente
     addFlowEdge(newEdge)
+  }
+
+  /**
+   * Handle node click — select the clicked node
+   */
+  const handleNodeClick = (_event: React.MouseEvent, node: ReactFlowNode): void => {
+    setSelectedNodeId(node.id)
+  }
+
+  /**
+   * Handle pane click — deselect any selected node
+   */
+  const handlePaneClick = (): void => {
+    setSelectedNodeId(null)
   }
 
   /**
@@ -579,6 +583,8 @@ function FlowBuilderContent({
               onNodesChange={handleNodesChangeWrapper}
               onEdgesChange={handleEdgesChangeWrapper}
               onConnect={handleConnect}
+              onNodeClick={handleNodeClick}
+              onPaneClick={handlePaneClick}
               nodeTypes={memoizedNodeTypes}
               edgeTypes={memoizedEdgeTypes}
               fitView
@@ -713,6 +719,13 @@ function FlowBuilderContent({
 
         {/* Sidebar - Tools & Options - Scrollable */}
         <div className="w-72 rounded-lg border border-segal-blue/10 bg-white p-4 shadow-sm overflow-y-auto flex flex-col gap-4">
+          {/* Node Detail Panel — shown when a node is selected */}
+          <NodeDetailPanel
+            onUpdate={updateNode}
+            onDelete={removeNode}
+            precios={precios ?? undefined}
+          />
+
           {/* Flow Stats */}
           <div className="space-y-3 border-t border-segal-blue/10 pt-4">
             <h3 className="font-bold text-sm text-segal-dark">Resumen</h3>
@@ -786,7 +799,7 @@ function FlowBuilderContent({
             <ul className="space-y-1 list-disc list-inside">
               <li>📍 Arrastra nodos para mover</li>
               <li>🔗 Arrastra desde cualquier punto azul para conectar</li>
-              <li>✏️ Click "Editar" en nodos para configurar</li>
+              <li>✏️ Click en un nodo para ver detalles y editar</li>
               <li>🗑️ Selecciona conexión y presiona Delete para eliminar</li>
               <li>🗺️ Usa minimapa (esquina inferior derecha) para navegar</li>
               <li>➕ Agrega etapas y condiciones para crear ramificaciones</li>

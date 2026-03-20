@@ -6,7 +6,7 @@
  * Muestra estadísticas de envíos por nodo cuando hay flujoId disponible.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { logger } from '@/lib/logger'
 import ReactFlow, {
   Controls,
@@ -24,6 +24,7 @@ import { InitialNode } from '../FlowBuilder/CustomNodes/InitialNode'
 import { EndNode } from '../FlowBuilder/CustomNodes/EndNode'
 import { ConditionalNode } from '../FlowBuilder/CustomNodes/ConditionalNode'
 import { N8nStyleEdge } from '../FlowBuilder/CustomEdges/N8nStyleEdge'
+import { NodeDetailPanel } from '../FlowBuilder/NodeDetailPanel'
 import { useNodeStats } from '../../hooks/useNodeStats'
 import { useCohortesActivas } from '../../hooks/useFlowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
@@ -82,9 +83,12 @@ const handleStyles = `
  * Componente interno que usa ReactFlow
  */
 function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationViewerProps) {
+  // Node selection state for read-only detail panel
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+
   // Fetch node statistics (aggregated across all executions)
   const { data: nodeStatsMap, isLoading: isLoadingStats } = useNodeStats(flujoId)
-  
+
   // Fetch active cohorts data
   const { data: cohortesData, isLoading: isLoadingCohorts } = useCohortesActivas(flujoId ?? 0, !!flujoId)
   const resumenPorNodo = cohortesData?.data?.resumen_por_nodo
@@ -171,22 +175,66 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
     )
   }
 
+  // Node click handlers for selection
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id)
+  }, [])
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null)
+  }, [])
+
+  // No-op handlers for read-only panel (edit/delete disabled)
+  const noopDelete = useCallback((_nodeId: string) => {}, [])
+  const noopUpdate = useCallback((_nodeId: string, _data: Partial<unknown>) => {}, [])
+
+  // Dynamic selection styles for the selected node (CompactNodeWrapper reads from
+  // the Zustand store which viewers don't use, so we apply CSS-based selection ring)
+  const selectionStyles = selectedNodeId
+    ? `
+      .react-flow__node[data-id="${selectedNodeId}"] > div > div {
+        ring: 2px;
+        box-shadow: 0 0 0 2px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        border-radius: 8px;
+      }
+    `
+    : ''
+
   return (
-    <>
-      <style>{handleStyles}</style>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodesChange={onNodesChange}
-        fitView
-      >
-        <Background />
-        <Controls showInteractive={false} />
-        <MiniMap />
-      </ReactFlow>
-    </>
+    <div className="flex h-full w-full">
+      {/* Canvas area */}
+      <div className="flex-1 relative">
+        <style>{handleStyles}{selectionStyles}</style>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodesChange={onNodesChange}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          fitView
+        >
+          <Background />
+          <Controls showInteractive={false} />
+          <MiniMap />
+        </ReactFlow>
+      </div>
+
+      {/* Read-only detail panel — only shown when a node is selected */}
+      {selectedNodeId && (
+        <div className="w-72 border-l border-segal-blue/10 bg-white p-4 overflow-y-auto">
+          <NodeDetailPanel
+            onUpdate={noopUpdate}
+            onDelete={noopDelete}
+            isReadOnly
+            externalNodes={nodes}
+            externalSelectedNodeId={selectedNodeId}
+            onClearSelection={() => setSelectedNodeId(null)}
+          />
+        </div>
+      )}
+    </div>
   )
 }
 

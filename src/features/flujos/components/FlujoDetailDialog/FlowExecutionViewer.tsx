@@ -19,7 +19,7 @@ import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, P
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { formatCurrency, useCostoEjecucion, usePrecios } from '@/features/costos/hooks'
+import { formatCurrency, useCostoEjecucion } from '@/features/costos/hooks'
 import type { StageExecution } from '@/types/flowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
 
@@ -350,27 +350,18 @@ function FlowExecutionContent({
   // Get execution cost
   const { data: costoEjecucion } = useCostoEjecucion(ejecucionId)
 
-  // Get pricing for cost badge display
-  const { data: precios } = usePrecios()
-
   // Get cohorts data for "Últimos ingresos" panel
   const { data: cohortesData } = useCohortesActivas(flujoId, true)
   const ultimosIngresos = cohortesData?.data?.ultimos_ingresos
 
-  // Create nodeTypes with precios - properly memoized to avoid re-renders
+  // Node types for compact rendering — execution state data is injected into node.data
+  // and displayed via the StageDetailPanel / SelectedNodePanel, not on the node itself.
   const nodeTypes = useMemo(() => ({
-    stage: (props: any) => (
-      <StageNode
-        {...props}
-        isNextNode={props.data?.isNextNode}
-        nextExecutionTime={props.data?.nextExecutionTime}
-        precios={precios}
-      />
-    ),
+    stage: StageNode,
     initial: InitialNode,
     end: EndNode,
     conditional: ConditionalNode,
-  }), [precios])
+  }), [])
 
   const [nodes, setNodes] = useNodesState(configVisual?.nodes || [])
   const [edges, setEdges] = useEdgesState(configVisual?.edges || [])
