@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import type { OpcionesFlujos } from '@/api/flujos.service'
 import type { Prospecto } from '@/types/prospecto'
 import { FlowBuilder } from '../FlowBuilder/FlowBuilder'
+import { useFlowBuilderStore } from '../../stores/flowBuilderStore'
 import { OriginSelector } from './steps/OriginSelector'
 import { LoteSelector } from './steps/LoteSelector'
 import { ProspectSelector } from './steps/ProspectSelector'
@@ -185,6 +186,8 @@ export function CreateFlujoWithBuilder({
       setSaving(false)
       setError(null)
       setFlujoCreado(null)
+      // Reset the Zustand flow builder store to clear any leftover data from previous flows
+      useFlowBuilderStore.getState().resetFlow()
       // Stop any ongoing polling from previous flujo
       detenerTracking()
     }

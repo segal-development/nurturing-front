@@ -256,6 +256,13 @@ function FlowBuilderContent({
   // Get pricing for cost display
   const { data: precios } = usePrecios()
 
+  // Reset store on mount to ensure clean canvas for new flows.
+  // Without this, data from a previously edited flow persists in the singleton Zustand store.
+  useEffect(() => {
+    resetFlow()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on mount
+  }, [])
+
   // ReactFlow state - sincronizado con Zustand
   const [nodes, setNodes, onNodesChange] = useNodesState(storeNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges)
@@ -263,7 +270,7 @@ function FlowBuilderContent({
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false)
   const [snapToGrid, setSnapToGrid] = useState(true)
   const flowContainerRef = useRef<HTMLDivElement>(null)
-  
+
   // ReactFlow instance for programmatic control
   const reactFlowInstance = useReactFlow()
 
