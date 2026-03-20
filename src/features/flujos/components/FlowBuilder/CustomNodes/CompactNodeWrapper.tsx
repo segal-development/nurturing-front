@@ -4,10 +4,15 @@
  * Layout: 64x64 icon box with label centered below (outside the box).
  * Handles: execution state border, icon, label, selection ring,
  * active/inactive opacity, and optional badge slot.
+ *
+ * Prospect indicators (ProspectCountBadge, NodeProgressBar, NewProspectsDot)
+ * are rendered inside the icon box when showProspectIndicators=true.
  */
 
+import { memo } from 'react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import type { CohorteResumenNodo } from '@/types/flowExecutionTracking'
 import { useFlowBuilderStore } from '../../../stores/flowBuilderStore'
 
 const EXECUTION_STATE = {
@@ -32,6 +37,9 @@ interface CompactNodeWrapperProps {
   isActive?: boolean
   badge?: ReactNode
   children?: ReactNode
+  // Prospect indicator props
+  cohorteResumen?: CohorteResumenNodo
+  showProspectIndicators?: boolean
 }
 
 function truncateLabel(label: string): string {
@@ -55,6 +63,73 @@ function getExecutionBorderClass(state?: ExecutionState): string {
   }
 }
 
+/** Format large numbers: 1500 -> "1.5k" */
+function formatProspectCount(count: number): string {
+  if (count >= 1000) {
+    const k = count / 1000
+    // Show one decimal only if needed (1.0k -> "1k", 1.5k -> "1.5k")
+    return `${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}k`
+  }
+  return String(count)
+}
+
+/** Blue pill badge showing prospectos_pendientes — top-right of icon box */
+function ProspectCountBadge({ count }: { count: number }) {
+  if (!count || count <= 0) return null
+
+  return (
+    <span className="absolute -top-2 -right-2 z-20 bg-blue-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center shadow-sm">
+      {formatProspectCount(count)}
+    </span>
+  )
+}
+
+/** Thin progress bar at bottom edge of icon box */
+function NodeProgressBar({
+  procesados,
+  total,
+}: {
+  procesados: number
+  total: number
+}) {
+  if (!total || total <= 0) return null
+
+  const percent = Math.min(100, (procesados / total) * 100)
+
+  // Color based on progress percentage
+  let fillColor = 'bg-amber-400' // < 30%
+  if (percent >= 100) {
+    fillColor = 'bg-green-500'
+  } else if (percent >= 30) {
+    fillColor = 'bg-blue-500'
+  }
+
+  return (
+    <div className="absolute bottom-0.5 left-1.5 right-1.5 h-[2px] bg-gray-200/50 rounded-full overflow-hidden">
+      <div
+        className={cn('h-full rounded-full transition-all duration-300', fillColor)}
+        style={{ width: `${percent}%` }}
+      />
+    </div>
+  )
+}
+
+/** Pulsing green dot indicating pending cohorts with unprocessed prospects */
+function NewProspectsDot({
+  cohortesPendientes,
+  prospectosPendientes,
+}: {
+  cohortesPendientes: number
+  prospectosPendientes: number
+}) {
+  if (!cohortesPendientes || cohortesPendientes <= 0) return null
+  if (!prospectosPendientes || prospectosPendientes <= 0) return null
+
+  return (
+    <span className="absolute -bottom-1 -left-1 z-10 h-1.5 w-1.5 bg-green-400 rounded-full animate-pulse shadow-sm" />
+  )
+}
+
 /** Execution status dot — top-right corner of node box */
 function ExecutionStatusDot({ state }: { state?: ExecutionState }) {
   if (!state || state === EXECUTION_STATE.PENDING) return null
@@ -76,7 +151,7 @@ function ExecutionStatusDot({ state }: { state?: ExecutionState }) {
   )
 }
 
-export function CompactNodeWrapper({
+export const CompactNodeWrapper = memo(function CompactNodeWrapper({
   nodeId,
   icon,
   label,
@@ -86,6 +161,8 @@ export function CompactNodeWrapper({
   isActive = true,
   badge,
   children,
+  cohorteResumen,
+  showProspectIndicators = false,
 }: CompactNodeWrapperProps) {
   const selectedNodeId = useFlowBuilderStore((state) => state.selectedNodeId)
   const isSelected = selectedNodeId === nodeId
@@ -119,6 +196,21 @@ export function CompactNodeWrapper({
         {/* Execution status dot */}
         <ExecutionStatusDot state={executionState} />
 
+        {/* Prospect indicators — only when showProspectIndicators is true */}
+        {showProspectIndicators && cohorteResumen && (
+          <>
+            <ProspectCountBadge count={cohorteResumen.prospectos_pendientes} />
+            <NodeProgressBar
+              procesados={cohorteResumen.prospectos_procesados}
+              total={cohorteResumen.total_prospectos}
+            />
+            <NewProspectsDot
+              cohortesPendientes={cohorteResumen.cohortes_pendientes}
+              prospectosPendientes={cohorteResumen.prospectos_pendientes}
+            />
+          </>
+        )}
+
         {/* Icon circle */}
         <div
           className={cn(
@@ -144,4 +236,4 @@ export function CompactNodeWrapper({
       {children}
     </div>
   )
-}
+})

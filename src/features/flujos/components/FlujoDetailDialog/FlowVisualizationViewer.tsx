@@ -166,6 +166,8 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
         } : undefined,
         // Add cohort summary for this node
         cohorteResumen: resumenPorNodo?.[node.id],
+        // Enable prospect indicators in visualization view
+        showProspectIndicators: true,
       }
 
       return {

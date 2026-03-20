@@ -351,6 +351,7 @@ export interface CohorteResumenNodo {
   cohortes_pendientes: number
   total_prospectos: number
   prospectos_procesados: number
+  prospectos_pendientes: number
   detalle_cohortes: CohorteDetalle[]
 }
 

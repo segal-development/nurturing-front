@@ -18,6 +18,8 @@ export function InitialNode({ id, data }: NodeProps<InitialNodeData>) {
       label={data.label || 'Inicio'}
       iconBgColor="bg-indigo-500"
       executionState={data.executionState}
+      cohorteResumen={data.cohorteResumen}
+      showProspectIndicators={data.showProspectIndicators}
     >
       {/* Output handle - only right side (n8n style) */}
       <Handle

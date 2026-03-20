@@ -22,6 +22,9 @@ export function ConditionalNode({ id, data }: NodeProps<ConditionalNodeData>) {
       icon={<GitBranch className="h-5 w-5" />}
       label={data.label || 'Condicion'}
       iconBgColor="bg-amber-500"
+      executionState={data.executionState}
+      cohorteResumen={data.cohorteResumen}
+      showProspectIndicators={data.showProspectIndicators}
     >
       {/* Input handle - only left side (n8n style) */}
       <Handle

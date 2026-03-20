@@ -43,6 +43,8 @@ export function StageNode({ id, data }: NodeProps<StageNodeData>) {
       iconBgColor="bg-blue-500"
       executionState={data.executionState}
       isActive={data.activo !== false}
+      cohorteResumen={data.cohorteResumen}
+      showProspectIndicators={data.showProspectIndicators}
       badge={
         <div className="flex h-4 w-4 items-center justify-center rounded-full bg-segal-blue text-[8px] font-bold text-white shadow-sm">
           {nodeNumber}

@@ -429,6 +429,9 @@ function FlowExecutionContent({
     }
   }, [configVisual?.edges, setEdges])
 
+  // Get resumen_por_nodo for prospect indicators
+  const resumenPorNodo = cohortesData?.data?.resumen_por_nodo
+
   // Enriquecer nodos con información de ejecución
   useEffect(() => {
     if (configVisual?.nodes) {
@@ -467,6 +470,8 @@ function FlowExecutionContent({
               isReadOnly: true, // Flow is executing, disable edit/delete
               isNextNode,
               nextExecutionTime,
+              cohorteResumen: resumenPorNodo?.[node.id],
+              showProspectIndicators: true,
             },
           }
         }
@@ -487,13 +492,16 @@ function FlowExecutionContent({
             pauseReason: stage.pause_reason,
             pausedAt: stage.paused_at,
             autoResumeAt: stage.auto_resume_at,
+            // Prospect indicators
+            cohorteResumen: resumenPorNodo?.[node.id],
+            showProspectIndicators: true,
           },
         }
       })
 
       setNodes(enrichedNodes)
     }
-  }, [configVisual?.nodes, stagesByNodeId, setNodes, executionData?.proximo_nodo])
+  }, [configVisual?.nodes, stagesByNodeId, setNodes, executionData?.proximo_nodo, resumenPorNodo])
 
   // Obtener el camino de ejecución desde la timeline
   const executionPath = (() => {

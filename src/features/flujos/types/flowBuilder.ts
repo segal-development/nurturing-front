@@ -32,6 +32,7 @@ export interface ExecutionStateData {
   autoResumeAt?: string // ISO datetime when will auto-resume
   // Cohort tracking for perpetual flows
   cohorteResumen?: CohorteResumenNodo // Summary of cohorts for this node
+  showProspectIndicators?: boolean // Gates indicator rendering on nodes
 }
 
 /**
