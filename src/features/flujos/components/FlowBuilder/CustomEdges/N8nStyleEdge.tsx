@@ -19,6 +19,11 @@ import {
 } from 'reactflow'
 import { Trash2 } from 'lucide-react'
 
+/** Unique marker ID per edge color to avoid conflicts */
+function getMarkerId(color: string): string {
+  return `arrowhead-${color.replace('#', '')}`
+}
+
 export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
   const {
     id,
@@ -28,7 +33,6 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
     targetY,
     data,
     sourceHandle,
-    markerEnd,
     selected = false,
   } = props
 
@@ -50,20 +54,26 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
 
   let edgeColor = '#1e3a8a' // Default blue (segal-blue-900)
   let edgeLabel = data?.label
-  let labelBgClass = 'bg-white border border-segal-blue/30 text-segal-blue'
+  let labelBgClass = 'bg-white/90 backdrop-blur border border-segal-blue/30 text-segal-blue'
   let glowColor = '#1e3a8a'
+  let branchLabel: string | null = null
 
   if (handleToUse?.includes('-yes')) {
     edgeColor = '#059669' // Green for YES
     edgeLabel = edgeLabel || '✓ Sí'
-    labelBgClass = 'bg-segal-green/10 border border-segal-green/50 text-segal-green font-semibold'
+    branchLabel = 'Sí'
+    labelBgClass = 'bg-green-500/90 backdrop-blur text-white font-semibold'
     glowColor = '#059669'
   } else if (handleToUse?.includes('-no')) {
     edgeColor = '#dc2626' // Red for NO
     edgeLabel = edgeLabel || '✗ No'
-    labelBgClass = 'bg-segal-red/10 border border-segal-red/50 text-segal-red font-semibold'
+    branchLabel = 'No'
+    labelBgClass = 'bg-red-500/90 backdrop-blur text-white font-semibold'
     glowColor = '#dc2626'
   }
+
+  const markerId = getMarkerId(edgeColor)
+  const markerUrl = `url(#${markerId})`
 
   const handleDeleteEdge = () => {
     deleteElements({ edges: [{ id: id || '' }] })
@@ -71,6 +81,21 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
 
   return (
     <>
+      {/* SVG arrow marker definition */}
+      <defs>
+        <marker
+          id={markerId}
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
+          refY="4"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M 0 0 L 8 4 L 0 8 Z" fill={edgeColor} opacity={0.8} />
+        </marker>
+      </defs>
+
       {/* Invisible thicker line for better selection hit area */}
       <BaseEdge
         path={edgePath}
@@ -84,7 +109,6 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
       {/* Glow/shadow effect - subtle for unselected, prominent for selected */}
       <BaseEdge
         path={edgePath}
-        markerEnd={markerEnd}
         style={{
           strokeWidth: selected ? 4 : 2.5,
           stroke: glowColor,
@@ -94,15 +118,14 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
         }}
       />
 
-      {/* Main solid line with n8n styling */}
+      {/* Main solid line with n8n styling + arrowhead */}
       <BaseEdge
         path={edgePath}
-        markerEnd={markerEnd}
+        markerEnd={markerUrl}
         style={{
           strokeWidth: selected ? 3 : 2.5,
           stroke: edgeColor,
           transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
-          // Add smooth cap for modern look
           strokeLinecap: 'round',
           strokeLinejoin: 'round',
         }}
@@ -112,7 +135,6 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
       {selected && (
         <BaseEdge
           path={edgePath}
-          markerEnd={markerEnd}
           style={{
             strokeWidth: 2.5,
             stroke: edgeColor,
@@ -124,8 +146,24 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
         />
       )}
 
-      {/* Label with improved styling */}
-      {(edgeLabel || data?.label) && (
+      {/* Branch label pill for conditional edges (Sí / No) */}
+      {branchLabel && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'none',
+            }}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold shadow-md ${labelBgClass}`}
+          >
+            {branchLabel}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+
+      {/* Generic edge label (non-branch) */}
+      {!branchLabel && (edgeLabel || data?.label) && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -156,7 +194,7 @@ export function N8nStyleEdge(props: EdgeProps & { sourceHandle?: string }) {
             }}
             className="nodrag nopan"
           >
-            <span className="text-segal-dark/70 font-medium text-xs bg-white px-2 py-1 rounded-md shadow-md">
+            <span className="text-white/70 font-medium text-xs bg-slate-800/80 backdrop-blur px-2 py-1 rounded-md shadow-md">
               Presiona Delete o
             </span>
             <button

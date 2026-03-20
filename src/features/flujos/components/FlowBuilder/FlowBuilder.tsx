@@ -35,38 +35,44 @@ import {
   MousePointer2,
 } from 'lucide-react'
 
-// Enhanced n8n-style CSS with better visibility and connection indicators
+// Enhanced n8n-style CSS with dark canvas, styled handles, and modern look
 const ENHANCED_FLOW_STYLES = `
-  /* ===== HANDLES - n8n style ===== */
+  /* ===== HANDLES - n8n style small dots with hover growth ===== */
   .react-flow__handle {
-    width: 12px;
-    height: 12px;
+    width: 8px !important;
+    height: 8px !important;
     border-radius: 50%;
-    opacity: 0.8;
-    transition: all 0.2s ease;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    opacity: 0.7;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid #1e3a8a !important;
+    background: white !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
 
   .react-flow__node:hover .react-flow__handle {
     opacity: 1;
-    transform: scale(1.2);
+    width: 12px !important;
+    height: 12px !important;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15), 0 2px 6px rgba(0,0,0,0.15);
   }
 
   .react-flow__handle:hover {
     opacity: 1;
-    transform: scale(1.5);
-    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.3), 0 2px 8px rgba(0,0,0,0.2);
+    width: 12px !important;
+    height: 12px !important;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.25), 0 2px 8px rgba(0,0,0,0.2);
   }
 
   .react-flow__handle.connectingFrom,
   .react-flow__handle.connectingTo {
     background: #16a34a !important;
+    border-color: #16a34a !important;
     opacity: 1;
-    transform: scale(1.4);
+    width: 12px !important;
+    height: 12px !important;
     box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.4);
   }
-  
+
   .react-flow__handle-left,
   .react-flow__handle-right {
     z-index: 10;
@@ -74,7 +80,7 @@ const ENHANCED_FLOW_STYLES = `
 
   /* ===== CONNECTION LINE - Visual guide while dragging ===== */
   .react-flow__connection-line {
-    stroke: #1e3a8a;
+    stroke: #60a5fa;
     stroke-width: 2.5;
     stroke-dasharray: 5 5;
     animation: dash 0.5s linear infinite;
@@ -86,9 +92,12 @@ const ENHANCED_FLOW_STYLES = `
     }
   }
 
-  /* ===== NODES - Enhanced borders and shadows ===== */
+  /* ===== NODES - Clean, no extra wrapper shadow ===== */
   .react-flow__node {
     transition: transform 0.1s ease, box-shadow 0.2s ease;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   .react-flow__node:hover {
@@ -96,34 +105,34 @@ const ENHANCED_FLOW_STYLES = `
   }
 
   .react-flow__node.selected {
-    box-shadow: 0 0 0 2px #1e3a8a, 0 4px 20px rgba(30, 58, 138, 0.3) !important;
+    box-shadow: none !important;
   }
 
-  /* ===== MINIMAP - Enhanced colors ===== */
+  /* ===== MINIMAP - Dark theme ===== */
   .react-flow__minimap {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(30, 58, 138, 0.2);
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .react-flow__minimap-mask {
-    fill: rgba(30, 58, 138, 0.1);
+    fill: rgba(96, 165, 250, 0.1);
   }
 
-  /* ===== CONTROLS - More visible ===== */
+  /* ===== CONTROLS - Dark theme ===== */
   .react-flow__controls {
-    background: white;
-    border: 1px solid rgba(30, 58, 138, 0.2);
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     overflow: hidden;
   }
 
   .react-flow__controls-button {
-    background: white;
+    background: transparent;
     border: none;
-    border-bottom: 1px solid rgba(30, 58, 138, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     width: 32px;
     height: 32px;
     display: flex;
@@ -133,7 +142,7 @@ const ENHANCED_FLOW_STYLES = `
   }
 
   .react-flow__controls-button:hover {
-    background: rgba(30, 58, 138, 0.1);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .react-flow__controls-button:last-child {
@@ -141,23 +150,18 @@ const ENHANCED_FLOW_STYLES = `
   }
 
   .react-flow__controls-button svg {
-    fill: #1e3a8a;
-  }
-
-  /* ===== BACKGROUND GRID ===== */
-  .react-flow__background {
-    background-color: #fafbfc;
+    fill: #94a3b8;
   }
 
   /* ===== SELECTION BOX ===== */
   .react-flow__selection {
-    background: rgba(30, 58, 138, 0.08);
-    border: 1px dashed #1e3a8a;
+    background: rgba(96, 165, 250, 0.08);
+    border: 1px dashed #60a5fa;
   }
 
   /* ===== EDGE SELECTION ===== */
   .react-flow__edge.selected .react-flow__edge-path {
-    stroke: #1e3a8a;
+    stroke: #60a5fa;
     stroke-width: 3;
   }
 
@@ -575,7 +579,7 @@ function FlowBuilderContent({
       {/* Main Content - Canvas + Sidebar */}
       <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
         {/* ReactFlow Canvas */}
-        <div className="flex-1 rounded-lg border border-segal-blue/10 dark:border-segal-blue/30 overflow-hidden bg-gradient-to-br from-slate-50 to-segal-blue/5 dark:from-slate-800 dark:to-slate-900 flex flex-col">
+        <div className="flex-1 rounded-lg border border-slate-700/50 overflow-hidden bg-slate-900 flex flex-col">
           <div ref={flowContainerRef} className="flex-1 w-full" style={{ minHeight: 0 }}>
             <ReactFlow
               nodes={nodes}
@@ -600,12 +604,12 @@ function FlowBuilderContent({
               maxZoom={2}
               attributionPosition="bottom-left"
             >
-              {/* Background with grid */}
+              {/* Background with subtle grid dots on dark canvas */}
               <Background
                 variant={BackgroundVariant.Dots}
-                gap={GRID_SNAP_SIZE}
-                size={1}
-                color="#cbd5e1"
+                gap={22}
+                size={1.2}
+                color="rgba(255,255,255,0.05)"
               />
               
               {/* Enhanced Controls - Hidden, using custom */}
@@ -617,55 +621,55 @@ function FlowBuilderContent({
                 className="hidden"
               />
               
-              {/* Custom Floating Toolbar */}
+              {/* Custom Floating Toolbar — dark theme */}
               <Panel position="top-left" className="m-2">
-                <div className="flex flex-col gap-1 bg-white rounded-lg border border-segal-blue/20 shadow-lg p-1">
+                <div className="flex flex-col gap-1 bg-slate-800/90 backdrop-blur rounded-lg border border-white/10 shadow-lg p-1">
                   <button
                     onClick={handleZoomIn}
-                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    className="p-2 rounded hover:bg-white/10 transition-colors group"
                     title="Acercar (Zoom In)"
                   >
-                    <ZoomIn className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                    <ZoomIn className="h-4 w-4 text-slate-300 group-hover:text-white group-hover:scale-110 transition-all" />
                   </button>
                   <button
                     onClick={handleZoomOut}
-                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    className="p-2 rounded hover:bg-white/10 transition-colors group"
                     title="Alejar (Zoom Out)"
                   >
-                    <ZoomOut className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                    <ZoomOut className="h-4 w-4 text-slate-300 group-hover:text-white group-hover:scale-110 transition-all" />
                   </button>
-                  <div className="h-px bg-segal-blue/10 my-1" />
+                  <div className="h-px bg-white/10 my-1" />
                   <button
                     onClick={handleFitView}
-                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    className="p-2 rounded hover:bg-white/10 transition-colors group"
                     title="Ajustar Vista (Fit All)"
                   >
-                    <Maximize2 className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                    <Maximize2 className="h-4 w-4 text-slate-300 group-hover:text-white group-hover:scale-110 transition-all" />
                   </button>
                   <button
                     onClick={handleCenterView}
-                    className="p-2 rounded hover:bg-segal-blue/10 transition-colors group"
+                    className="p-2 rounded hover:bg-white/10 transition-colors group"
                     title="Centrar en Inicio"
                   >
-                    <MousePointer2 className="h-4 w-4 text-segal-blue group-hover:scale-110 transition-transform" />
+                    <MousePointer2 className="h-4 w-4 text-slate-300 group-hover:text-white group-hover:scale-110 transition-all" />
                   </button>
-                  <div className="h-px bg-segal-blue/10 my-1" />
+                  <div className="h-px bg-white/10 my-1" />
                   <button
                     onClick={() => setSnapToGrid(!snapToGrid)}
-                    className={`p-2 rounded transition-colors group ${snapToGrid ? 'bg-segal-blue/10' : 'hover:bg-segal-blue/5'}`}
+                    className={`p-2 rounded transition-colors group ${snapToGrid ? 'bg-blue-500/20' : 'hover:bg-white/5'}`}
                     title={snapToGrid ? 'Desactivar Grid Snap' : 'Activar Grid Snap'}
                   >
-                    <Grid3X3 className={`h-4 w-4 transition-transform ${snapToGrid ? 'text-segal-blue' : 'text-gray-400'}`} />
+                    <Grid3X3 className={`h-4 w-4 transition-all ${snapToGrid ? 'text-blue-400' : 'text-slate-500'}`} />
                   </button>
                 </div>
               </Panel>
 
-              {/* Floating Add Node Toolbar */}
+              {/* Floating Add Node Toolbar — dark theme */}
               <Panel position="top-center" className="m-2">
-                <div className="flex gap-2 bg-white rounded-lg border border-segal-blue/20 shadow-lg p-2">
+                <div className="flex gap-2 bg-slate-800/90 backdrop-blur rounded-lg border border-white/10 shadow-lg p-2">
                   <button
                     onClick={addStageNode}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-segal-blue text-white text-sm font-medium hover:bg-segal-blue/90 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition-colors"
                     title="Agregar Etapa"
                   >
                     <Plus className="h-4 w-4" />
@@ -673,7 +677,7 @@ function FlowBuilderContent({
                   </button>
                   <button
                     onClick={addConditionalNode}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-400 text-amber-600 text-sm font-medium hover:bg-amber-50 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-amber-500/50 text-amber-400 text-sm font-medium hover:bg-amber-500/10 transition-colors"
                     title="Agregar Condición"
                   >
                     <GitBranch className="h-4 w-4" />
@@ -681,7 +685,7 @@ function FlowBuilderContent({
                   </button>
                   <button
                     onClick={addEndNode}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-segal-green text-segal-green text-sm font-medium hover:bg-segal-green/5 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-500/50 text-green-400 text-sm font-medium hover:bg-green-500/10 transition-colors"
                     title="Agregar Fin"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -690,25 +694,25 @@ function FlowBuilderContent({
                 </div>
               </Panel>
 
-              {/* Node Counter Badge */}
+              {/* Node Counter Badge — dark theme */}
               <Panel position="top-right" className="m-2">
-                <div className="flex gap-2 bg-white/90 backdrop-blur rounded-lg border border-segal-blue/20 shadow-sm px-3 py-1.5 text-xs font-medium">
-                  <span className="text-segal-blue">{stageCount} etapas</span>
-                  <span className="text-segal-blue/30">|</span>
-                  <span className="text-amber-600">{conditionalCount} cond.</span>
-                  <span className="text-segal-blue/30">|</span>
-                  <span className="text-segal-green">{endNodeCount} fin</span>
+                <div className="flex gap-2 bg-slate-800/90 backdrop-blur rounded-lg border border-white/10 shadow-sm px-3 py-1.5 text-xs font-medium">
+                  <span className="text-blue-400">{stageCount} etapas</span>
+                  <span className="text-white/20">|</span>
+                  <span className="text-amber-400">{conditionalCount} cond.</span>
+                  <span className="text-white/20">|</span>
+                  <span className="text-green-400">{endNodeCount} fin</span>
                 </div>
               </Panel>
               
-              {/* Enhanced MiniMap with node colors */}
-              <MiniMap 
+              {/* Enhanced MiniMap — dark theme */}
+              <MiniMap
                 position="bottom-right"
                 nodeColor={getMinimapNodeColor}
                 nodeStrokeColor={(node) => getMinimapNodeColor(node)}
                 nodeBorderRadius={4}
-                maskColor="rgba(30, 58, 138, 0.1)"
-                className="!bg-white/95 !border-segal-blue/20 !rounded-lg !shadow-lg"
+                maskColor="rgba(96, 165, 250, 0.08)"
+                className="!bg-slate-800/90 !border-white/10 !rounded-lg !shadow-lg"
                 style={{ width: 180, height: 120 }}
                 zoomable
                 pannable

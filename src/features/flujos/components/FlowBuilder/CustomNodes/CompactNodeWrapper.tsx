@@ -55,6 +55,27 @@ function getExecutionBorderClass(state?: ExecutionState): string {
   }
 }
 
+/** Execution status dot — top-right corner of node box */
+function ExecutionStatusDot({ state }: { state?: ExecutionState }) {
+  if (!state || state === EXECUTION_STATE.PENDING) return null
+
+  const dotClasses: Record<string, string> = {
+    [EXECUTION_STATE.COMPLETED]: 'bg-green-500',
+    [EXECUTION_STATE.EXECUTING]: 'bg-blue-500 animate-pulse',
+    [EXECUTION_STATE.PAUSED]: 'bg-amber-500',
+    [EXECUTION_STATE.FAILED]: 'bg-red-500',
+  }
+
+  return (
+    <span
+      className={cn(
+        'absolute -top-1 -right-1 z-10 h-2.5 w-2.5 rounded-full border-2 border-white shadow-sm',
+        dotClasses[state],
+      )}
+    />
+  )
+}
+
 export function CompactNodeWrapper({
   nodeId,
   icon,
@@ -70,7 +91,13 @@ export function CompactNodeWrapper({
   const isSelected = selectedNodeId === nodeId
 
   return (
-    <div className={cn('relative flex flex-col items-center', !isActive && 'opacity-50')}>
+    <div
+      className={cn(
+        'group relative flex flex-col items-center transition-transform duration-200',
+        'hover:scale-105',
+        !isActive && 'opacity-50',
+      )}
+    >
       {/* Badge slot — top-left of the icon box */}
       {badge && (
         <div className="absolute -top-2 -left-2 z-10">
@@ -78,22 +105,27 @@ export function CompactNodeWrapper({
         </div>
       )}
 
-      {/* Icon box — n8n style square with only the icon */}
+      {/* Icon box — n8n style card with floating shadow */}
       <div
         className={cn(
-          'flex items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-150',
+          'relative flex items-center justify-center rounded-2xl border border-gray-200 bg-white shadow-md transition-all duration-200',
           'w-[64px] h-[64px]',
           'border-l-4',
           getExecutionBorderClass(executionState),
-          isSelected && 'ring-2 ring-blue-500 ring-offset-1 shadow-md',
+          'group-hover:shadow-lg',
+          isSelected && 'ring-2 ring-blue-400 ring-offset-1 shadow-lg',
         )}
       >
+        {/* Execution status dot */}
+        <ExecutionStatusDot state={executionState} />
+
         {/* Icon circle */}
         <div
           className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-200',
+            'group-hover:brightness-110',
             iconBgColor,
-            iconTextColor
+            iconTextColor,
           )}
         >
           {icon}
@@ -102,7 +134,7 @@ export function CompactNodeWrapper({
 
       {/* Label — outside, below the icon box (n8n style) */}
       <span
-        className="mt-1.5 max-w-[90px] text-xs font-medium leading-tight text-center text-gray-700 select-none truncate"
+        className="mt-1.5 max-w-[90px] text-xs font-medium leading-tight text-center text-gray-300 select-none truncate drop-shadow-sm"
         title={label}
       >
         {truncateLabel(label)}
