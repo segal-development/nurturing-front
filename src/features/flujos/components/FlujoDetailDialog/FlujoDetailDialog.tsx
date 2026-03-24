@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import {
@@ -86,6 +87,9 @@ export function FlujoDetailDialog({
   const [isEditingNivelDeuda, setIsEditingNivelDeuda] = useState(false)
   const [editNivelDeudaValues, setEditNivelDeudaValues] = useState<Set<string>>(new Set())
   const [isSavingNivelDeuda, setIsSavingNivelDeuda] = useState(false)
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient()
 
   // Obtener flujo detallado del backend si está disponible
   const { data: detailedFlujo, isLoading, refetch: refetchFlujo } = useFlujosDetail(initialFlujo?.id || null, {
@@ -1022,8 +1026,13 @@ export function FlujoDetailDialog({
           isOpen={isAddProspectsModalOpen}
           onClose={() => setIsAddProspectsModalOpen(false)}
           onSuccess={() => {
-            // Invalidate queries to refresh prospect count
-            // This will be handled by the parent component refreshing the flujo data
+            // Invalidate queries to refresh prospect count and flujo data
+            queryClient.invalidateQueries({ queryKey: ['flujos-page'] })
+            queryClient.invalidateQueries({ queryKey: ['flujos-detail', initialFlujo?.id] })
+            // Also refetch the current flujo detail
+            refetchFlujo()
+            // Close the detail dialog and go back to flujos list
+            onOpenChange(false)
           }}
         />
       </DialogContent>
