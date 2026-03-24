@@ -21,6 +21,7 @@ import { useFlujoOpciones } from '@/features/flujos/hooks/useFlujoOpciones'
 import { useTiposProspecto } from '@/hooks/useTiposProspecto'
 import { useProspectosConteoPorTipo } from '@/hooks/useProspectosConteoPorTipo'
 import { useMetadataValues, NIVEL_DEUDA_LABELS, NIVEL_DEUDA_COLORS } from '@/hooks/useMetadataValues'
+import { useLotesPorOrigen } from '@/hooks/useLotesPorOrigen'
 import type { FlujoNurturing } from '@/types/flujo'
 
 interface AddProspectsModalProps {
@@ -63,11 +64,23 @@ export function AddProspectsModal({
   // Check if we should show nivel_deuda filter
   const showNivelDeudaFilter = Boolean(selectedOriginId && isSysgalOrigin(selectedOriginName))
 
-  // Fetch nivel_deuda values for Sysgal origins
+  // Fetch lotes for the selected origin (needed to filter nivel_deuda correctly)
+  const { data: lotesData } = useLotesPorOrigen({
+    origen: selectedOriginId,
+    enabled: showNivelDeudaFilter,
+  })
+
+  // Extract lote_ids from the selected origin
+  const loteIdsForOrigin = useMemo(() => {
+    if (!lotesData?.lotes) return undefined
+    return lotesData.lotes.map((l) => l.id)
+  }, [lotesData])
+
+  // Fetch nivel_deuda values for Sysgal origins - NOW filtered by lote_ids
   const { data: nivelDeudaData, isLoading: loadingNivelDeuda } = useMetadataValues(
     'nivel_deuda',
-    undefined, // We'll filter by origin, not lote
-    showNivelDeudaFilter === true
+    loteIdsForOrigin, // Filter by the lotes belonging to this origin
+    showNivelDeudaFilter && !!loteIdsForOrigin
   )
 
   const nivelDeudaValores = nivelDeudaData?.valores ?? []
