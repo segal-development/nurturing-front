@@ -61,18 +61,18 @@ export function AddProspectsModal({
     enabled: !!selectedOriginId,
   })
 
-  // Check if we should show nivel_deuda filter
-  const showNivelDeudaFilter = Boolean(selectedOriginId && isSysgalOrigin(selectedOriginName))
+  // Check if origin is Sysgal-related (may need nivel_deuda filter)
+  const isSysgalRelated = Boolean(selectedOriginId && isSysgalOrigin(selectedOriginName))
 
   // Fetch lotes for the selected origin (needed to filter nivel_deuda correctly)
-  const { data: lotesData } = useLotesPorOrigen({
+  const { data: lotesData, isLoading: loadingLotes } = useLotesPorOrigen({
     origen: selectedOriginId,
-    enabled: showNivelDeudaFilter,
+    enabled: isSysgalRelated,
   })
 
   // Extract lote_ids from the selected origin
   const loteIdsForOrigin = useMemo(() => {
-    if (!lotesData?.lotes) return undefined
+    if (!lotesData?.lotes || lotesData.lotes.length === 0) return undefined
     return lotesData.lotes.map((l) => l.id)
   }, [lotesData])
 
@@ -80,10 +80,20 @@ export function AddProspectsModal({
   const { data: nivelDeudaData, isLoading: loadingNivelDeuda } = useMetadataValues(
     'nivel_deuda',
     loteIdsForOrigin, // Filter by the lotes belonging to this origin
-    showNivelDeudaFilter && !!loteIdsForOrigin
+    isSysgalRelated && !!loteIdsForOrigin
   )
 
   const nivelDeudaValores = nivelDeudaData?.valores ?? []
+
+  // Only show nivel_deuda filter if:
+  // 1. Origin is Sysgal-related AND
+  // 2. We have lotes for this origin AND
+  // 3. We have nivel_deuda data available
+  // Otherwise, show the regular tipo selection or allow adding all prospects
+  const showNivelDeudaFilter = isSysgalRelated && loteIdsForOrigin && loteIdsForOrigin.length > 0 && nivelDeudaValores.length > 0
+
+  // For Sysgal origins without lotes/nivel_deuda data, allow adding all prospects directly
+  const sysgalWithoutNivelDeuda = isSysgalRelated && !loadingLotes && !loadingNivelDeuda && !showNivelDeudaFilter
 
   // Derived state
   const totalProspectosOrigen = conteoPorTipo?.total ?? 0
@@ -101,11 +111,16 @@ export function AddProspectsModal({
 
   // Calculate selected count
   const selectedCount = useMemo(() => {
-    // For Sysgal: use nivel_deuda counts directly
+    // For Sysgal with nivel_deuda filter: use nivel_deuda counts directly
     if (showNivelDeudaFilter && selectedNivelDeuda.size > 0 && nivelDeudaValores.length > 0) {
       return nivelDeudaValores
         .filter(v => selectedNivelDeuda.has(v.valor))
         .reduce((acc, v) => acc + v.total, 0)
+    }
+
+    // For Sysgal without nivel_deuda data: use total from origin when "all" is selected
+    if (sysgalWithoutNivelDeuda && isAllTypes) {
+      return totalProspectosOrigen
     }
 
     // For non-Sysgal: use tipo counts
@@ -116,7 +131,7 @@ export function AddProspectsModal({
     }
 
     return 0
-  }, [isAllTypes, selectedTipoId, totalProspectosOrigen, conteoByTipoId, showNivelDeudaFilter, selectedNivelDeuda, nivelDeudaValores])
+  }, [isAllTypes, selectedTipoId, totalProspectosOrigen, conteoByTipoId, showNivelDeudaFilter, selectedNivelDeuda, nivelDeudaValores, sysgalWithoutNivelDeuda])
 
   const getTodosTipoId = useCallback((): number | null => {
     if (!tiposProspecto || tiposProspecto.length === 0) return null
@@ -167,13 +182,19 @@ export function AddProspectsModal({
       return
     }
 
-    // For non-Sysgal origins, require tipo selection
-    if (!showNivelDeudaFilter && !isAllTypes && !selectedTipoId) {
+    // For Sysgal without nivel_deuda data: require "all types" selection
+    if (sysgalWithoutNivelDeuda && !isAllTypes) {
+      toast.error('Debes seleccionar "Todos" para agregar los prospectos')
+      return
+    }
+
+    // For non-Sysgal origins (and Sysgal with nivel_deuda), require tipo or nivel_deuda selection
+    if (!sysgalWithoutNivelDeuda && !showNivelDeudaFilter && !isAllTypes && !selectedTipoId) {
       toast.error('Debes seleccionar un tipo de deuda')
       return
     }
 
-    // For Sysgal origins, require nivel_deuda selection
+    // For Sysgal origins with nivel_deuda filter, require nivel_deuda selection
     if (showNivelDeudaFilter && selectedNivelDeuda.size === 0) {
       toast.error('Debes seleccionar al menos un nivel de deuda')
       return
@@ -229,13 +250,17 @@ export function AddProspectsModal({
 
   if (!flujo) return null
 
-  // For Sysgal: step 2 is nivel_deuda selection (skip tipo selection)
-  // For others: step 2 is tipo selection
+  // Determine if step 2 is complete based on the selection type:
+  // - Sysgal with nivel_deuda filter: need nivel_deuda selection
+  // - Sysgal without nivel_deuda data: need "all types" selection
+  // - Non-Sysgal: need tipo or "all types" selection
   const isStepTwoComplete = showNivelDeudaFilter 
     ? selectedNivelDeuda.size > 0 
-    : (isAllTypes || selectedTipoId !== null)
+    : sysgalWithoutNivelDeuda
+      ? isAllTypes
+      : (isAllTypes || selectedTipoId !== null)
   
-  // Step 3 only exists for non-Sysgal (it's merged into step 2 for Sysgal)
+  // Form is complete when step 2 is complete
   const isFormComplete = isStepTwoComplete
 
   return (
@@ -270,8 +295,8 @@ export function AddProspectsModal({
             </div>
           </div>
 
-          {/* Step 2: Select Type (only if origin selected AND not Sysgal) */}
-          {selectedOriginId && !showNivelDeudaFilter && (
+          {/* Step 2: Select Type (only if origin selected AND not Sysgal with nivel_deuda) */}
+          {selectedOriginId && !showNivelDeudaFilter && !sysgalWithoutNivelDeuda && (
             <div className="space-y-3">
               <label className="text-sm font-semibold text-segal-dark">2. Selecciona el tipo de prospecto</label>
               
@@ -328,7 +353,39 @@ export function AddProspectsModal({
             </div>
           )}
 
-          {/* Step 2 for Sysgal: Nivel de Deuda Filter (replaces tipo selection) */}
+          {/* Step 2 for Sysgal without nivel_deuda data: Show "Add All" option */}
+          {sysgalWithoutNivelDeuda && (
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-segal-dark">2. Confirmar selección</label>
+              
+              {loadingLotes || loadingConteo ? (
+                <div className="flex items-center gap-2 text-sm text-segal-dark/60 p-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cargando datos...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Button
+                    variant={isAllTypes ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={handleSelectAllTypes}
+                    className={`w-full ${isAllTypes 
+                      ? 'bg-segal-green text-white' 
+                      : 'border-segal-green/30 text-segal-green hover:bg-segal-green/5'
+                    }`}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Agregar todos los prospectos ({totalProspectosOrigen.toLocaleString()})
+                  </Button>
+                  <p className="text-xs text-segal-dark/50 text-center">
+                    Este origen no tiene filtros de nivel de deuda disponibles.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 2 for Sysgal with nivel_deuda: Nivel de Deuda Filter (replaces tipo selection) */}
           {showNivelDeudaFilter && (
             <div className="space-y-3">
               <label className="text-sm font-semibold text-segal-dark">2. Selecciona el nivel de deuda</label>
@@ -426,13 +483,25 @@ export function AddProspectsModal({
             </div>
           )}
 
-          {/* Warning if no selection (non-Sysgal only) */}
-          {selectedOriginId && !showNivelDeudaFilter && !isStepTwoComplete && (
+          {/* Warning if no selection (non-Sysgal with tipo selection) */}
+          {selectedOriginId && !showNivelDeudaFilter && !sysgalWithoutNivelDeuda && !isStepTwoComplete && (
             <div className="p-3 rounded bg-amber-50 border border-amber-200">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-amber-900">
                   Selecciona un tipo de prospecto o &quot;Todos&quot; para continuar
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Warning for Sysgal without nivel_deuda - need to select "all" */}
+          {sysgalWithoutNivelDeuda && !isAllTypes && (
+            <div className="p-3 rounded bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900">
+                  Haz clic en &quot;Agregar todos los prospectos&quot; para continuar
                 </p>
               </div>
             </div>
