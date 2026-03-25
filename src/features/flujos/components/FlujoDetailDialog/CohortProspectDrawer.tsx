@@ -1,11 +1,11 @@
 /**
  * CohortProspectDrawer
  *
- * Right-side drawer for viewing and filtering prospects within a flow execution cohort.
+ * Right-side panel for viewing and filtering prospects within a flow execution cohort.
  * Opens from the CohortCard when clicking the prospect count.
  *
  * Features:
- * - 640px width drawer from right side
+ * - 600px width panel from right side (using Dialog with custom positioning)
  * - Filter controls for stage, send status, and search
  * - Virtualized list for handling large datasets (up to 300k)
  * - Infinite scroll pagination
@@ -18,13 +18,12 @@ import { useState } from 'react'
 import { X, Users } from 'lucide-react'
 
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-} from '@/components/ui/drawer'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { CohortProspectFilters as FilterState } from '@/types/flowExecutionTracking'
 import type { ConfigVisual } from '@/types/flujo'
@@ -105,10 +104,10 @@ function extractStageOptions(
 // ============================================================================
 
 /**
- * Drawer for viewing cohort prospects with filters
+ * Side panel for viewing cohort prospects with filters
  *
- * @param isOpen - Whether the drawer is open
- * @param onClose - Callback to close the drawer
+ * @param isOpen - Whether the panel is open
+ * @param onClose - Callback to close the panel
  * @param flujoId - Flow ID
  * @param ejecucionId - Execution/cohort ID
  * @param cohorteInfo - Basic cohort info for header display
@@ -151,57 +150,54 @@ export function CohortProspectDrawer({
     setFilters({})
   }
 
-  // Handle drawer close
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      onClose()
-    }
-  }
-
   return (
-    <Drawer open={isOpen} onOpenChange={handleOpenChange} direction="right">
-      <DrawerContent className="w-full sm:max-w-xl md:max-w-2xl h-full">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent 
+        showCloseButton={false}
+        className="!fixed !inset-y-0 !right-0 !left-auto !translate-x-0 !translate-y-0 !top-0 !rounded-none !rounded-l-xl w-full max-w-[600px] h-full flex flex-col p-0 gap-0 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right"
+      >
         {/* Header */}
-        <DrawerHeader className="border-b border-segal-blue/10 pb-4">
+        <DialogHeader className="border-b border-segal-blue/10 p-4 shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-segal-blue/10">
                 <Users className="h-5 w-5 text-segal-blue" />
               </div>
               <div>
-                <DrawerTitle className="text-lg font-bold text-segal-dark">
+                <DialogTitle className="text-lg font-bold text-segal-dark">
                   Prospectos del Cohorte
-                </DrawerTitle>
-                <DrawerDescription className="text-sm text-segal-dark/60 mt-0.5">
+                </DialogTitle>
+                <DialogDescription className="text-sm text-segal-dark/60 mt-0.5">
                   {formatCohortDate(cohorteInfo.fecha)} &bull;{' '}
                   {cohorteInfo.prospectos_count.toLocaleString()} prospectos
-                </DrawerDescription>
+                </DialogDescription>
               </div>
             </div>
 
-            <DrawerClose asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-segal-dark/60 hover:text-segal-dark"
-              >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Cerrar</span>
-              </Button>
-            </DrawerClose>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-segal-dark/60 hover:text-segal-dark"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Cerrar</span>
+            </Button>
           </div>
-        </DrawerHeader>
+        </DialogHeader>
 
         {/* Filters */}
-        <CohortProspectFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          stages={stageOptions}
-          disabled={isLoading}
-        />
+        <div className="shrink-0">
+          <CohortProspectFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            stages={stageOptions}
+            disabled={isLoading}
+          />
+        </div>
 
         {/* List */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-h-0">
           <CohortProspectList
             prospects={prospects}
             total={total}
@@ -215,7 +211,7 @@ export function CohortProspectDrawer({
             onClearFilters={handleClearFilters}
           />
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   )
 }
