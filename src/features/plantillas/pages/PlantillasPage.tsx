@@ -39,14 +39,20 @@ export function PlantillasPage() {
   const { currentPage, goToPage, resetPage } = usePagination()
 
   // Debounce para búsqueda
+  const prevSearchRef = useRef(searchInput)
+  
   useEffect(() => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current)
     }
 
     debounceTimeoutRef.current = setTimeout(() => {
-      setBusqueda(searchInput)
-      resetPage() // Reset page when search changes
+      // Solo actualizar si realmente cambió el texto
+      if (prevSearchRef.current !== searchInput) {
+        prevSearchRef.current = searchInput
+        setBusqueda(searchInput)
+        resetPage() // Reset page only when search actually changes
+      }
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
@@ -54,7 +60,7 @@ export function PlantillasPage() {
         clearTimeout(debounceTimeoutRef.current)
       }
     }
-  }, [searchInput, resetPage])
+  }, [searchInput]) // Removed resetPage from deps - it's stable from the hook
 
   // Reset page when tab changes
   const handleTabChange = (newTab: TipoTab) => {
