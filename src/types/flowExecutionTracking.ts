@@ -18,7 +18,8 @@ export type StageExecutionState = 'pending' | 'executing' | 'completed' | 'faile
  */
 export interface StageEnvios {
   pendiente: number
-  enviado: number
+  enviado: number // Total envío records (backwards compat)
+  prospectos_alcanzados: number // Unique prospectos that received at least one message
   fallido: number
   abierto: number
   clickeado: number

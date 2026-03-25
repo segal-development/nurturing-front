@@ -2,12 +2,12 @@
  * EtapasHistoryTimeline
  *
  * Displays a detailed timeline of stages for a cohort/execution showing
- * send statistics for each stage: enviados, % abiertos, % clicks.
+ * send statistics for each stage: prospectos alcanzados, % abiertos, % clicks.
  *
  * Features:
  * - Lazy loads execution detail when rendered
  * - Shows stage status with visual indicators (✓ completed, ● in progress, ○ pending)
- * - Displays metrics for completed/in-progress stages
+ * - Displays metrics for completed/in-progress stages (using unique prospectos, not total envío records)
  * - Shows fecha_programada for pending stages
  * - Resolves stage labels from config_structure
  *
@@ -56,7 +56,7 @@ interface ConfigStageData {
  * Calculated metrics for a stage
  */
 interface StageMetrics {
-  enviados: number
+  alcanzados: number // prospectos_alcanzados - unique prospectos
   porcentajeAbiertos: number
   porcentajeClicks: number
 }
@@ -92,6 +92,7 @@ function resolveStageDayLabel(
 
 /**
  * Calculates send metrics from StageExecution.envios
+ * Uses prospectos_alcanzados (unique prospectos) for percentages.
  * Returns percentages as whole numbers (0-100)
  */
 function calculateStageMetrics(
@@ -99,10 +100,12 @@ function calculateStageMetrics(
 ): StageMetrics | null {
   if (!envios) return null
 
-  const enviados = envios.enviado ?? 0
-  if (enviados === 0) {
+  // Use prospectos_alcanzados (unique prospectos) instead of enviado (total records)
+  // Fall back to enviado for backwards compatibility with older API responses
+  const alcanzados = envios.prospectos_alcanzados ?? envios.enviado ?? 0
+  if (alcanzados === 0) {
     return {
-      enviados: 0,
+      alcanzados: 0,
       porcentajeAbiertos: 0,
       porcentajeClicks: 0,
     }
@@ -112,9 +115,9 @@ function calculateStageMetrics(
   const clickeados = envios.clickeado ?? 0
 
   return {
-    enviados,
-    porcentajeAbiertos: Math.round((abiertos / enviados) * 100),
-    porcentajeClicks: Math.round((clickeados / enviados) * 100),
+    alcanzados,
+    porcentajeAbiertos: Math.round((abiertos / alcanzados) * 100),
+    porcentajeClicks: Math.round((clickeados / alcanzados) * 100),
   }
 }
 
@@ -281,10 +284,10 @@ function StageTimelineItem({ stage, stageLabel, isLast }: StageTimelineItemProps
         </div>
 
         {/* Metrics for completed/executing stages */}
-        {(isCompleted || isExecuting) && metrics && metrics.enviados > 0 && (
+        {(isCompleted || isExecuting) && metrics && metrics.alcanzados > 0 && (
           <div className="flex items-center gap-3 mt-1 text-xs text-segal-dark/70">
             <span>
-              <strong>{metrics.enviados.toLocaleString()}</strong> enviados
+              <strong>{metrics.alcanzados.toLocaleString()}</strong> alcanzados
             </span>
             <span className="text-green-600">
               {metrics.porcentajeAbiertos}% abiertos
@@ -296,7 +299,7 @@ function StageTimelineItem({ stage, stageLabel, isLast }: StageTimelineItemProps
         )}
 
         {/* In progress indicator */}
-        {isExecuting && (!metrics || metrics.enviados === 0) && (
+        {isExecuting && (!metrics || metrics.alcanzados === 0) && (
           <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
             <Loader2 className="h-3 w-3 animate-spin" />
             En progreso...
