@@ -91,6 +91,7 @@ export const plantillasService = {
     activo?: boolean
     pagina?: number
     por_pagina?: number
+    busqueda?: string
   }): Promise<PlantillasResponse> {
     try {
       logger.log('plantillasService.getAll() - Enviando request')
@@ -99,6 +100,7 @@ export const plantillasService = {
           ...params,
           pagina: params?.pagina || 1,
           por_pagina: params?.por_pagina || 10,
+          ...(params?.busqueda ? { busqueda: params.busqueda } : {}),
         },
       })
 

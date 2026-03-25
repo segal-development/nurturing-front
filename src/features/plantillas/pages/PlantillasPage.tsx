@@ -3,27 +3,64 @@
  * Permite ver, crear, editar y eliminar plantillas de SMS y Email
  */
 
-import { useState } from 'react'
-import { Plus, Mail, MessageSquare } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Mail, MessageSquare, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { PlantillasTable } from '../components/PlantillasTable'
 import { PlantillaCrearDialog } from '../components/PlantillaCrearDialog'
 import { PlantillaDetailDialog } from '../components/PlantillaDetailDialog'
 import { PlantillaEditarDialog } from '../components/PlantillaEditarDialog'
 import { PlantillaEliminarDialog } from '../components/PlantillaEliminarDialog'
+import { usePagination } from '@/hooks/usePagination'
 import { plantillasService } from '@/api/plantillas.service'
 import type { AnyPlantilla } from '@/types/plantilla'
 
 type TipoTab = 'todas' | 'sms' | 'email'
+
+const ITEMS_PER_PAGE = 15
+const SEARCH_DEBOUNCE_MS = 300
 
 export function PlantillasPage() {
   const queryClient = useQueryClient()
   const [tabActivo, setTabActivo] = useState<TipoTab>('todas')
   const [crearDialogOpen, setCrearDialogOpen] = useState(false)
   const [tipoNuevo, setTipoNuevo] = useState<'sms' | 'email'>('sms')
+
+  // Estado de búsqueda con debounce
+  const [searchInput, setSearchInput] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Hook de paginación
+  const { currentPage, goToPage, resetPage } = usePagination()
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      setBusqueda(searchInput)
+      resetPage() // Reset page when search changes
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+    }
+  }, [searchInput, resetPage])
+
+  // Reset page when tab changes
+  const handleTabChange = (newTab: TipoTab) => {
+    setTabActivo(newTab)
+    resetPage()
+  }
 
   // Estados para modales
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -120,11 +157,23 @@ export function PlantillasPage() {
         </div>
       </div>
 
+      {/* Buscador */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-segal-dark/40 dark:text-gray-500" />
+        <Input
+          type="text"
+          placeholder="Buscar plantilla..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="pl-10 border-segal-blue/20 dark:border-gray-700 focus:border-segal-blue dark:focus:border-segal-turquoise"
+        />
+      </div>
+
       {/* Tabs */}
       <div className="border-b border-segal-blue/10 dark:border-gray-700">
         <div className="flex gap-4">
           <button
-            onClick={() => setTabActivo('todas')}
+            onClick={() => handleTabChange('todas')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               tabActivo === 'todas'
                 ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
@@ -134,7 +183,7 @@ export function PlantillasPage() {
             Todas las Plantillas
           </button>
           <button
-            onClick={() => setTabActivo('sms')}
+            onClick={() => handleTabChange('sms')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               tabActivo === 'sms'
                 ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
@@ -145,7 +194,7 @@ export function PlantillasPage() {
             SMS
           </button>
           <button
-            onClick={() => setTabActivo('email')}
+            onClick={() => handleTabChange('email')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${
               tabActivo === 'email'
                 ? 'border-segal-blue dark:border-segal-turquoise text-segal-blue dark:text-segal-turquoise'
@@ -161,6 +210,10 @@ export function PlantillasPage() {
       {/* Tabla de plantillas */}
       <PlantillasTable
         tipo={tabActivo === 'todas' ? undefined : (tabActivo as 'sms' | 'email')}
+        page={currentPage}
+        perPage={ITEMS_PER_PAGE}
+        busqueda={busqueda}
+        onPageChange={goToPage}
         onVerClick={handleVer}
         onEditarClick={handleEditar}
         onCopiarClick={handleCopiar}

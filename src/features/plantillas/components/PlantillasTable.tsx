@@ -6,11 +6,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { Loader2, Eye, Trash2, Copy, ToggleLeft, ToggleRight, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/shared/Pagination'
 import { plantillasService } from '@/api/plantillas.service'
-import type { AnyPlantilla } from '@/types/plantilla'
+import type { AnyPlantilla, PlantillasResponse } from '@/types/plantilla'
 
 interface PlantillasTableProps {
   tipo?: 'sms' | 'email'
+  page: number
+  perPage: number
+  busqueda?: string
+  onPageChange: (page: number) => void
   onVerClick?: (plantilla: AnyPlantilla) => void
   onEditarClick?: (plantilla: AnyPlantilla) => void
   onCopiarClick?: (plantilla: AnyPlantilla) => void
@@ -20,24 +25,31 @@ interface PlantillasTableProps {
 
 export function PlantillasTable({
   tipo,
+  page,
+  perPage,
+  busqueda,
+  onPageChange,
   onVerClick,
   onEditarClick,
   onCopiarClick,
   onEliminarClick,
   onEstadoToggle,
 }: PlantillasTableProps) {
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['plantillas', tipo],
+  const { data, isLoading, isError, error } = useQuery<PlantillasResponse>({
+    queryKey: ['plantillas', tipo, page, perPage, busqueda],
     queryFn: () =>
       plantillasService.getAll({
         tipo: tipo,
         activo: undefined,
-        pagina: 1,
-        por_pagina: 50,
+        pagina: page,
+        por_pagina: perPage,
+        busqueda: busqueda || undefined,
       }),
   })
 
   const plantillas = data?.data || []
+  const meta = data?.meta
+  const totalPages = meta ? Math.ceil(meta.total / perPage) : 0
 
   if (isLoading) {
     return (
@@ -169,12 +181,35 @@ export function PlantillasTable({
         </table>
       </div>
 
-      {/* Footer */}
+      {/* Footer con info y paginación */}
       <div className="border-t border-segal-blue/10 bg-segal-blue/5 px-6 py-3 dark:bg-slate-800 dark:border-slate-700">
-        <p className="text-sm text-segal-dark/60 dark:text-white/60">
-          Total: <span className="font-semibold">{data?.meta.total || 0}</span> plantillas
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-segal-dark/60 dark:text-white/60">
+            Mostrando{' '}
+            <span className="font-semibold">
+              {meta ? ((page - 1) * perPage) + 1 : 0}
+            </span>
+            {' '}a{' '}
+            <span className="font-semibold">
+              {meta ? Math.min(page * perPage, meta.total) : 0}
+            </span>
+            {' '}de{' '}
+            <span className="font-semibold text-segal-blue dark:text-segal-turquoise">
+              {meta?.total || 0}
+            </span>
+            {' '}plantillas
+          </p>
+        </div>
       </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
+      )}
     </div>
   )
 }
