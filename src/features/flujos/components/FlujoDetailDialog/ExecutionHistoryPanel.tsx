@@ -47,9 +47,10 @@ import type {
   CohorteActiva,
   CohortesActivasResponse,
 } from "@/types/flowExecutionTracking";
-import type { ConfigVisual } from "@/types/flujo";
+import type { ConfigStructure, ConfigVisual } from "@/types/flujo";
 
 import { CohortProspectDrawer } from "./CohortProspectDrawer";
+import { EtapasHistoryTimeline } from "./EtapasHistoryTimeline";
 
 import { useNodeLabelMap } from "../../hooks/useNodeLabelMap";
 import {
@@ -70,6 +71,8 @@ interface ExecutionHistoryPanelProps {
   onViewExecution?: (ejecucionId: number) => void;
   onRefresh?: () => void;
   configVisual?: ConfigVisual;
+  /** Config structure for stage label resolution in timeline */
+  configStructure?: ConfigStructure;
   /** If true, renders cohort view instead of flat execution list */
   isPerpetual?: boolean;
   /** Cohort data from useCohortesActivas - required for cohort view */
@@ -110,6 +113,10 @@ interface CohortCardProps {
   onViewExecution?: (ejecucionId: number) => void;
   onViewProspectos?: (cohorte: CohorteActiva) => void;
   defaultExpanded?: boolean;
+  /** Flow ID - required for etapas history timeline */
+  flujoId: number;
+  /** Config structure for stage label resolution */
+  configStructure?: ConfigStructure;
 }
 
 interface CohortSummaryProps {
@@ -277,6 +284,8 @@ function CohortCard({
   onViewExecution,
   onViewProspectos,
   defaultExpanded = false,
+  flujoId,
+  configStructure,
 }: CohortCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -439,37 +448,12 @@ function CohortCard({
             </div>
           )}
 
-          {/* Stage progress visual */}
-          <div className="bg-white rounded-lg p-4 border border-segal-blue/10">
-            <h4 className="text-sm font-semibold text-segal-dark mb-3">
-              Progreso por Etapas
-            </h4>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: cohorte.etapas_total }).map((_, idx) => {
-                const isCompleted = idx < cohorte.etapas_completadas;
-                const isCurrent =
-                  idx === cohorte.etapas_completadas &&
-                  cohorte.estado !== "completed";
-
-                return (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "flex-1 h-3 rounded-sm transition-colors",
-                      isCompleted && "bg-green-500",
-                      isCurrent && "bg-amber-400 animate-pulse",
-                      !isCompleted && !isCurrent && "bg-slate-200",
-                    )}
-                    title={`Etapa ${idx + 1}`}
-                  />
-                );
-              })}
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-segal-dark/50">
-              <span>Etapa 1</span>
-              <span>Etapa {cohorte.etapas_total}</span>
-            </div>
-          </div>
+          {/* Etapas History Timeline - detailed metrics per stage */}
+          <EtapasHistoryTimeline
+            flujoId={flujoId}
+            ejecucionId={cohorte.id}
+            configStructure={configStructure}
+          />
         </div>
       )}
     </div>
@@ -842,6 +826,7 @@ export function ExecutionHistoryPanel({
   onViewExecution,
   onRefresh,
   configVisual,
+  configStructure,
   isPerpetual = false,
   cohortesData,
   flujoId,
@@ -919,6 +904,8 @@ export function ExecutionHistoryPanel({
               onViewExecution={onViewExecution}
               onViewProspectos={handleViewProspectos}
               defaultExpanded={index === 0}
+              flujoId={flujoId!}
+              configStructure={configStructure}
             />
           ))}
         </div>

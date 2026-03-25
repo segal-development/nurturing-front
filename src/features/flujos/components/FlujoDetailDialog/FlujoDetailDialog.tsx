@@ -812,6 +812,7 @@ export function FlujoDetailDialog({
                   ejecuciones={executionsData?.data}
                   isLoading={isLoadingExecutions}
                   configVisual={flujo?.config_visual}
+                  configStructure={flujo?.config_structure}
                   onViewExecution={(ejecucionId) => {
                     // Navegar al tab de Monitoreo con la ejecución seleccionada
                     setActiveTab('monitoreo')
