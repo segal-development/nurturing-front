@@ -150,9 +150,9 @@ export function CohortProspectRow({
 }: CohortProspectRowProps) {
   const { nombre, email, telefono, envios_resumen, ultimo_envio } = prospect
 
-  // Calculate total successful sends (enviado + abierto + clickeado)
+  // Calculate total successful sends (enviados + abiertos + clickeados)
   const totalExitosos =
-    envios_resumen.enviado + envios_resumen.abierto + envios_resumen.clickeado
+    envios_resumen.enviados + envios_resumen.abiertos + envios_resumen.clickeados
 
   return (
     <div
@@ -198,19 +198,19 @@ export function CohortProspectRow({
           icon={<CheckCircle2 className="h-3 w-3" />}
         />
         <EnviosPill
-          count={envios_resumen.fallido}
+          count={envios_resumen.fallidos}
           label="fallidos"
           colorClass="bg-red-100 text-red-700 border-red-200"
           icon={<XCircle className="h-3 w-3" />}
         />
         <EnviosPill
-          count={envios_resumen.abierto}
+          count={envios_resumen.abiertos}
           label="abiertos"
           colorClass="bg-blue-100 text-blue-700 border-blue-200"
           icon={<Eye className="h-3 w-3" />}
         />
         <EnviosPill
-          count={envios_resumen.clickeado}
+          count={envios_resumen.clickeados}
           label="clickeados"
           colorClass="bg-purple-100 text-purple-700 border-purple-200"
           icon={<MousePointerClick className="h-3 w-3" />}

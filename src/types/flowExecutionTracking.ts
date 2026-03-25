@@ -430,13 +430,14 @@ export type EnvioEstado = (typeof ENVIO_ESTADO)[keyof typeof ENVIO_ESTADO]
 
 /**
  * Aggregated send statistics for a prospect
+ * NOTE: Backend returns plural field names (enviados, fallidos, abiertos, clickeados)
  */
 export interface EnviosResumen {
-  pendiente: number
-  enviado: number
-  fallido: number
-  abierto: number
-  clickeado: number
+  pendientes: number
+  enviados: number
+  fallidos: number
+  abiertos: number
+  clickeados: number
 }
 
 /**
