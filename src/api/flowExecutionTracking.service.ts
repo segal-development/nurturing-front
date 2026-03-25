@@ -19,6 +19,8 @@ import type {
   ActiveExecutionResponse,
   FlowExecutionsListResponse,
   CohortesActivasResponse,
+  CohortProspectosResponse,
+  CohortProspectosParams,
 } from '@/types/flowExecutionTracking'
 import { apiClient } from './client'
 
@@ -212,6 +214,46 @@ class FlowExecutionTrackingService {
       {
         params: {
           ids: flujoIds.join(','),
+        },
+      },
+    )
+    return response.data
+  }
+
+  /**
+   * Get paginated list of prospects in a cohort (flow execution)
+   * 
+   * Supports filtering by stage (node_id), send status, and search.
+   * Returns prospects with their send statistics and last send info.
+   *
+   * @param flujoId - Flow ID
+   * @param ejecucionId - Execution ID (cohort)
+   * @param params - Query params for filtering and pagination
+   * @returns Paginated list of prospects with send stats
+   *
+   * @example
+   * const { data, meta } = await flowExecutionTrackingService.getCohortProspectos(1, 123, {
+   *   page: 1,
+   *   per_page: 50,
+   *   node_id: 'stage_2',
+   *   envio_estado: 'fallido',
+   *   search: 'juan'
+   * })
+   */
+  async getCohortProspectos(
+    flujoId: number,
+    ejecucionId: number,
+    params: CohortProspectosParams = {},
+  ): Promise<CohortProspectosResponse> {
+    const response = await apiClient.get<CohortProspectosResponse>(
+      `${BASE_URL}/${flujoId}/ejecuciones/${ejecucionId}/prospectos`,
+      {
+        params: {
+          page: params.page ?? 1,
+          per_page: params.per_page ?? 50,
+          ...(params.node_id && { node_id: params.node_id }),
+          ...(params.envio_estado && { envio_estado: params.envio_estado }),
+          ...(params.search && { search: params.search }),
         },
       },
     )

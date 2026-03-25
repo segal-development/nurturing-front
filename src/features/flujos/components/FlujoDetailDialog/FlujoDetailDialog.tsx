@@ -823,6 +823,8 @@ export function FlujoDetailDialog({
                   // Cohort view for perpetual flows
                   isPerpetual={flujo?.auto_asignar_nuevos === true}
                   cohortesData={cohortesActivasData?.data}
+                  // Pass flujoId for cohort prospects drilldown
+                  flujoId={flujo?.id}
                 />
               )}
 

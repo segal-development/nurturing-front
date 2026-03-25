@@ -49,6 +49,8 @@ import type {
 } from "@/types/flowExecutionTracking";
 import type { ConfigVisual } from "@/types/flujo";
 
+import { CohortProspectDrawer } from "./CohortProspectDrawer";
+
 import { useNodeLabelMap } from "../../hooks/useNodeLabelMap";
 import {
   calculateExecutionDuration,
@@ -72,6 +74,8 @@ interface ExecutionHistoryPanelProps {
   isPerpetual?: boolean;
   /** Cohort data from useCohortesActivas - required for cohort view */
   cohortesData?: CohortesActivasResponse["data"];
+  /** Flow ID - required for cohort prospects drilldown */
+  flujoId?: number;
 }
 
 interface StageItemProps {
@@ -104,6 +108,7 @@ interface CohortCardProps {
   cohorte: CohorteActiva;
   nodeLabelMap: Map<string, string>;
   onViewExecution?: (ejecucionId: number) => void;
+  onViewProspectos?: (cohorte: CohorteActiva) => void;
   defaultExpanded?: boolean;
 }
 
@@ -270,12 +275,18 @@ function CohortCard({
   cohorte,
   nodeLabelMap,
   onViewExecution,
+  onViewProspectos,
   defaultExpanded = false,
 }: CohortCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   const colorClass = getExecutionStateColor(cohorte.estado);
   const origenInfo = getOrigenLabel(cohorte.origen);
+
+  const handleProspectosClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewProspectos?.(cohorte);
+  };
 
   // Calculate progress bar color based on state
   const progressColor =
@@ -317,13 +328,18 @@ function CohortCard({
 
             {/* Key metrics row */}
             <div className="flex items-center gap-4 mt-2 text-sm text-segal-dark/70">
-              <span className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <strong>
+              <button
+                type="button"
+                onClick={handleProspectosClick}
+                className="flex items-center gap-1 hover:text-segal-blue transition-colors group"
+                title="Ver prospectos de esta cohorte"
+              >
+                <Users className="h-4 w-4 group-hover:text-segal-blue" />
+                <strong className="group-hover:underline">
                   {cohorte.prospectos_count.toLocaleString()}
                 </strong>{" "}
                 prospectos
-              </span>
+              </button>
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 {cohorte.etapas_completadas}/{cohorte.etapas_total} etapas
@@ -828,8 +844,21 @@ export function ExecutionHistoryPanel({
   configVisual,
   isPerpetual = false,
   cohortesData,
+  flujoId,
 }: ExecutionHistoryPanelProps) {
   const nodeLabelMap = useNodeLabelMap(configVisual);
+  
+  // Drawer state for cohort prospects drilldown
+  const [selectedCohorte, setSelectedCohorte] = useState<CohorteActiva | null>(null);
+  const isDrawerOpen = selectedCohorte !== null;
+
+  const handleViewProspectos = (cohorte: CohorteActiva) => {
+    setSelectedCohorte(cohorte);
+  };
+
+  const handleCloseDrawer = () => {
+    setSelectedCohorte(null);
+  };
 
   if (isLoading) {
     return <LoadingState />;
@@ -888,10 +917,28 @@ export function ExecutionHistoryPanel({
               cohorte={cohorte}
               nodeLabelMap={nodeLabelMap}
               onViewExecution={onViewExecution}
+              onViewProspectos={handleViewProspectos}
               defaultExpanded={index === 0}
             />
           ))}
         </div>
+
+        {/* Cohort Prospects Drawer */}
+        {flujoId && selectedCohorte && (
+          <CohortProspectDrawer
+            isOpen={isDrawerOpen}
+            onClose={handleCloseDrawer}
+            flujoId={flujoId}
+            ejecucionId={selectedCohorte.id}
+            cohorteInfo={{
+              id: selectedCohorte.id,
+              fecha: selectedCohorte.created_at,
+              prospectos_count: selectedCohorte.prospectos_count,
+              estado: selectedCohorte.estado,
+            }}
+            configVisual={configVisual}
+          />
+        )}
       </div>
     );
   }

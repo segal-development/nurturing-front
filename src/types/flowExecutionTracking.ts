@@ -410,3 +410,92 @@ export interface CohortesActivasResponse {
     nuevos_ultimo_sync?: NuevosUltimoSync
   }
 }
+
+// ============================================================================
+// Cohort Prospects Drilldown Types
+// ============================================================================
+
+/**
+ * Valid envio status values for filtering
+ */
+export const ENVIO_ESTADO = {
+  PENDIENTE: 'pendiente',
+  ENVIADO: 'enviado',
+  FALLIDO: 'fallido',
+  ABIERTO: 'abierto',
+  CLICKEADO: 'clickeado',
+} as const
+
+export type EnvioEstado = (typeof ENVIO_ESTADO)[keyof typeof ENVIO_ESTADO]
+
+/**
+ * Aggregated send statistics for a prospect
+ */
+export interface EnviosResumen {
+  pendiente: number
+  enviado: number
+  fallido: number
+  abierto: number
+  clickeado: number
+}
+
+/**
+ * Most recent send information for a prospect
+ */
+export interface UltimoEnvio {
+  estado: EnvioEstado
+  fecha: string // ISO 8601
+  etapa_node_id: string
+}
+
+/**
+ * Individual prospect within a cohort
+ */
+export interface CohortProspecto {
+  id: number
+  nombre: string
+  email: string
+  telefono: string | null
+  ultima_etapa_node_id: string | null
+  envios_resumen: EnviosResumen
+  ultimo_envio: UltimoEnvio | null
+}
+
+/**
+ * Pagination metadata for cohort prospects response
+ */
+export interface CohortProspectosMeta {
+  current_page: number
+  per_page: number
+  total: number
+  last_page: number
+}
+
+/**
+ * Response from GET /flujos/{flujo}/ejecuciones/{ejecucion}/prospectos
+ */
+export interface CohortProspectosResponse {
+  error: boolean
+  data: CohortProspecto[]
+  meta: CohortProspectosMeta
+}
+
+/**
+ * Query params for cohort prospects endpoint
+ */
+export interface CohortProspectosParams {
+  page?: number
+  per_page?: number
+  node_id?: string
+  envio_estado?: EnvioEstado
+  search?: string
+}
+
+/**
+ * Filter state for cohort prospects UI
+ */
+export interface CohortProspectFilters {
+  node_id?: string
+  envio_estado?: EnvioEstado
+  search?: string
+}
