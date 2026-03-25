@@ -151,8 +151,15 @@ export function CohortProspectDrawer({
     setFilters({})
   }
 
+  // Handle drawer close
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose()
+    }
+  }
+
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} direction="right">
+    <Drawer open={isOpen} onOpenChange={handleOpenChange} direction="right">
       <DrawerContent className="w-full sm:max-w-xl md:max-w-2xl h-full">
         {/* Header */}
         <DrawerHeader className="border-b border-segal-blue/10 pb-4">

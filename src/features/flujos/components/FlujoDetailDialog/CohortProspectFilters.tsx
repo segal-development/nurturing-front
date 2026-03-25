@@ -7,7 +7,7 @@
  * @module CohortProspectFilters
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -96,16 +96,26 @@ export function CohortProspectFilters({
   // Local search state for debouncing
   const [searchInput, setSearchInput] = useState(filters.search ?? '')
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS)
+  
+  // Track previous debounced search to prevent unnecessary updates
+  const prevDebouncedSearchRef = useRef(debouncedSearch)
 
-  // Update filters when debounced search changes
+  // Update parent filters when debounced search changes
   useEffect(() => {
-    if (debouncedSearch !== filters.search) {
+    // Skip if value hasn't actually changed
+    if (prevDebouncedSearchRef.current === debouncedSearch) return
+    prevDebouncedSearchRef.current = debouncedSearch
+    
+    const newSearch = debouncedSearch || undefined
+    // Only call if the search value is different from current filters
+    if (newSearch !== filters.search) {
       onFiltersChange({
         ...filters,
-        search: debouncedSearch || undefined,
+        search: newSearch,
       })
     }
-  }, [debouncedSearch, filters, onFiltersChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to debouncedSearch changes
+  }, [debouncedSearch])
 
   // Sync local search with external filter changes (only when filters are cleared externally)
   useEffect(() => {
