@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { useFlujosDetail } from '@/features/flujos/hooks/useFlujosDetail'
 import { useActiveExecution, useFlowExecutions, useLatestExecution, useFlowExecutionDetail, useCohortesActivas } from '@/features/flujos/hooks/useFlowExecutionTracking'
+import { useEjecucionesTour } from '@/features/flujos/hooks/useEjecucionesTour'
 import { flujosService } from '@/api/flujos.service'
 import { FlujoStatisticsPanel } from './FlujoStatisticsPanel'
 import { FlowStructurePanel } from './FlowStructurePanel'
@@ -145,6 +146,9 @@ export function FlujoDetailDialog({
     open && initialFlujo?.id ? initialFlujo.id : 0,
     open, // enablePolling solo cuando el diálogo está abierto
   )
+
+  // Ejecuciones tab onboarding tour
+  const { startTour } = useEjecucionesTour()
 
   // Usar flujo detallado si está disponible, sino usar el flujo inicial
   const flujo = detailedFlujo || initialFlujo
@@ -826,6 +830,8 @@ export function FlujoDetailDialog({
                   cohortesData={cohortesActivasData?.data}
                   // Pass flujoId for cohort prospects drilldown
                   flujoId={flujo?.id}
+                  // Onboarding tour
+                  onStartTour={startTour}
                 />
               )}
 

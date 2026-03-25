@@ -392,7 +392,10 @@ export function EtapasHistoryTimeline({
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 border border-segal-blue/10">
+    <div
+      data-tour="etapas-timeline"
+      className="bg-white rounded-lg p-4 border border-segal-blue/10"
+    >
       <h4 className="text-sm font-semibold text-segal-dark mb-4 flex items-center gap-2">
         <Clock className="h-4 w-4 text-segal-blue" />
         Historial de Etapas

@@ -28,6 +28,7 @@ import {
   DollarSign,
   Eye,
   GitBranch,
+  HelpCircle,
   Loader2,
   Mail,
   MessageSquare,
@@ -79,6 +80,8 @@ interface ExecutionHistoryPanelProps {
   cohortesData?: CohortesActivasResponse["data"];
   /** Flow ID - required for cohort prospects drilldown */
   flujoId?: number;
+  /** Callback to start the onboarding tour */
+  onStartTour?: () => void;
 }
 
 interface StageItemProps {
@@ -117,6 +120,8 @@ interface CohortCardProps {
   flujoId: number;
   /** Config structure for stage label resolution */
   configStructure?: ConfigStructure;
+  /** Whether this is the first card (for tour data attributes) */
+  isFirst?: boolean;
 }
 
 interface CohortSummaryProps {
@@ -232,7 +237,10 @@ function CohortSummary({
       : 0;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div
+      data-tour="cohort-summary"
+      className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
+    >
       <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
         <div className="flex items-center gap-2 text-segal-blue mb-1">
           <Layers className="h-4 w-4" />
@@ -241,7 +249,10 @@ function CohortSummary({
         <p className="text-2xl font-bold text-segal-dark">{totalCohortes}</p>
       </div>
 
-      <div className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+      <div
+        data-tour="stat-total-prospectos"
+        className="bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10"
+      >
         <div className="flex items-center gap-2 text-segal-blue mb-1">
           <Users className="h-4 w-4" />
           <span className="text-xs font-medium">Total Prospectos</span>
@@ -286,6 +297,7 @@ function CohortCard({
   defaultExpanded = false,
   flujoId,
   configStructure,
+  isFirst = false,
 }: CohortCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -306,7 +318,10 @@ function CohortCard({
         : "bg-segal-blue";
 
   return (
-    <div className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors">
+    <div
+      {...(isFirst ? { "data-tour": "cohort-card" } : {})}
+      className="border border-segal-blue/10 rounded-lg overflow-hidden bg-white hover:border-segal-blue/20 transition-colors"
+    >
       {/* Header - Always visible */}
       <button
         type="button"
@@ -342,6 +357,7 @@ function CohortCard({
                 onClick={handleProspectosClick}
                 className="flex items-center gap-1 hover:text-segal-blue transition-colors group"
                 title="Ver prospectos de esta cohorte"
+                {...(isFirst ? { "data-tour": "cohort-prospectos-count" } : {})}
               >
                 <Users className="h-4 w-4 group-hover:text-segal-blue" />
                 <strong className="group-hover:underline">
@@ -356,7 +372,10 @@ function CohortCard({
             </div>
 
             {/* Progress bar */}
-            <div className="mt-3 flex items-center gap-3">
+            <div
+              {...(isFirst ? { "data-tour": "cohort-progress" } : {})}
+              className="mt-3 flex items-center gap-3"
+            >
               <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
                 <div
                   className={cn(
@@ -376,6 +395,7 @@ function CohortCard({
         {/* Right side: status and expand button */}
         <div className="flex items-center gap-3">
           <span
+            {...(isFirst ? { "data-tour": "cohort-estado" } : {})}
             className={cn(
               "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border",
               colorClass,
@@ -395,6 +415,7 @@ function CohortCard({
               }}
               className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
               title="Ver monitoreo visual"
+              {...(isFirst ? { "data-tour": "cohort-ver-btn" } : {})}
             >
               <Eye className="h-3 w-3 mr-1" />
               Ver
@@ -830,6 +851,7 @@ export function ExecutionHistoryPanel({
   isPerpetual = false,
   cohortesData,
   flujoId,
+  onStartTour,
 }: ExecutionHistoryPanelProps) {
   const nodeLabelMap = useNodeLabelMap(configVisual);
   
@@ -881,9 +903,22 @@ export function ExecutionHistoryPanel({
               Cohortes del Flujo
             </h3>
           </div>
-          <span className="text-sm text-segal-dark/60 bg-segal-blue/10 px-2 py-1 rounded-full">
-            Flujo Perpetuo
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-segal-dark/60 bg-segal-blue/10 px-2 py-1 rounded-full">
+              Flujo Perpetuo
+            </span>
+            {onStartTour && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onStartTour}
+                className="text-segal-blue hover:bg-segal-blue/10"
+                title="Iniciar tour guiado"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Cohort Summary Stats */}
@@ -906,6 +941,7 @@ export function ExecutionHistoryPanel({
               defaultExpanded={index === 0}
               flujoId={flujoId!}
               configStructure={configStructure}
+              isFirst={index === 0}
             />
           ))}
         </div>
