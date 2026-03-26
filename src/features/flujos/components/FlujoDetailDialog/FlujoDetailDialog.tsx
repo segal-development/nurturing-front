@@ -148,7 +148,15 @@ export function FlujoDetailDialog({
   )
 
   // Ejecuciones tab onboarding tour
-  const { startTour } = useEjecucionesTour()
+  const { startTour, startTourIfFirstTime } = useEjecucionesTour()
+
+  // Handle tab change with tour auto-start for ejecuciones
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab)
+    if (tab === 'ejecuciones') {
+      startTourIfFirstTime()
+    }
+  }
 
   // Usar flujo detallado si está disponible, sino usar el flujo inicial
   const flujo = detailedFlujo || initialFlujo
@@ -367,7 +375,7 @@ export function FlujoDetailDialog({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-segal-blue text-segal-blue'
@@ -982,7 +990,7 @@ export function FlujoDetailDialog({
             ) : hasCompletedExecution ? (
               // Flujo ya completado exitosamente - NO se puede volver a ejecutar
               <Button
-                onClick={() => setActiveTab('ejecuciones')}
+                onClick={() => handleTabChange('ejecuciones')}
                 className="bg-green-600 hover:bg-green-700 text-white cursor-default"
                 disabled={showDeleteConfirm}
               >

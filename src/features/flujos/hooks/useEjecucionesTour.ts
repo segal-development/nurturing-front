@@ -203,10 +203,41 @@ function injectTourStyles() {
 }
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+const TOUR_STORAGE_KEY = 'ejecuciones-tour-seen'
+
+// ============================================================================
 // Hook
 // ============================================================================
 
 export function useEjecucionesTour() {
+  /**
+   * Check if user has already seen the tour
+   */
+  const hasSeenTour = (): boolean => {
+    try {
+      return localStorage.getItem(TOUR_STORAGE_KEY) === 'true'
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Mark tour as seen in localStorage
+   */
+  const markTourAsSeen = () => {
+    try {
+      localStorage.setItem(TOUR_STORAGE_KEY, 'true')
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  /**
+   * Start the tour manually (always starts, used by help button)
+   */
   const startTour = () => {
     // Inject custom styles before starting
     injectTourStyles()
@@ -225,7 +256,8 @@ export function useEjecucionesTour() {
       stageRadius: 8,
       steps: TOUR_STEPS,
       onDestroyStarted: () => {
-        // Allow the user to close the tour at any point
+        // Mark as seen when tour is closed/completed
+        markTourAsSeen()
         driverObj.destroy()
       },
     })
@@ -233,5 +265,38 @@ export function useEjecucionesTour() {
     driverObj.drive()
   }
 
-  return { startTour }
+  /**
+   * Start tour only if it's the user's first time (for auto-start on tab change)
+   * Uses a small delay to ensure DOM elements are rendered
+   */
+  const startTourIfFirstTime = () => {
+    if (hasSeenTour()) return
+
+    // Small delay to ensure cohort elements are rendered
+    setTimeout(() => {
+      // Check if there are cohorts to show (avoid tour on empty state)
+      const cohortCard = document.querySelector('[data-tour="cohort-card"]')
+      if (cohortCard) {
+        startTour()
+      }
+    }, 500)
+  }
+
+  /**
+   * Reset tour state (for testing/debugging)
+   */
+  const resetTour = () => {
+    try {
+      localStorage.removeItem(TOUR_STORAGE_KEY)
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  return { 
+    startTour, 
+    startTourIfFirstTime,
+    hasSeenTour,
+    resetTour,
+  }
 }
