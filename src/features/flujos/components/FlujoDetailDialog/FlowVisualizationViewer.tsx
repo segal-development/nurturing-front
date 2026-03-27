@@ -152,6 +152,10 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
         dia_envio: nodeData.dia_envio !== undefined ? nodeData.dia_envio : 1,
         tipo_mensaje: nodeData.tipo_mensaje !== undefined ? nodeData.tipo_mensaje : 'email',
         plantilla_mensaje: nodeData.plantilla_mensaje !== undefined ? nodeData.plantilla_mensaje : '',
+        // Plantilla reference fields — pass through for preview functionality
+        plantilla_type: nodeData.plantilla_type,
+        plantilla_id: nodeData.plantilla_id,
+        plantilla_id_email: nodeData.plantilla_id_email,
         activo: nodeData.activo !== undefined ? nodeData.activo : true,
         condition: nodeData.condition !== undefined ? nodeData.condition : { type: 'email_opened', label: 'Email abierto' },
         yesLabel: nodeData.yesLabel !== undefined ? nodeData.yesLabel : 'Sí',
