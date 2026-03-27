@@ -17,6 +17,7 @@ import type {
   AnyEmailComponent,
   GuardarPlantillaResponse,
   PlantillasResponse,
+  PlantillaPreviewResponse,
 } from '@/types/plantilla'
 
 // ============================================================================
@@ -310,6 +311,26 @@ export const plantillasService = {
       return response.data
     } catch (error: any) {
       logger.error('plantillasService.validarSMS() - Error:', {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
+  },
+
+  /**
+   * Obtener preview de una plantilla guardada con datos de ejemplo
+   * GET /api/plantillas/{id}/preview
+   */
+  async getPreview(id: number): Promise<PlantillaPreviewResponse> {
+    try {
+      logger.log(`plantillasService.getPreview(${id}) - Obteniendo preview`)
+      const response = await apiClient.get<{ data: PlantillaPreviewResponse }>(`/plantillas/${id}/preview`)
+
+      logger.log(`plantillasService.getPreview(${id}) - Preview obtenido`)
+      return response.data.data
+    } catch (error: any) {
+      logger.error(`plantillasService.getPreview(${id}) - Error:`, {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })

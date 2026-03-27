@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
+  Eye,
   Layers,
   Loader2,
   Mail,
@@ -35,6 +36,7 @@ import { cn } from '@/lib/utils'
 import { DatePicker } from '@/components/ui/date-picker'
 import type { StageNodeData } from '../../../types/flowBuilder'
 import { PlantillaSelector } from '../components/PlantillaSelector'
+import { PlantillaPreviewDrawer } from '../components/PlantillaPreviewDrawer'
 
 interface StageNodeDetailProps {
   nodeId: string
@@ -346,6 +348,7 @@ export function StageNodeDetail({
 }: StageNodeDetailProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [localData, setLocalData] = useState<StageNodeData>({ ...data })
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   // Sync localData when data changes externally (execution stats arriving)
   // Only sync when NOT editing to avoid losing user changes
@@ -455,8 +458,17 @@ export function StageNodeDetail({
           {/* Template preview */}
           {localData.plantilla_type === 'reference' &&
           (localData.plantilla_id || localData.plantilla_id_email) ? (
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-segal-dark">Plantilla</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-segal-dark">Plantilla</p>
+                <button
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="flex items-center gap-1 text-xs text-segal-blue hover:text-segal-blue/80 font-medium transition-colors"
+                >
+                  <Eye className="h-3 w-3" />
+                  Ver preview
+                </button>
+              </div>
               {localData.plantilla_id && (
                 <div className="p-2 rounded bg-green-50 border border-green-200 flex items-center gap-2">
                   <span className="text-green-600 text-xs">📄</span>
@@ -722,6 +734,16 @@ export function StageNodeDetail({
           </div>
         </div>
       )}
+
+      {/* Plantilla Preview Drawer */}
+      <PlantillaPreviewDrawer
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        plantillaId={localData.plantilla_id}
+        plantillaIdEmail={localData.plantilla_id_email}
+        tipoMensaje={localData.tipo_mensaje}
+        nodeLabel={localData.label}
+      />
     </div>
   )
 }

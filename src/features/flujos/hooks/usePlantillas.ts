@@ -5,7 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { plantillasService } from '@/api/plantillas.service'
-import type { PlantillaSMS, PlantillaEmail } from '@/types/plantilla'
+import type { PlantillaSMS, PlantillaEmail, PlantillaPreviewResponse } from '@/types/plantilla'
 
 /**
  * Hook para obtener plantillas filtradas por tipo
@@ -99,6 +99,22 @@ export function usePlantillasById(plantillaIds?: number[], enabled: boolean = tr
       return plantillas
     },
     enabled: enabled && !!plantillaIds && plantillaIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/**
+ * Hook para obtener preview de una plantilla con datos de ejemplo
+ * Retorna el HTML renderizado (email) o texto (SMS) con variables reemplazadas
+ */
+export function usePlantillaPreview(plantillaId?: number, enabled: boolean = true) {
+  return useQuery<PlantillaPreviewResponse | null>({
+    queryKey: ['plantilla-preview', plantillaId],
+    queryFn: async () => {
+      if (!plantillaId) return null
+      return await plantillasService.getPreview(plantillaId)
+    },
+    enabled: enabled && !!plantillaId,
     staleTime: 5 * 60 * 1000,
   })
 }

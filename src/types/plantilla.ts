@@ -188,3 +188,16 @@ export interface ValidacionPlantilla {
   errores: string[]
   advertencias: string[]
 }
+
+/**
+ * Respuesta del endpoint de preview de plantilla
+ * Incluye contenido renderizado con variables de ejemplo
+ */
+export interface PlantillaPreviewResponse {
+  id: number
+  nombre: string
+  tipo: 'sms' | 'email'
+  asunto: string | null
+  contenido: string // HTML para email, texto para SMS
+  variables: string[] // Variables detectadas en la plantilla
+}
