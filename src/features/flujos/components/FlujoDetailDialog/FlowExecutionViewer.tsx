@@ -828,7 +828,7 @@ function FlowExecutionContent({
       )}
 
       {/* Estado y controles */}
-      <div className={`absolute top-4 right-4 z-50 flex flex-col gap-2 transition-all duration-300 ${
+      <div className={`absolute top-4 right-4 bottom-4 z-50 flex flex-col gap-2 transition-all duration-300 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent ${
         showInfoPanels ? 'translate-x-0 opacity-100' : 'translate-x-[400px] opacity-0 pointer-events-none'
       }`}>
         {/* Botón para ocultar paneles */}
