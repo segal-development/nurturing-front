@@ -16,7 +16,7 @@ import ReactFlow, {
   useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pause, PauseCircle, Play, Trash2, UserPlus } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, Pause, PauseCircle, Play, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,8 @@ import { InitialNode } from '../FlowBuilder/CustomNodes/InitialNode'
 import { StageNode } from '../FlowBuilder/CustomNodes/StageNode'
 import { N8nStyleEdge } from '../FlowBuilder/CustomEdges/N8nStyleEdge'
 import { CancelExecutionDialog } from './CancelExecutionDialog'
+import { PlantillaPreviewDrawer } from '../FlowBuilder/components/PlantillaPreviewDrawer'
+import type { TipoMensaje } from '@/types/flujo'
 
 interface FlowExecutionViewerProps {
   flujoId: number
@@ -44,10 +46,36 @@ const edgeTypes = {
 }
 
 /**
+ * Datos del nodo visual para preview de plantilla
+ */
+interface NodeVisualData {
+  label?: string
+  plantilla_type?: 'reference' | 'inline'
+  plantilla_id?: number
+  plantilla_id_email?: number
+  tipo_mensaje?: TipoMensaje
+}
+
+/**
  * Panel de detalles de un nodo ejecutándose
  */
-function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | null; isOpen: boolean; onClose: () => void }) {
+function StageDetailPanel({ 
+  stage, 
+  isOpen, 
+  onClose,
+  nodeData 
+}: { 
+  stage: StageExecution | null
+  isOpen: boolean
+  onClose: () => void
+  nodeData?: NodeVisualData
+}) {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  
   if (!isOpen || !stage) return null
+  
+  const hasPlantilla = nodeData?.plantilla_type === 'reference' && 
+    (nodeData?.plantilla_id || nodeData?.plantilla_id_email)
 
   const getStateIcon = () => {
     switch (stage.estado) {
@@ -167,14 +195,37 @@ function StageDetailPanel({ stage, isOpen, onClose }: { stage: StageExecution | 
             </div>
           )}
 
+          {/* Botón Ver Plantilla */}
+          {hasPlantilla && (
+            <button
+              onClick={() => setIsPreviewOpen(true)}
+              className="w-full mt-2 px-4 py-2 border border-segal-blue text-segal-blue rounded-lg hover:bg-segal-blue/5 transition-colors flex items-center justify-center gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Ver plantilla
+            </button>
+          )}
+
           <button
             onClick={onClose}
-            className="w-full mt-4 px-4 py-2 bg-segal-blue text-white rounded-lg hover:bg-segal-blue/90 transition-colors"
+            className="w-full mt-2 px-4 py-2 bg-segal-blue text-white rounded-lg hover:bg-segal-blue/90 transition-colors"
           >
             Cerrar
           </button>
         </div>
       </div>
+      
+      {/* Drawer de preview */}
+      {hasPlantilla && (
+        <PlantillaPreviewDrawer
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          plantillaId={nodeData?.plantilla_id}
+          plantillaIdEmail={nodeData?.plantilla_id_email}
+          tipoMensaje={nodeData?.tipo_mensaje}
+          nodeLabel={nodeData?.label || stage.node_id}
+        />
+      )}
     </div>
   )
 }
@@ -367,6 +418,7 @@ function FlowExecutionContent({
   const [nodes, setNodes] = useNodesState(configVisual?.nodes || [])
   const [edges, setEdges] = useEdgesState(configVisual?.edges || [])
   const [selectedStage, setSelectedStage] = useState<StageExecution | null>(null)
+  const [selectedNodeData, setSelectedNodeData] = useState<NodeVisualData | undefined>(undefined)
   const [showStageDetail, setShowStageDetail] = useState(false)
   const [showInfoPanels, setShowInfoPanels] = useState(true)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -726,8 +778,10 @@ function FlowExecutionContent({
 
   // Handle node click to show node-specific stats in the panel
   const handleNodeClick = (_event: React.MouseEvent, node: any) => {
-    logger.log('Node clicked:', node.id, node.type)
+    logger.log('Node clicked:', node.id, node.type, node.data)
     setSelectedNodeId(node.id)
+    // Save node visual data for plantilla preview
+    setSelectedNodeData(node.data as NodeVisualData)
     // If the node has execution data, also set it as selected stage for detail view
     const stage = stagesByNodeId.get(node.id)
     if (stage) {
@@ -777,7 +831,12 @@ function FlowExecutionContent({
     <>
       <style>{executionStyles}</style>
 
-      <StageDetailPanel stage={selectedStage} isOpen={showStageDetail} onClose={() => setShowStageDetail(false)} />
+      <StageDetailPanel 
+        stage={selectedStage} 
+        isOpen={showStageDetail} 
+        onClose={() => setShowStageDetail(false)}
+        nodeData={selectedNodeData}
+      />
 
       {/* Toggle button para mostrar/ocultar paneles informativos */}
       {!showInfoPanels && (
