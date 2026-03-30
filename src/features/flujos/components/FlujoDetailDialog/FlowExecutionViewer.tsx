@@ -57,18 +57,22 @@ interface NodeVisualData {
 }
 
 /**
- * Panel de detalles de un nodo ejecutándose
+ * Panel de detalles de un nodo - versión simplificada
+ * Solo muestra: nombre, estado, métrica clave, botón plantilla, link a detalles
+ * La info completa está en el SelectedNodePanel del panel lateral
  */
 function StageDetailPanel({ 
   stage, 
   isOpen, 
   onClose,
-  nodeData 
+  nodeData,
+  nodeLabel
 }: { 
   stage: StageExecution | null
   isOpen: boolean
   onClose: () => void
   nodeData?: NodeVisualData
+  nodeLabel?: string
 }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   
@@ -77,140 +81,112 @@ function StageDetailPanel({
   const hasPlantilla = nodeData?.plantilla_type === 'reference' && 
     (nodeData?.plantilla_id || nodeData?.plantilla_id_email)
 
-  const getStateIcon = () => {
+  const getStateConfig = () => {
     switch (stage.estado) {
       case 'completed':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+        return { 
+          icon: <CheckCircle2 className="h-4 w-4" />, 
+          label: 'Completada', 
+          color: 'text-green-600',
+          dot: 'bg-green-500'
+        }
       case 'executing':
-        return <Loader2 className="h-5 w-5 text-amber-600 animate-spin" />
+        return { 
+          icon: <Loader2 className="h-4 w-4 animate-spin" />, 
+          label: 'Ejecutándose', 
+          color: 'text-amber-600',
+          dot: 'bg-amber-500'
+        }
       case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
+        return { 
+          icon: <AlertCircle className="h-4 w-4" />, 
+          label: 'Falló', 
+          color: 'text-red-600',
+          dot: 'bg-red-500'
+        }
       case 'paused':
-        return <PauseCircle className="h-5 w-5 text-orange-500" />
+        return { 
+          icon: <PauseCircle className="h-4 w-4" />, 
+          label: 'Pausada', 
+          color: 'text-orange-500',
+          dot: 'bg-orange-500'
+        }
       default:
-        return <AlertCircle className="h-5 w-5 text-gray-400" />
+        return { 
+          icon: <AlertCircle className="h-4 w-4" />, 
+          label: 'Pendiente', 
+          color: 'text-gray-500',
+          dot: 'bg-gray-400'
+        }
     }
   }
 
-  const getStateLabel = () => {
-    switch (stage.estado) {
-      case 'pending':
-        return 'Pendiente'
-      case 'executing':
-        return 'Ejecutándose'
-      case 'completed':
-        return 'Completada'
-      case 'failed':
-        return 'Falló'
-      case 'paused':
-        return 'Pausada (Circuit Breaker)'
-      default:
-        return 'Desconocido'
-    }
+  const stateConfig = getStateConfig()
+  
+  // Calcular métrica clave: enviados y tasa de éxito
+  const getKeyMetric = () => {
+    if (!stage.envios) return null
+    const enviados = stage.envios.enviado || 0
+    const fallidos = stage.envios.fallido || 0
+    const total = enviados + fallidos
+    if (total === 0) return null
+    const tasa = ((enviados / total) * 100).toFixed(0)
+    return `${enviados.toLocaleString()} enviados · ${tasa}% éxito`
   }
 
-  const getStateColor = () => {
-    switch (stage.estado) {
-      case 'completed':
-        return 'bg-green-50 border-green-200'
-      case 'executing':
-        return 'bg-amber-50 border-amber-200'
-      case 'failed':
-        return 'bg-red-50 border-red-200'
-      case 'paused':
-        return 'bg-orange-50 border-orange-200'
-      default:
-        return 'bg-gray-50 border-gray-200'
-    }
-  }
+  const keyMetric = getKeyMetric()
+  const displayName = nodeLabel || nodeData?.label || stage.node_id
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-2xl w-96 max-h-96 overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center gap-3 pb-4 border-b">
-            {getStateIcon()}
-            <div>
-              <p className="font-semibold text-segal-dark">Etapa {stage.node_id}</p>
-              <p className="text-sm text-segal-dark/60">{getStateLabel()}</p>
-            </div>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center" onClick={onClose}>
+      <div 
+        className="bg-white rounded-xl shadow-2xl w-72 overflow-hidden border border-gray-200"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header compacto */}
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h3 className="font-semibold text-segal-dark text-sm truncate" title={displayName}>
+            {displayName}
+          </h3>
+          <div className={`flex items-center gap-1.5 mt-1 ${stateConfig.color}`}>
+            <span className={`w-2 h-2 rounded-full ${stateConfig.dot}`} />
+            <span className="text-xs font-medium">{stateConfig.label}</span>
           </div>
+        </div>
 
-          {/* Fechas */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-segal-dark/60">Programada:</span>
-              <span className="font-semibold">{new Date(stage.fecha_programada).toLocaleString()}</span>
-            </div>
-            {stage.fecha_ejecucion && (
-              <div className="flex justify-between">
-                <span className="text-segal-dark/60">Ejecutada:</span>
-                <span className="font-semibold">{new Date(stage.fecha_ejecucion).toLocaleString()}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Envíos */}
-          {stage.envios && (
-            <div className={`rounded-lg border p-4 ${stage.estado === 'pending' ? 'bg-gray-50 border-gray-200' : getStateColor()}`}>
-              {/* Título diferente según el estado */}
-              {stage.estado === 'pending' ? (
-                <div className="mb-3">
-                  <p className="font-semibold text-segal-dark">📊 Histórico de este nodo</p>
-                  <p className="text-xs text-segal-dark/50">Estadísticas de ejecuciones anteriores</p>
-                </div>
-              ) : (
-                <p className="font-semibold text-segal-dark mb-3">Estadísticas de Envíos</p>
-              )}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-segal-dark/60">✓ Enviados:</span>
-                  <span className="font-bold text-green-600">{stage.envios.enviado}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-segal-dark/60">⏳ Pendientes:</span>
-                  <span className="font-bold text-amber-600">{stage.envios.pendiente}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-segal-dark/60">✗ Fallidos:</span>
-                  <span className="font-bold text-red-600">{stage.envios.fallido}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-segal-dark/60">📧 Abiertos:</span>
-                  <span className="font-bold text-blue-600">{stage.envios.abierto}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-segal-dark/60">🔗 Clicks:</span>
-                  <span className="font-bold text-purple-600">{stage.envios.clickeado}</span>
-                </div>
-              </div>
-            </div>
+        {/* Contenido */}
+        <div className="px-4 py-3 space-y-3">
+          {/* Métrica clave */}
+          {keyMetric && (
+            <p className="text-sm text-segal-dark/70 text-center bg-gray-50 rounded-lg py-2 px-3">
+              {keyMetric}
+            </p>
           )}
 
-          {/* Error */}
+          {/* Error si hay */}
           {stage.error_mensaje && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm font-semibold text-red-700 mb-1">Error</p>
-              <p className="text-sm text-red-600">{stage.error_mensaje}</p>
-            </div>
+            <p className="text-xs text-red-600 bg-red-50 rounded-lg py-2 px-3 line-clamp-2">
+              {stage.error_mensaje}
+            </p>
           )}
 
-          {/* Botón Ver Plantilla */}
+          {/* Botón Ver Plantilla - destacado */}
           {hasPlantilla && (
             <button
               onClick={() => setIsPreviewOpen(true)}
-              className="w-full mt-2 px-4 py-2 border border-segal-blue text-segal-blue rounded-lg hover:bg-segal-blue/5 transition-colors flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 bg-segal-blue text-white rounded-lg hover:bg-segal-blue/90 transition-colors flex items-center justify-center gap-2 font-medium text-sm"
             >
               <Eye className="h-4 w-4" />
               Ver plantilla
             </button>
           )}
 
+          {/* Link a detalles completos */}
           <button
             onClick={onClose}
-            className="w-full mt-2 px-4 py-2 bg-segal-blue text-white rounded-lg hover:bg-segal-blue/90 transition-colors"
+            className="w-full text-center text-xs text-segal-blue hover:text-segal-blue/80 transition-colors py-1"
           >
-            Cerrar
+            Ver detalles en panel lateral →
           </button>
         </div>
       </div>
@@ -223,7 +199,7 @@ function StageDetailPanel({
           plantillaId={nodeData?.plantilla_id}
           plantillaIdEmail={nodeData?.plantilla_id_email}
           tipoMensaje={nodeData?.tipo_mensaje}
-          nodeLabel={nodeData?.label || stage.node_id}
+          nodeLabel={displayName}
         />
       )}
     </div>
@@ -836,6 +812,7 @@ function FlowExecutionContent({
         isOpen={showStageDetail} 
         onClose={() => setShowStageDetail(false)}
         nodeData={selectedNodeData}
+        nodeLabel={selectedNodeId ? nodeLabelsByNodeId.get(selectedNodeId) : undefined}
       />
 
       {/* Toggle button para mostrar/ocultar paneles informativos */}
