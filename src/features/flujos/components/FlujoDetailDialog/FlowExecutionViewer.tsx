@@ -1039,26 +1039,98 @@ function FlowExecutionContent({
           </div>
         )}
 
-        {/* Panel de Nuevos del Último Sync - muestra prospectos nuevos de Sysgal */}
+        {/* Panel de Nuevos del Último Sync - muestra prospectos nuevos de Sysgal con progreso */}
         {cohortesData?.data?.nuevos_ultimo_sync && cohortesData.data.nuevos_ultimo_sync.count > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-3 border border-segal-blue/20 min-w-64 max-w-sm">
             <div className="flex items-center gap-2 mb-2">
               <UserPlus className="h-4 w-4 text-green-600" />
               <p className="text-xs font-semibold text-segal-dark">Nuevos último sync</p>
             </div>
-            <div className="p-2 bg-green-50 rounded-lg border border-green-100">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-green-800">
-                  +{cohortesData.data.nuevos_ultimo_sync.count.toLocaleString()} prospectos
-                </p>
-                <p className="text-xs text-green-600">
-                  {cohortesData.data.nuevos_ultimo_sync.fecha_legible} • {cohortesData.data.nuevos_ultimo_sync.origen}
-                </p>
-                <p className="text-xs text-green-700 font-medium mt-1">
-                  {cohortesData.data.nuevos_ultimo_sync.nivel_deuda}
-                </p>
-              </div>
+            
+            {/* Info básica */}
+            <div className="p-2 bg-green-50 rounded-lg border border-green-100 mb-2">
+              <p className="text-sm font-bold text-green-800">
+                +{cohortesData.data.nuevos_ultimo_sync.count.toLocaleString()} prospectos
+              </p>
+              <p className="text-xs text-green-600">
+                {cohortesData.data.nuevos_ultimo_sync.fecha_legible} • {cohortesData.data.nuevos_ultimo_sync.origen}
+              </p>
+              <p className="text-xs text-green-700 font-medium mt-1">
+                {cohortesData.data.nuevos_ultimo_sync.nivel_deuda}
+              </p>
             </div>
+
+            {/* Progreso de alcance */}
+            {cohortesData.data.nuevos_ultimo_sync.progreso?.tiene_datos && (
+              <div className="space-y-2">
+                {/* Barra de progreso */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-segal-dark/70">Progreso de alcance</span>
+                    <span className="text-xs font-semibold text-segal-blue">
+                      {cohortesData.data.nuevos_ultimo_sync.progreso.porcentaje_alcance}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div
+                      className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
+                      style={{ width: `${cohortesData.data.nuevos_ultimo_sync.progreso.porcentaje_alcance}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Estadísticas de alcance */}
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-green-700">✓ Ya en nodo actual</span>
+                    <span className="font-semibold text-green-700">
+                      {cohortesData.data.nuevos_ultimo_sync.progreso.ya_alcanzaron.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-amber-700">⏳ Alcanzando</span>
+                    <span className="font-semibold text-amber-700">
+                      {cohortesData.data.nuevos_ultimo_sync.progreso.alcanzando.toLocaleString()}
+                    </span>
+                  </div>
+                  {cohortesData.data.nuevos_ultimo_sync.progreso.nodo_actual_label && (
+                    <div className="flex justify-between pt-1 border-t border-gray-200">
+                      <span className="text-segal-dark/60">📍 Etapa actual</span>
+                      <span className="font-medium text-segal-dark truncate max-w-[120px]" title={cohortesData.data.nuevos_ultimo_sync.progreso.nodo_actual_label}>
+                        {cohortesData.data.nuevos_ultimo_sync.progreso.nodo_actual_label}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Estadísticas de envíos */}
+                {cohortesData.data.nuevos_ultimo_sync.progreso.envios.total > 0 && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <p className="text-xs text-segal-dark/70 mb-1">Envíos totales</p>
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-green-700">
+                        ✓ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.enviados.toLocaleString()}
+                      </span>
+                      <span className="text-red-600">
+                        ✗ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.fallidos.toLocaleString()}
+                      </span>
+                      {cohortesData.data.nuevos_ultimo_sync.progreso.envios.pendientes > 0 && (
+                        <span className="text-amber-600">
+                          ⏳ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.pendientes.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Mensaje si no hay datos de progreso */}
+            {cohortesData.data.nuevos_ultimo_sync.progreso && !cohortesData.data.nuevos_ultimo_sync.progreso.tiene_datos && (
+              <p className="text-xs text-segal-dark/50 italic">
+                {cohortesData.data.nuevos_ultimo_sync.progreso.mensaje}
+              </p>
+            )}
           </div>
         )}
       </div>

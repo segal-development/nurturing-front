@@ -388,6 +388,28 @@ export interface UltimoIngreso {
 }
 
 /**
+ * Progreso de alcance de prospectos del sync
+ */
+export interface ProgresoAlcanceSync {
+  tiene_datos: boolean
+  mensaje?: string
+  total_prospectos?: number
+  ya_alcanzaron?: number
+  alcanzando?: number
+  sin_empezar?: number
+  en_nodos_anteriores?: number
+  porcentaje_alcance?: number
+  nodo_actual?: string
+  nodo_actual_label?: string
+  envios?: {
+    total: number
+    enviados: number
+    fallidos: number
+    pendientes: number
+  }
+}
+
+/**
  * Nuevos prospectos del último sync de Sysgal para este flujo
  */
 export interface NuevosUltimoSync {
@@ -396,6 +418,7 @@ export interface NuevosUltimoSync {
   fecha_legible: string
   nivel_deuda: string
   origen: string
+  progreso?: ProgresoAlcanceSync
 }
 
 /**
