@@ -209,6 +209,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
   // Node click handlers for selection
   // IMPORTANT: ALL hooks must be called before any early return to avoid React error #310
   const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    console.log('[FlowVisualizationViewer] Node clicked:', node.id, node.type, node.data)
     setSelectedNodeId(node.id)
   }, [])
 
@@ -278,6 +279,7 @@ function FlowVisualizationContent({ configVisual, flujoId }: FlowVisualizationVi
       </div>
 
       {/* Read-only detail panel — only shown when a node is selected */}
+      {selectedNodeId && console.log('[FlowVisualizationViewer] Rendering panel for:', selectedNodeId, 'nodes count:', nodes.length)}
       {selectedNodeId && (
         <div className="w-72 border-l border-segal-blue/10 bg-white p-4 overflow-y-auto">
           <NodeDetailPanel
