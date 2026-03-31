@@ -45,23 +45,27 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
               <p>No hay componentes para mostrar</p>
             </div>
           ) : (
-            plantilla.componentes.map((componente) => (
+            plantilla.componentes.map((componente) => {
+              // Guard against missing contenido
+              const contenido = componente.contenido || {}
+              
+              return (
               <div key={componente.id} className="mb-4">
                 {componente.tipo === 'logo' && (
                   <div 
                     style={{
                       textAlign: 'center',
                       marginBottom: '16px',
-                      backgroundColor: componente.contenido.color_fondo || 'transparent',
-                      padding: `${componente.contenido.padding ?? 20}px`,
+                      backgroundColor: contenido.color_fondo || 'transparent',
+                      padding: `${contenido.padding ?? 20}px`,
                     }}
                   >
                     <img
-                      src={componente.contenido.url}
-                      alt={componente.contenido.alt || 'Logo'}
+                      src={contenido.url}
+                      alt={contenido.alt || 'Logo'}
                       style={{
-                        maxWidth: `${componente.contenido.ancho || 200}px`,
-                        maxHeight: `${componente.contenido.altura || 100}px`,
+                        maxWidth: `${contenido.ancho || 200}px`,
+                        maxHeight: `${contenido.altura || 100}px`,
                       }}
                     />
                   </div>
@@ -70,27 +74,27 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                 {componente.tipo === 'texto' && (
                   <div
                     style={{
-                      textAlign: componente.contenido.alineacion as any,
-                      fontSize: `${componente.contenido.tamanio_fuente || 14}px`,
-                      color: componente.contenido.color || '#000000',
-                      fontWeight: componente.contenido.negrita ? 'bold' : 'normal',
-                      fontStyle: componente.contenido.italica ? 'italic' : 'normal',
+                      textAlign: contenido.alineacion as any,
+                      fontSize: `${contenido.tamanio_fuente || 14}px`,
+                      color: contenido.color || '#000000',
+                      fontWeight: contenido.negrita ? 'bold' : 'normal',
+                      fontStyle: contenido.italica ? 'italic' : 'normal',
                       marginBottom: '16px',
                       whiteSpace: 'pre-line',
                     }}
                   >
-                    {renderTextoConEnlaces(componente.contenido.texto, componente.contenido.enlaces)}
+                    {renderTextoConEnlaces(contenido.texto, contenido.enlaces)}
                   </div>
                 )}
 
                 {componente.tipo === 'boton' && (
                   <div style={{ textAlign: 'center', margin: '20px 0' }}>
                     <a
-                      href={componente.contenido.url}
+                      href={contenido.url}
                       style={{
                         display: 'inline-block',
-                        backgroundColor: componente.contenido.color_fondo || '#1e3a8a',
-                        color: componente.contenido.color_texto || '#ffffff',
+                        backgroundColor: contenido.color_fondo || '#1e3a8a',
+                        color: contenido.color_texto || '#ffffff',
                         padding: '12px 24px',
                         borderRadius: '4px',
                         textDecoration: 'none',
@@ -98,7 +102,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                       }}
                       onClick={(e) => e.preventDefault()}
                     >
-                      {componente.contenido.texto}
+                      {contenido.texto}
                     </a>
                   </div>
                 )}
@@ -106,8 +110,8 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                 {componente.tipo === 'separador' && (
                   <div
                     style={{
-                      height: `${componente.contenido.altura || 10}px`,
-                      backgroundColor: componente.contenido.color || '#e0e0e0',
+                      height: `${contenido.altura || 10}px`,
+                      backgroundColor: contenido.color || '#e0e0e0',
                       margin: '16px 0',
                     }}
                   />
@@ -116,37 +120,37 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                 {componente.tipo === 'imagen' && (
                   <div
                     style={{
-                      textAlign: componente.contenido.alineacion || 'center',
+                      textAlign: contenido.alineacion || 'center',
                       margin: '16px 0',
-                      padding: `${componente.contenido.padding ?? 10}px`,
+                      padding: `${contenido.padding ?? 10}px`,
                     }}
                   >
-                    {componente.contenido.link_url ? (
+                    {contenido.link_url ? (
                       <a
-                        href={componente.contenido.link_url}
-                        target={componente.contenido.link_target || '_blank'}
+                        href={contenido.link_url}
+                        target={contenido.link_target || '_blank'}
                         onClick={(e) => e.preventDefault()}
                         style={{ display: 'inline-block' }}
                       >
                         <img
-                          src={componente.contenido.url}
-                          alt={componente.contenido.alt || 'Imagen'}
+                          src={contenido.url}
+                          alt={contenido.alt || 'Imagen'}
                           style={{
-                            maxWidth: componente.contenido.ancho ? `${componente.contenido.ancho}px` : '100%',
-                            maxHeight: componente.contenido.altura ? `${componente.contenido.altura}px` : 'auto',
-                            borderRadius: `${componente.contenido.border_radius ?? 0}px`,
+                            maxWidth: contenido.ancho ? `${contenido.ancho}px` : '100%',
+                            maxHeight: contenido.altura ? `${contenido.altura}px` : 'auto',
+                            borderRadius: `${contenido.border_radius ?? 0}px`,
                             display: 'block',
                           }}
                         />
                       </a>
                     ) : (
                       <img
-                        src={componente.contenido.url}
-                        alt={componente.contenido.alt || 'Imagen'}
+                        src={contenido.url}
+                        alt={contenido.alt || 'Imagen'}
                         style={{
-                          maxWidth: componente.contenido.ancho ? `${componente.contenido.ancho}px` : '100%',
-                          maxHeight: componente.contenido.altura ? `${componente.contenido.altura}px` : 'auto',
-                          borderRadius: `${componente.contenido.border_radius ?? 0}px`,
+                          maxWidth: contenido.ancho ? `${contenido.ancho}px` : '100%',
+                          maxHeight: contenido.altura ? `${contenido.altura}px` : 'auto',
+                          borderRadius: `${contenido.border_radius ?? 0}px`,
                           display: 'inline-block',
                         }}
                       />
@@ -158,22 +162,22 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                   <div
                     style={{
                       marginTop: '24px',
-                      padding: `${componente.contenido.padding ?? 20}px`,
+                      padding: `${contenido.padding ?? 20}px`,
                       fontSize: '12px',
-                      color: componente.contenido.color_texto || '#666666',
-                      backgroundColor: componente.contenido.color_fondo || 'transparent',
+                      color: contenido.color_texto || '#666666',
+                      backgroundColor: contenido.color_fondo || 'transparent',
                       textAlign: 'center',
                     }}
                   >
-                    <p>{componente.contenido.texto}</p>
-                    {componente.contenido.enlaces && componente.contenido.enlaces.length > 0 && (
+                    <p>{contenido.texto}</p>
+                    {contenido.enlaces && contenido.enlaces.length > 0 && (
                       <div style={{ marginTop: '8px' }}>
-                        {componente.contenido.enlaces.map((enlace, idx) => (
+                        {contenido.enlaces.map((enlace, idx) => (
                           <span key={`footer-preview-${idx}`}>
                             <a
                               href={enlace.url}
                               style={{
-                                color: componente.contenido.color_texto || '#666666',
+                                color: contenido.color_texto || '#666666',
                                 textDecoration: 'underline',
                                 marginRight: '16px',
                               }}
@@ -181,12 +185,12 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                             >
                               {enlace.etiqueta}
                             </a>
-                            {idx < componente.contenido.enlaces!.length - 1 && ' | '}
+                            {idx < contenido.enlaces!.length - 1 && ' | '}
                           </span>
                         ))}
                       </div>
                     )}
-                    {componente.contenido.mostrar_fecha && (
+                    {contenido.mostrar_fecha && (
                       <p style={{ marginTop: '8px', opacity: 0.7 }}>
                         Enviado: {new Date().toLocaleDateString()}
                       </p>
@@ -194,7 +198,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                   </div>
                 )}
               </div>
-            ))
+            )})
           )}
         </div>
       </div>
