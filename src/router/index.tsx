@@ -31,6 +31,11 @@ const PlantillasPage = lazy(() =>
     default: module.PlantillasPage,
   }))
 );
+const PlantillaChatPage = lazy(() =>
+  import('@/features/plantillas/pages/PlantillaChatPage').then((module) => ({
+    default: module.PlantillaChatPage,
+  }))
+);
 const MetricasPage = lazy(() =>
   import('@/features/metricas').then((module) => ({
     default: module.MetricasPage,
@@ -48,6 +53,17 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    // Full-screen chat page without dashboard layout
+    path: '/plantillas/chat',
+    element: (
+      <ProtectedRoute>
+        <LazyPage>
+          <PlantillaChatPage />
+        </LazyPage>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/',

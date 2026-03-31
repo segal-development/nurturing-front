@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Mail, MessageSquare, Search } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Mail, MessageSquare, Search, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { logger } from '@/lib/logger'
 import { useQueryClient } from '@tanstack/react-query'
@@ -25,6 +26,7 @@ const ITEMS_PER_PAGE = 15
 const SEARCH_DEBOUNCE_MS = 300
 
 export function PlantillasPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [tabActivo, setTabActivo] = useState<TipoTab>('todas')
   const [crearDialogOpen, setCrearDialogOpen] = useState(false)
@@ -144,7 +146,7 @@ export function PlantillasPage() {
         </div>
 
         {/* Botones de crear */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             onClick={() => handleAbrirCrear('sms')}
             className="bg-segal-blue hover:bg-segal-blue/90 dark:bg-segal-turquoise dark:hover:bg-segal-turquoise/90 text-white dark:text-gray-900 font-semibold flex items-center gap-2"
@@ -159,6 +161,13 @@ export function PlantillasPage() {
           >
             <Plus className="h-4 w-4" />
             Nueva Plantilla Email
+          </Button>
+          <Button
+            onClick={() => navigate('/plantillas/chat')}
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold flex items-center gap-2 shadow-md shadow-purple-500/20"
+          >
+            <Sparkles className="h-4 w-4" />
+            Crear con IA
           </Button>
         </div>
       </div>
