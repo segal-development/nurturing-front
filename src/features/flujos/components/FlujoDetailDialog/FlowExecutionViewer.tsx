@@ -621,6 +621,12 @@ function FlowExecutionContent({
       .react-flow__controls-button svg {
         fill: #94a3b8;
       }
+
+      /* Default: all stage/conditional nodes start dimmed (not yet executed) */
+      .react-flow__node[data-id^="stage-"],
+      .react-flow__node[data-id^="conditional-"] {
+        opacity: 0.5;
+      }
     `
 
     stagesByNodeId.forEach((stage, nodeId) => {
@@ -637,9 +643,13 @@ function FlowExecutionContent({
       const isNextNode = executionData?.proximo_nodo === nodeId
 
       if (isCurrentNode) {
-        // Nodo actual: doble efecto de glow
+        // Nodo actual (executing): doble efecto de glow + full opacity
         styles += `
           ${baseStyle}
+          .react-flow__node[data-id="${nodeId}"] {
+            opacity: 1 !important;
+            z-index: 10;
+          }
           ${box} {
             border-color: #f59e0b !important;
             border-width: 2px !important;
@@ -648,14 +658,14 @@ function FlowExecutionContent({
               inset 0 0 6px rgba(245, 158, 11, 0.3) !important;
             animation: pulse-execution 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
           }
-          .react-flow__node[data-id="${nodeId}"] {
-            z-index: 10;
-          }
         `
       } else if (isNextNode) {
-        // Próximo nodo: efecto de anticipación
+        // Próximo nodo: efecto de anticipación + full opacity
         styles += `
           ${baseStyle}
+          .react-flow__node[data-id="${nodeId}"] {
+            opacity: 1 !important;
+          }
           ${box} {
             border-color: #3b82f6 !important;
             border-width: 2px !important;
@@ -665,9 +675,12 @@ function FlowExecutionContent({
           }
         `
       } else if (isInPath && stage.estado === 'completed') {
-        // Nodos en el camino que ya se ejecutaron
+        // Nodos en el camino que ya se ejecutaron: full opacity
         styles += `
           ${baseStyle}
+          .react-flow__node[data-id="${nodeId}"] {
+            opacity: 1 !important;
+          }
           ${box} {
             border-color: #16a34a !important;
             border-width: 2px !important;
@@ -680,6 +693,9 @@ function FlowExecutionContent({
           case 'completed':
             styles += `
               ${baseStyle}
+              .react-flow__node[data-id="${nodeId}"] {
+                opacity: 1 !important;
+              }
               ${box} {
                 border-color: #16a34a !important;
                 border-width: 2px !important;
@@ -690,6 +706,9 @@ function FlowExecutionContent({
           case 'failed':
             styles += `
               ${baseStyle}
+              .react-flow__node[data-id="${nodeId}"] {
+                opacity: 1 !important;
+              }
               ${box} {
                 border-color: #dc2626 !important;
                 border-width: 2px !important;
@@ -698,16 +717,17 @@ function FlowExecutionContent({
             `
             break
           case 'pending':
+            // Pending keeps the default 0.5 opacity (no override needed)
             styles += `
               ${baseStyle}
-              .react-flow__node[data-id="${nodeId}"] {
-                opacity: 0.5;
-              }
             `
             break
           case 'paused':
             styles += `
               ${baseStyle}
+              .react-flow__node[data-id="${nodeId}"] {
+                opacity: 1 !important;
+              }
               ${box} {
                 border-color: #f97316 !important;
                 border-width: 2px !important;
