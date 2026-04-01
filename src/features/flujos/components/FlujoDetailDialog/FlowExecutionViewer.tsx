@@ -287,6 +287,50 @@ function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear, onViewDetail }: 
         </button>
       </div>
 
+      {/* Fecha de ejecución */}
+      {stage?.fecha_ejecucion && (
+        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
+          <p className="text-xs text-blue-600 font-medium">📅 Ejecutado</p>
+          <p className="text-sm font-semibold text-blue-800">
+            {new Date(stage.fecha_ejecucion).toLocaleDateString('es-CL', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+            {' '}
+            <span className="text-blue-600 font-normal">
+              {new Date(stage.fecha_ejecucion).toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </p>
+        </div>
+      )}
+
+      {/* Fecha programada si no se ejecutó aún */}
+      {stage?.fecha_programada && !stage?.fecha_ejecucion && (
+        <div className="mb-3 p-2 bg-amber-50 rounded-lg border border-amber-100">
+          <p className="text-xs text-amber-600 font-medium">⏳ Programado para</p>
+          <p className="text-sm font-semibold text-amber-800">
+            {new Date(stage.fecha_programada).toLocaleDateString('es-CL', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+            {' '}
+            <span className="text-amber-600 font-normal">
+              {new Date(stage.fecha_programada).toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </p>
+        </div>
+      )}
+
       {/* Stats del nodo seleccionado */}
       {stage?.envios && (
         <div className="space-y-2">
