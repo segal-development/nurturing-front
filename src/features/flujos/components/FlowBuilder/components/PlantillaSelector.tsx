@@ -11,16 +11,11 @@
  */
 
 import { useState } from 'react'
-import { AlertCircle, FileText, Mail, MessageSquare, X } from 'lucide-react'
+import { AlertCircle, FileText, Mail, MessageSquare, X, ChevronDown } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import { usePlantillasSMS, usePlantillasEmail } from '@/features/flujos/hooks/usePlantillas'
+import { PlantillaSelectorModal } from './PlantillaSelectorModal'
 import type { PlantillaSMS, PlantillaEmail, AnyPlantilla } from '@/types/plantilla'
 import type { TipoMensaje } from '@/types/flujo'
 
@@ -261,50 +256,50 @@ function SelectedPlantillaCard({ plantilla, tipo, onClear }: SelectedPlantillaCa
 }
 
 /**
- * Select dropdown para elegir plantilla
+ * Botón que abre el modal de selección de plantilla
  */
-interface PlantillaSelectProps {
+interface PlantillaSelectButtonProps {
   plantillas: AnyPlantilla[]
   selectedId: number | undefined
   tipo: 'sms' | 'email'
   onSelect: (id: number) => void
 }
 
-function PlantillaSelect({ plantillas, selectedId, tipo, onSelect }: PlantillaSelectProps) {
+function PlantillaSelectButton({ plantillas, selectedId, tipo, onSelect }: PlantillaSelectButtonProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const label = tipo === 'sms' ? 'SMS' : 'Email'
   const Icon = tipo === 'sms' ? MessageSquare : Mail
 
-  const handleValueChange = (value: string) => {
-    const id = parseInt(value, 10)
-    if (!isNaN(id)) {
-      onSelect(id)
+  const handleSelect = (plantilla: AnyPlantilla) => {
+    if (plantilla.id) {
+      onSelect(plantilla.id)
     }
   }
 
   return (
-    <Select
-      value={selectedId?.toString() ?? ''}
-      onValueChange={handleValueChange}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={`Seleccionar plantilla ${label}`} />
-      </SelectTrigger>
-      <SelectContent className="bg-white border border-gray-200 shadow-lg z-[9999]">
-        {plantillas.map((plantilla) => (
-          <SelectItem key={plantilla.id} value={plantilla.id!.toString()}>
-            <div className="flex items-center gap-2">
-              <Icon className="h-3 w-3 text-segal-dark/50" />
-              <span className="font-medium">{plantilla.nombre}</span>
-              {plantilla.descripcion && (
-                <span className="text-segal-dark/50 text-xs">
-                  - {truncateText(plantilla.descripcion, 30)}
-                </span>
-              )}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setIsModalOpen(true)}
+        className="w-full justify-between border-segal-blue/30 hover:border-segal-blue/50 hover:bg-segal-blue/5"
+      >
+        <span className="flex items-center gap-2 text-gray-500">
+          <Icon className="h-4 w-4" />
+          Seleccionar plantilla {label}
+        </span>
+        <ChevronDown className="h-4 w-4 text-gray-400" />
+      </Button>
+
+      <PlantillaSelectorModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        plantillas={plantillas}
+        tipo={tipo}
+        selectedId={selectedId}
+        onSelect={handleSelect}
+      />
+    </>
   )
 }
 
@@ -394,7 +389,7 @@ function PlantillaSection({
           onClear={onClear}
         />
       ) : (
-        <PlantillaSelect
+        <PlantillaSelectButton
           plantillas={plantillas}
           selectedId={undefined}
           tipo={tipo}
