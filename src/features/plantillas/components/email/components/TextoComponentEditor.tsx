@@ -3,11 +3,12 @@
  * Soporta: alineación, tamaño, color, estilos, enlaces
  */
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import type { TextoComponentFormData } from '@/features/plantillas/schemas/plantillaSchemas'
 
 interface TextoComponentEditorProps {
@@ -21,6 +22,7 @@ export function TextoComponentEditor({
 }: TextoComponentEditorProps) {
   const [mostrarFormularioEnlace, setMostrarFormularioEnlace] = useState(false)
   const [nuevoEnlace, setNuevoEnlace] = useState({ url: '', texto: '' })
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Valores por defecto para evitar undefined
   const contenido = componente.contenido || {
@@ -76,6 +78,7 @@ export function TextoComponentEditor({
           Texto <span className="text-segal-red">*</span>
         </Label>
         <textarea
+          ref={textareaRef}
           value={contenido.texto || ''}
           onChange={(e) =>
             onUpdate({
@@ -86,8 +89,40 @@ export function TextoComponentEditor({
               },
             })
           }
+          onDragOver={(e) => {
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'copy'
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            const variable = e.dataTransfer.getData('application/x-variable') || e.dataTransfer.getData('text/plain')
+            if (variable && variable.startsWith('{{')) {
+              const textarea = e.currentTarget
+              const currentText = contenido.texto || ''
+              const cursorPos = textarea.selectionStart ?? currentText.length
+              const before = currentText.substring(0, cursorPos)
+              const after = currentText.substring(cursorPos)
+              const newValue = before + variable + after
+              
+              onUpdate({
+                ...componente,
+                contenido: {
+                  ...contenido,
+                  texto: newValue,
+                },
+              })
+              
+              setTimeout(() => {
+                textarea.focus()
+                const newCursorPos = cursorPos + variable.length
+                textarea.selectionStart = textarea.selectionEnd = newCursorPos
+              }, 0)
+              
+              toast.success(`Variable insertada`, { duration: 1500 })
+            }
+          }}
           className="w-full min-h-24 px-3 py-2 rounded-md border border-segal-blue/30 text-sm focus:outline-none focus:ring-2 focus:ring-segal-blue/20 focus:border-segal-blue"
-          placeholder="Escribe el contenido del texto..."
+          placeholder="Escribe el contenido del texto... Arrastra variables aquí"
         />
         <p className="text-xs text-segal-dark/60">
           {contenido.texto.length} caracteres

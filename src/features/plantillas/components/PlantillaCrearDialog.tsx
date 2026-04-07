@@ -18,30 +18,24 @@ import {
 import { Button } from '@/components/ui/button'
 import { SMSTemplateEditor } from './SMSTemplateEditor'
 import { EmailTemplateEditor } from './EmailTemplateEditor'
-import { EmailTemplateBuilder } from './EmailTemplates'
 import { plantillasService } from '@/api/plantillas.service'
 import { plantillaSMSSchema, plantillaEmailSchema, type PlantillaSMSFormData, type PlantillaEmailFormData } from '../schemas/plantillaSchemas'
 import { useQueryClient } from '@tanstack/react-query'
-import type { EmailBlockData } from './EmailTemplates'
-import { exportEmailForBackend } from '../utils/emailRenderer'
 
 interface PlantillaCrearDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   tipoInicial?: 'sms' | 'email'
-  modoEmailInicial?: 'modular' | 'avanzado'
 }
 
 export function PlantillaCrearDialog({
   open,
   onOpenChange,
   tipoInicial = 'sms',
-  modoEmailInicial = 'modular',
 }: PlantillaCrearDialogProps) {
   const queryClient = useQueryClient()
   const [isSaving, setIsSaving] = useState(false)
   const [tipo, setTipo] = useState<'sms' | 'email'>(tipoInicial)
-  const [modoEmail, setModoEmail] = useState<'modular' | 'avanzado'>(modoEmailInicial)
 
   // Estado para plantilla SMS
   const [plantillaSMS, setPlantillaSMS] = useState<PlantillaSMSFormData>({
@@ -52,7 +46,7 @@ export function PlantillaCrearDialog({
     contenido: '',
   })
 
-  // Estado para plantilla Email Modular
+  // Estado para plantilla Email
   const [plantillaEmail, setPlantillaEmail] = useState<PlantillaEmailFormData>({
     nombre: '',
     descripcion: '',
@@ -60,17 +54,6 @@ export function PlantillaCrearDialog({
     activo: true,
     asunto: '',
     componentes: [],
-  })
-
-  // Estado para plantilla Email Avanzado (react-email)
-  const [plantillaEmailAvanzada, setPlantillaEmailAvanzada] = useState({
-    nombre: '',
-    descripcion: '',
-    tipo: 'email',
-    formato: 'bloques',
-    activo: true,
-    bloques: [] as EmailBlockData[],
-    html: '',
   })
 
   const handleGuardar = async () => {
@@ -81,47 +64,13 @@ export function PlantillaCrearDialog({
         const validatedData = plantillaSMSSchema.parse(plantillaSMS)
         await plantillasService.crearPlantillaSMS(validatedData)
       } else if (tipo === 'email') {
-        if (modoEmail === 'modular') {
-          // Validar antes de enviar
-          const validatedData = plantillaEmailSchema.parse(plantillaEmail)
+        // Validar antes de enviar
+        const validatedData = plantillaEmailSchema.parse(plantillaEmail)
 
-          logger.log('[PlantillaCrearDialog] Creando plantilla email modular')
-          logger.log('[PlantillaCrearDialog] Componentes que se enviarán:', validatedData.componentes)
+        logger.log('[PlantillaCrearDialog] Creando plantilla email')
+        logger.log('[PlantillaCrearDialog] Componentes que se enviarán:', validatedData.componentes)
 
-          await plantillasService.crearPlantillaEmail(validatedData)
-        } else {
-          // Email Avanzado con react-email
-          if (!plantillaEmailAvanzada.nombre || plantillaEmailAvanzada.bloques.length === 0) {
-            toast.error('Por favor ingresa un nombre y al menos un bloque')
-            setIsSaving(false)
-            return
-          }
-
-          // Exportar bloques a HTML
-          const exported = exportEmailForBackend(plantillaEmailAvanzada.bloques, {
-            subject: plantillaEmailAvanzada.nombre,
-          })
-
-          // Enviar al backend
-          await plantillasService.crearPlantillaEmail({
-            nombre: plantillaEmailAvanzada.nombre,
-            descripcion: plantillaEmailAvanzada.descripcion,
-            tipo: 'email',
-            activo: plantillaEmailAvanzada.activo,
-            asunto: plantillaEmailAvanzada.nombre,
-            componentes: [
-              {
-                id: 'avanzado-html',
-                tipo: 'html-avanzado',
-                orden: 0,
-                contenido: {
-                  html: exported.html,
-                  bloques: exported.blocksJSON,
-                } as any,
-              },
-            ] as any,
-          })
-        }
+        await plantillasService.crearPlantillaEmail(validatedData)
       }
 
       // Invalidar cache para recargar la tabla
@@ -147,17 +96,7 @@ export function PlantillaCrearDialog({
         asunto: '',
         componentes: [],
       })
-      setPlantillaEmailAvanzada({
-        nombre: '',
-        descripcion: '',
-        tipo: 'email',
-        formato: 'bloques',
-        activo: true,
-        bloques: [],
-        html: '',
-      })
       setTipo('sms')
-      setModoEmail('modular')
     } catch (error: any) {
       logger.error('Error al crear plantilla:', error)
       const errorMessage = error.response?.data?.message || error.message || 'Error desconocido'
@@ -174,12 +113,8 @@ export function PlantillaCrearDialog({
         plantillaSMSSchema.parse(plantillaSMS)
         return true
       } else if (tipo === 'email') {
-        if (modoEmail === 'modular') {
-          plantillaEmailSchema.parse(plantillaEmail)
-          return true
-        } else {
-          return plantillaEmailAvanzada.nombre && plantillaEmailAvanzada.bloques.length > 0
-        }
+        plantillaEmailSchema.parse(plantillaEmail)
+        return true
       }
       return false
     } catch {
@@ -195,9 +130,7 @@ export function PlantillaCrearDialog({
           <DialogDescription>
             {tipo === 'sms'
               ? 'Crea una plantilla de SMS con máximo 160 caracteres'
-              : modoEmail === 'modular'
-              ? 'Crea una plantilla de Email con componentes (Logo, Texto, Botón, etc)'
-              : 'Crea una plantilla de Email avanzada con bloques personalizables'}
+              : 'Crea una plantilla de Email con componentes (Logo, Texto, Botón, etc)'}
           </DialogDescription>
         </DialogHeader>
 
@@ -231,36 +164,6 @@ export function PlantillaCrearDialog({
           </div>
         )}
 
-        {/* Selector de modo Email */}
-        {tipo === 'email' && !plantillaEmail.nombre && !plantillaEmailAvanzada.nombre && (
-          <div className="grid grid-cols-2 gap-4 my-6">
-            <button
-              type="button"
-              onClick={() => setModoEmail('modular')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                modoEmail === 'modular'
-                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
-                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
-              }`}
-            >
-              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">🧩 Email Modular</p>
-              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Logo, Texto, Botón, etc</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setModoEmail('avanzado')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                modoEmail === 'avanzado'
-                  ? 'border-segal-blue dark:border-segal-turquoise bg-segal-blue/10 dark:bg-segal-turquoise/10'
-                  : 'border-segal-blue/20 dark:border-gray-600 hover:border-segal-blue/40 dark:hover:border-gray-500'
-              }`}
-            >
-              <p className="font-semibold text-segal-dark dark:text-white text-lg mb-1">⚡ Email Avanzado</p>
-              <p className="text-sm text-segal-dark/60 dark:text-gray-400">Bloques personalizables</p>
-            </button>
-          </div>
-        )}
-
         {/* Editor SMS */}
         {tipo === 'sms' && (
           <SMSTemplateEditor
@@ -269,58 +172,12 @@ export function PlantillaCrearDialog({
           />
         )}
 
-        {/* Editor Email Modular */}
-        {tipo === 'email' && modoEmail === 'modular' && (
+        {/* Editor Email */}
+        {tipo === 'email' && (
           <EmailTemplateEditor
             initialData={plantillaEmail}
             onDataChange={setPlantillaEmail}
           />
-        )}
-
-        {/* Editor Email Avanzado */}
-        {tipo === 'email' && modoEmail === 'avanzado' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-segal-dark dark:text-white">Nombre de la Plantilla</label>
-              <input
-                type="text"
-                value={plantillaEmailAvanzada.nombre}
-                onChange={(e) =>
-                  setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, nombre: e.target.value })
-                }
-                className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20"
-                placeholder="Ej: Newsletter Mensual"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-segal-dark dark:text-white">Descripción (Opcional)</label>
-              <textarea
-                value={plantillaEmailAvanzada.descripcion}
-                onChange={(e) =>
-                  setPlantillaEmailAvanzada({ ...plantillaEmailAvanzada, descripcion: e.target.value })
-                }
-                className="w-full px-3 py-2 text-sm border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-1 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20 resize-none h-20"
-                placeholder="Describe para qué sirve esta plantilla..."
-              />
-            </div>
-
-            <EmailTemplateBuilder
-              initialBlocks={plantillaEmailAvanzada.bloques}
-              onChange={(blocks, html) => {
-                setPlantillaEmailAvanzada({
-                  ...plantillaEmailAvanzada,
-                  bloques: blocks,
-                  html: html,
-                })
-              }}
-              showPreview={true}
-              config={{
-                subject: plantillaEmailAvanzada.nombre || 'Email Template',
-                headerText: 'Email Template',
-              }}
-            />
-          </div>
         )}
 
         <DialogFooter className="flex gap-3 justify-end mt-6">

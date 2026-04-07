@@ -259,6 +259,31 @@ export function EmailTemplateEditor({
             value={plantilla.asunto}
             onChange={handleAsuntoChange}
             onFocus={() => setActiveField('asunto')}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'copy'
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const variable = e.dataTransfer.getData('application/x-variable') || e.dataTransfer.getData('text/plain')
+              if (variable && variable.startsWith('{{')) {
+                const input = e.currentTarget
+                const cursorPos = input.selectionStart ?? plantilla.asunto.length
+                const before = plantilla.asunto.substring(0, cursorPos)
+                const after = plantilla.asunto.substring(cursorPos)
+                const newValue = (before + variable + after).slice(0, 200)
+                
+                setPlantilla({ ...plantilla, asunto: newValue })
+                
+                setTimeout(() => {
+                  input.focus()
+                  const newCursorPos = Math.min(cursorPos + variable.length, newValue.length)
+                  input.selectionStart = input.selectionEnd = newCursorPos
+                }, 0)
+                
+                toast.success(`Variable insertada en el asunto`, { duration: 1500 })
+              }
+            }}
             placeholder="Ej: Bienvenido a nuestro servicio - Usa {{ para variables"
             className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             maxLength={200}

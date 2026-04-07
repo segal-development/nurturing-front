@@ -108,6 +108,12 @@ function VariableItem({ variable, onInsert }: VariableItemProps) {
     toast.success(`${variableTag} copiada al portapapeles`, { duration: 1500 })
   }
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', variableTag)
+    e.dataTransfer.setData('application/x-variable', variableTag)
+    e.dataTransfer.effectAllowed = 'copy'
+  }
+
   return (
     <TooltipProvider>
       <Tooltip delayDuration={300}>
@@ -115,7 +121,9 @@ function VariableItem({ variable, onInsert }: VariableItemProps) {
           <button
             type="button"
             onClick={handleClick}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-segal-blue/10 dark:hover:bg-segal-turquoise/10 transition-colors group"
+            draggable
+            onDragStart={handleDragStart}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-segal-blue/10 dark:hover:bg-segal-turquoise/10 transition-colors group cursor-grab active:cursor-grabbing"
           >
             <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-segal-blue dark:text-segal-turquoise">
               {`{{${variable.key}}}`}
@@ -135,7 +143,7 @@ function VariableItem({ variable, onInsert }: VariableItemProps) {
             <p className="text-xs text-gray-400">
               Ejemplo: <span className="text-gray-300">{variable.ejemplo}</span>
             </p>
-            <p className="text-xs text-gray-500">Click para insertar</p>
+            <p className="text-xs text-gray-500">Click o arrastra para insertar</p>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -256,6 +264,9 @@ export function VariablesPanel({ onInsertVariable, className = '' }: VariablesPa
       <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <p className="text-xs text-gray-500 dark:text-gray-400">
           💡 Escribe <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{'{{'}</code> en el editor para autocompletar
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          🖱️ También podés arrastrar y soltar las variables
         </p>
       </div>
     </div>

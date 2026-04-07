@@ -364,6 +364,38 @@ export function SMSTemplateEditor({
                       // Delay closing to allow click on autocomplete
                       setTimeout(() => setLocalShowAutocomplete(false), 200)
                     }}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'copy'
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const variable = e.dataTransfer.getData('application/x-variable') || e.dataTransfer.getData('text/plain')
+                      if (variable && variable.startsWith('{{')) {
+                        const currentValue = field.value || ''
+                        // Get drop position from caret position in textarea
+                        const textarea = e.currentTarget
+                        const rect = textarea.getBoundingClientRect()
+                        const x = e.clientX - rect.left
+                        const y = e.clientY - rect.top
+                        
+                        // Approximate cursor position - insert at end if can't determine
+                        // For simplicity, we'll insert at current cursor or end
+                        const cursorPos = textarea.selectionStart ?? currentValue.length
+                        const before = currentValue.substring(0, cursorPos)
+                        const after = currentValue.substring(cursorPos)
+                        const newValue = (before + variable + after).slice(0, 160)
+                        
+                        form.setValue('contenido', newValue, { shouldValidate: true })
+                        
+                        // Focus and set cursor after the variable
+                        setTimeout(() => {
+                          textarea.focus()
+                          const newCursorPos = Math.min(cursorPos + variable.length, newValue.length)
+                          textarea.selectionStart = textarea.selectionEnd = newCursorPos
+                        }, 0)
+                      }
+                    }}
                     value={field.value}
                     disabled={field.disabled}
                     name={field.name}
