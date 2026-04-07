@@ -1,10 +1,11 @@
 /**
  * Single chat message bubble component
  * Displays user messages on the right (blue) and agent messages on the left (gray)
+ * Parses JSON responses from AI agent to display only the message content
  */
 
 import { useMemo } from 'react'
-import { Bot, User } from 'lucide-react'
+import { Bot, User, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage as ChatMessageType } from '../../types/chat'
 
@@ -12,8 +13,42 @@ interface ChatMessageProps {
   message: ChatMessageType
 }
 
+/**
+ * Parse agent message content - handles JSON responses from the AI
+ * Returns { thinking, message } if JSON, or just the text if not
+ */
+function parseAgentMessage(content: string): { thinking?: string; message: string } {
+  // Try to parse as JSON
+  try {
+    // Check if it looks like JSON
+    if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+      const parsed = JSON.parse(content)
+      
+      // Check for expected fields
+      if (parsed.message || parsed.thinking) {
+        return {
+          thinking: parsed.thinking || undefined,
+          message: parsed.message || content,
+        }
+      }
+    }
+  } catch {
+    // Not JSON, return as-is
+  }
+  
+  return { message: content }
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user'
+
+  // Parse agent messages to extract thinking and message
+  const parsedContent = useMemo(() => {
+    if (isUser) {
+      return { message: message.content }
+    }
+    return parseAgentMessage(message.content)
+  }, [message.content, isUser])
 
   // Format timestamp
   const formattedTime = useMemo(() => {
@@ -56,6 +91,19 @@ export function ChatMessage({ message }: ChatMessageProps) {
               : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-tl-sm border border-gray-200 dark:border-gray-700'
           )}
         >
+          {/* Thinking indicator (collapsed by default for agent messages) */}
+          {!isUser && parsedContent.thinking && (
+            <details className="mb-2 text-xs">
+              <summary className="cursor-pointer text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-300">
+                <Lightbulb className="w-3 h-3" />
+                <span>Ver razonamiento del agente</span>
+              </summary>
+              <div className="mt-2 p-2 bg-gray-200/50 dark:bg-gray-700/50 rounded text-gray-600 dark:text-gray-400 text-xs leading-relaxed">
+                {parsedContent.thinking}
+              </div>
+            </details>
+          )}
+
           {/* Message content */}
           <p
             className={cn(
@@ -63,7 +111,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               message.isStreaming && 'animate-pulse'
             )}
           >
-            {message.content}
+            {parsedContent.message}
             {message.isStreaming && (
               <span className="inline-block ml-1 animate-pulse">...</span>
             )}
