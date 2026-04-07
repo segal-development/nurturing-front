@@ -2,18 +2,23 @@
  * Editor de Plantillas SMS con React Hook Form + Zod
  * Validación en tiempo real de 160 caracteres máximo
  * Detección automática de caracteres especiales
+ * Soporte para variables dinámicas con autocompletado
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Info, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
 import { plantillaSMSSchema, type PlantillaSMSFormData } from '../schemas/plantillaSchemas'
 import { obtenerInfoCaracteresSMS } from '../utils/plantillaValidator'
+import { VariablesPanel } from './VariablesPanel'
+import { VariableAutocomplete } from './VariableAutocomplete'
+import { useVariables } from '../hooks/useVariables'
 
 interface SMSTemplateEditorProps {
   initialData?: Partial<PlantillaSMSFormData>
@@ -24,6 +29,11 @@ export function SMSTemplateEditor({
   initialData,
   onDataChange,
 }: SMSTemplateEditorProps) {
+  const [showVariablesPanel, setShowVariablesPanel] = useState(true)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [autocompletePos, setAutocompletePos] = useState({ top: 0, left: 0 })
+  const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0)
+
   const form = useForm<PlantillaSMSFormData>({
     resolver: zodResolver(plantillaSMSSchema) as any,
     mode: 'onChange',
@@ -36,12 +46,93 @@ export function SMSTemplateEditor({
     },
   })
 
+  // Variables hook for autocomplete
+  const {
+    filteredVariables,
+    showAutocomplete,
+    autocompleteFilter,
+    closeAutocomplete,
+    insertVariable,
+  } = useVariables()
+
   // Watch all relevant fields for changes
   const formValues = form.watch()
   const contenido = formValues.contenido || ''
 
   // Calcular información de caracteres
   const infoCaracteres = obtenerInfoCaracteresSMS(contenido)
+
+  // Handle variable insertion from panel
+  const handleInsertVariable = (variable: string) => {
+    const currentValue = form.getValues('contenido')
+    const newValue = insertVariable(variable, textareaRef.current)
+    if (newValue !== variable) {
+      form.setValue('contenido', newValue, { shouldValidate: true })
+    } else {
+      // Fallback: append at end if no textarea ref
+      form.setValue('contenido', currentValue + variable, { shouldValidate: true })
+    }
+  }
+
+  // Handle autocomplete selection
+  const handleAutocompleteSelect = (variable: { key: string }) => {
+    const currentValue = form.getValues('contenido')
+    const cursorPos = textareaRef.current?.selectionStart ?? currentValue.length
+    const textBeforeCursor = currentValue.substring(0, cursorPos)
+    const lastOpenBraces = textBeforeCursor.lastIndexOf('{{')
+
+    if (lastOpenBraces !== -1) {
+      const before = currentValue.substring(0, lastOpenBraces)
+      const after = currentValue.substring(cursorPos)
+      const variableTag = `{{${variable.key}}}`
+      const newValue = before + variableTag + after
+
+      form.setValue('contenido', newValue, { shouldValidate: true })
+
+      // Set cursor after the variable
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = lastOpenBraces + variableTag.length
+          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = newCursorPos
+          textareaRef.current.focus()
+        }
+      }, 0)
+    }
+
+    closeAutocomplete()
+  }
+
+  // Detect {{ typing for autocomplete
+  const [localShowAutocomplete, setLocalShowAutocomplete] = useState(false)
+  const [localAutocompleteFilter, setLocalAutocompleteFilter] = useState('')
+
+  const handleContenidoChange = (value: string, cursorPos: number) => {
+    const textBeforeCursor = value.substring(0, cursorPos)
+    const lastOpenBraces = textBeforeCursor.lastIndexOf('{{')
+
+    if (lastOpenBraces !== -1) {
+      const textAfterBraces = textBeforeCursor.substring(lastOpenBraces + 2)
+      const hasClosingBraces = textAfterBraces.includes('}}')
+
+      if (!hasClosingBraces && /^[a-zA-Z0-9_.]*$/.test(textAfterBraces)) {
+        setLocalAutocompleteFilter(textAfterBraces)
+        setLocalShowAutocomplete(true)
+        setSelectedAutocompleteIndex(0)
+        return
+      }
+    }
+
+    setLocalShowAutocomplete(false)
+  }
+
+  // Filter variables for local autocomplete
+  const localFilteredVariables = localAutocompleteFilter
+    ? filteredVariables.filter(
+        (v) =>
+          v.key.toLowerCase().includes(localAutocompleteFilter.toLowerCase()) ||
+          v.label.toLowerCase().includes(localAutocompleteFilter.toLowerCase())
+      )
+    : filteredVariables
 
   // Determinar color de la barra de progreso
   const obtenerColorProgreso = (): string => {
@@ -65,11 +156,36 @@ export function SMSTemplateEditor({
   }, [formValues.nombre, formValues.descripcion, formValues.contenido, formValues.activo, form.formState.isValid, onDataChange])
 
   return (
-    <Form {...form}>
-      <form className="space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">
-        {/* Información general */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Información General</h3>
+    <div className="flex gap-4">
+      {/* Main Form */}
+      <Form {...form}>
+        <form className="flex-1 space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">
+          {/* Header con toggle de variables */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Información General</h3>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowVariablesPanel(!showVariablesPanel)}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {showVariablesPanel ? (
+                <>
+                  <PanelRightClose className="h-4 w-4 mr-1" />
+                  Ocultar Variables
+                </>
+              ) : (
+                <>
+                  <PanelRightOpen className="h-4 w-4 mr-1" />
+                  Mostrar Variables
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Información general */}
+          <div className="space-y-4">
 
           {/* Nombre */}
           <FormField
@@ -193,18 +309,19 @@ export function SMSTemplateEditor({
             })()}
           </div>
 
-          {/* Textarea para contenido */}
+          {/* Textarea para contenido con autocompletado */}
           <FormField
             control={form.control}
             name="contenido"
             render={({ field, fieldState }) => (
-              <FormItem>
+              <FormItem className="relative">
                 <FormLabel className="text-sm font-semibold text-segal-dark dark:text-white">
                   Contenido <span className="text-segal-red dark:text-red-400">*</span>
                 </FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Escribe el contenido de tu SMS aquí..."
+                    ref={textareaRef}
+                    placeholder="Escribe el contenido de tu SMS aquí... Usa {{ para insertar variables"
                     className={`min-h-32 border-2 text-sm focus:outline-none transition-colors dark:bg-gray-800 dark:text-white ${
                       infoCaracteres.esValido && !fieldState.error
                         ? 'border-segal-blue/30 dark:border-gray-600 focus:border-segal-blue dark:focus:border-segal-turquoise focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20'
@@ -213,20 +330,57 @@ export function SMSTemplateEditor({
                     style={{ resize: 'vertical' }}
                     maxLength={160}
                     onChange={(e) => {
-                      // Truncar el valor si excede 160 caracteres
                       const truncatedValue = e.target.value.slice(0, 160)
                       e.target.value = truncatedValue
-                      // Usar solo field.onChange para evitar race conditions
                       field.onChange(e)
+                      // Check for autocomplete trigger
+                      handleContenidoChange(truncatedValue, e.target.selectionStart)
                     }}
-                    onBlur={field.onBlur}
+                    onKeyDown={(e) => {
+                      if (localShowAutocomplete) {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault()
+                          setSelectedAutocompleteIndex((prev) =>
+                            prev < Math.min(localFilteredVariables.length - 1, 14) ? prev + 1 : 0
+                          )
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault()
+                          setSelectedAutocompleteIndex((prev) =>
+                            prev > 0 ? prev - 1 : Math.min(localFilteredVariables.length - 1, 14)
+                          )
+                        } else if (e.key === 'Enter' || e.key === 'Tab') {
+                          if (localFilteredVariables.length > 0) {
+                            e.preventDefault()
+                            handleAutocompleteSelect(localFilteredVariables[selectedAutocompleteIndex])
+                          }
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault()
+                          setLocalShowAutocomplete(false)
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      field.onBlur()
+                      // Delay closing to allow click on autocomplete
+                      setTimeout(() => setLocalShowAutocomplete(false), 200)
+                    }}
                     value={field.value}
                     disabled={field.disabled}
                     name={field.name}
-                    ref={field.ref}
                   />
                 </FormControl>
                 <FormMessage />
+
+                {/* Autocomplete dropdown */}
+                {localShowAutocomplete && localFilteredVariables.length > 0 && (
+                  <VariableAutocomplete
+                    variables={localFilteredVariables}
+                    selectedIndex={selectedAutocompleteIndex}
+                    onSelect={handleAutocompleteSelect}
+                    onClose={() => setLocalShowAutocomplete(false)}
+                    filter={localAutocompleteFilter}
+                  />
+                )}
               </FormItem>
             )}
           />
@@ -254,7 +408,15 @@ export function SMSTemplateEditor({
             </div>
           )
         )}
-      </form>
-    </Form>
+        </form>
+      </Form>
+
+      {/* Variables Panel */}
+      {showVariablesPanel && (
+        <div className="w-72 shrink-0 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 overflow-hidden">
+          <VariablesPanel onInsertVariable={handleInsertVariable} />
+        </div>
+      )}
+    </div>
   )
 }

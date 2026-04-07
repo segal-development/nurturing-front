@@ -201,3 +201,22 @@ export interface PlantillaPreviewResponse {
   contenido: string // HTML para email, texto para SMS
   variables: string[] // Variables detectadas en la plantilla
 }
+
+/**
+ * Variable disponible para plantillas
+ */
+export interface VariableDisponible {
+  key: string
+  label: string
+  ejemplo: string
+  frecuencia?: number // Solo para variables de metadata
+}
+
+/**
+ * Respuesta del endpoint de variables disponibles
+ */
+export interface VariablesDisponiblesResponse {
+  basicas: VariableDisponible[]
+  sistema: VariableDisponible[]
+  metadata: VariableDisponible[]
+}

@@ -18,6 +18,7 @@ import type {
   GuardarPlantillaResponse,
   PlantillasResponse,
   PlantillaPreviewResponse,
+  VariablesDisponiblesResponse,
 } from '@/types/plantilla'
 
 // ============================================================================
@@ -331,6 +332,26 @@ export const plantillasService = {
       return response.data.data
     } catch (error: any) {
       logger.error(`plantillasService.getPreview(${id}) - Error:`, {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      })
+      throw error
+    }
+  },
+
+  /**
+   * Obtener las variables disponibles para plantillas
+   * GET /api/plantillas/variables-disponibles
+   */
+  async getVariablesDisponibles(): Promise<VariablesDisponiblesResponse> {
+    try {
+      logger.log('plantillasService.getVariablesDisponibles() - Obteniendo variables')
+      const response = await apiClient.get<{ data: VariablesDisponiblesResponse }>('/plantillas/variables-disponibles')
+
+      logger.log('plantillasService.getVariablesDisponibles() - Variables obtenidas')
+      return response.data.data
+    } catch (error: any) {
+      logger.error('plantillasService.getVariablesDisponibles() - Error:', {
         status: error.response?.status,
         message: error.response?.data?.message || error.message,
       })
