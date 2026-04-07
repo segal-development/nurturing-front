@@ -2,14 +2,17 @@
  * Editor de Plantillas Email tipo Mailchimp
  * Permite agregar componentes: logo, texto, botón, separador, footer
  * Con edición visual y preview en tiempo real
+ * Soporte para variables dinámicas
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Plus,
   Eye,
   AlertCircle,
   CheckCircle2,
+  PanelRightOpen,
+  PanelRightClose,
 } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -18,6 +21,8 @@ import { type PlantillaEmailFormData, type EmailComponentFormData } from '../sch
 import { validarPlantillaEmail } from '../utils/plantillaValidator'
 import { EmailComponentEditor } from './email/EmailComponentEditor'
 import { EmailPreview } from './email/EmailPreview'
+import { VariablesPanel } from './VariablesPanel'
+import { toast } from 'sonner'
 
 interface EmailTemplateEditorProps {
   initialData?: Partial<PlantillaEmailFormData>
@@ -32,6 +37,9 @@ export function EmailTemplateEditor({
 }: EmailTemplateEditorProps) {
   const [vistaActiva, setVistaActiva] = useState<VistaActiva>('editor')
   const [componenteSeleccionado, setComponenteSeleccionado] = useState<string | null>(null)
+  const [showVariablesPanel, setShowVariablesPanel] = useState(true)
+  const [activeField, setActiveField] = useState<'asunto' | 'componente' | null>(null)
+  const asuntoInputRef = useRef<HTMLInputElement>(null)
 
   // Estado local para la plantilla
   const [plantilla, setPlantilla] = useState<PlantillaEmailFormData>({
@@ -42,6 +50,54 @@ export function EmailTemplateEditor({
     asunto: initialData?.asunto || '',
     componentes: initialData?.componentes || [],
   })
+
+  /**
+   * Inserta una variable en el campo activo
+   */
+  const handleInsertVariable = (variable: string) => {
+    if (activeField === 'asunto' && asuntoInputRef.current) {
+      // Insertar en el asunto
+      const input = asuntoInputRef.current
+      const start = input.selectionStart ?? plantilla.asunto.length
+      const end = input.selectionEnd ?? plantilla.asunto.length
+      const newValue = plantilla.asunto.substring(0, start) + variable + plantilla.asunto.substring(end)
+      
+      setPlantilla({ ...plantilla, asunto: newValue })
+      
+      // Restaurar cursor
+      setTimeout(() => {
+        input.selectionStart = input.selectionEnd = start + variable.length
+        input.focus()
+      }, 0)
+      
+      toast.success(`Variable insertada en el asunto`, { duration: 1500 })
+    } else if (activeField === 'componente' && componenteSeleccionado) {
+      // Insertar en el componente de texto seleccionado
+      const componente = plantilla.componentes.find(c => c.id === componenteSeleccionado)
+      if (componente && componente.tipo === 'texto') {
+        const textoActual = componente.contenido?.texto || ''
+        const nuevoTexto = textoActual + variable
+        
+        setPlantilla({
+          ...plantilla,
+          componentes: plantilla.componentes.map(c =>
+            c.id === componenteSeleccionado
+              ? { ...c, contenido: { ...c.contenido, texto: nuevoTexto } }
+              : c
+          ),
+        })
+        
+        toast.success(`Variable insertada en el componente de texto`, { duration: 1500 })
+      } else {
+        toast.info('Selecciona un componente de texto para insertar la variable', { duration: 2000 })
+      }
+    } else {
+      // Si no hay campo activo, intentar insertar en el asunto
+      const newValue = plantilla.asunto + variable
+      setPlantilla({ ...plantilla, asunto: newValue })
+      toast.success(`Variable insertada en el asunto`, { duration: 1500 })
+    }
+  }
 
   // Notificar cambios al componente padre
   useEffect(() => {
@@ -144,10 +200,35 @@ export function EmailTemplateEditor({
   }
 
   return (
-    <div className="space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">
-      {/* Información general */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Información General</h3>
+    <div className="flex gap-4">
+      {/* Main Editor */}
+      <div className="flex-1 space-y-6 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 p-6">
+        {/* Header con toggle de variables */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Información General</h3>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowVariablesPanel(!showVariablesPanel)}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            {showVariablesPanel ? (
+              <>
+                <PanelRightClose className="h-4 w-4 mr-1" />
+                Ocultar Variables
+              </>
+            ) : (
+              <>
+                <PanelRightOpen className="h-4 w-4 mr-1" />
+                Mostrar Variables
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Información general */}
+        <div className="space-y-4">
 
         {/* Nombre */}
         <div className="space-y-2">
@@ -173,15 +254,17 @@ export function EmailTemplateEditor({
             Asunto del Email <span className="text-segal-red dark:text-red-400">*</span>
           </Label>
           <Input
+            ref={asuntoInputRef}
             id="email-asunto"
             value={plantilla.asunto}
             onChange={handleAsuntoChange}
-            placeholder="Ej: Bienvenido a nuestro servicio"
+            onFocus={() => setActiveField('asunto')}
+            placeholder="Ej: Bienvenido a nuestro servicio - Usa {{ para variables"
             className="border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
             maxLength={200}
           />
           <p className="text-xs text-segal-dark/60 dark:text-gray-400">
-            {plantilla.asunto.length}/200 caracteres
+            {plantilla.asunto.length}/200 caracteres • Usa variables como {`{{nombre}}`} para personalizar
           </p>
         </div>
 
@@ -325,7 +408,12 @@ export function EmailTemplateEditor({
                     key={componente.id}
                     componente={componente}
                     isSeleccionado={componenteSeleccionado === componente.id}
-                    onSelect={() => setComponenteSeleccionado(componente.id)}
+                    onSelect={() => {
+                      setComponenteSeleccionado(componente.id)
+                      if (componente.tipo === 'texto') {
+                        setActiveField('componente')
+                      }
+                    }}
                     onUpdate={actualizarComponente}
                     onDelete={() => eliminarComponente(componente.id)}
                     onMoveUp={index > 0 ? () => moverComponenteArriba(index) : undefined}
@@ -394,6 +482,14 @@ export function EmailTemplateEditor({
         <div className="flex gap-2 items-center bg-segal-green/10 dark:bg-green-950/30 border border-segal-green/30 dark:border-green-800 rounded-lg p-4">
           <CheckCircle2 className="h-5 w-5 text-segal-green dark:text-green-400 shrink-0" />
           <p className="text-sm text-segal-green dark:text-green-400 font-medium">Plantilla Email válida</p>
+        </div>
+      )}
+      </div>
+
+      {/* Variables Panel */}
+      {showVariablesPanel && (
+        <div className="w-72 shrink-0 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 overflow-hidden h-fit max-h-[80vh] sticky top-4">
+          <VariablesPanel onInsertVariable={handleInsertVariable} />
         </div>
       )}
     </div>
