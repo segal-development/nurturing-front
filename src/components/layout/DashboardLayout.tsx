@@ -28,6 +28,7 @@ import { useSidebar } from '@/hooks/useSidebar'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { SidebarToggle } from '@/components/sidebar/SidebarToggle'
 import { ImportacionIndicator } from '@/components/shared/ImportacionIndicator'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 const NAVIGATION_ITEMS = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -57,7 +58,9 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
+    <>
+      <OfflineBanner />
+      <div className="flex h-screen bg-white dark:bg-slate-950 transition-colors duration-300">
       {/* Sidebar */}
       <div className={cn(
         'flex w-64 flex-col border-r border-segal-blue/10 bg-white dark:border-slate-700 dark:bg-slate-900 transition-all duration-300',
@@ -184,5 +187,6 @@ export function DashboardLayout() {
         </main>
       </div>
     </div>
+    </>
   )
 }
