@@ -195,18 +195,22 @@ export function CreateFlujoWithBuilder({
   }, [open])
 
   /**
-   * Obtiene el nombre de un origen por su ID
+   * Obtiene el origen completo por su ID
+   * Retorna undefined si no se encuentra
    */
-  const getOriginNameById = (originId: string): string | null => {
-    return opciones?.origenes?.find((o) => o.id === originId)?.nombre ?? null
+  const getOriginById = (originId: string) => {
+    return opciones?.origenes?.find((o) => o.id === originId)
   }
 
   /**
    * Selecciona un origen y avanza al paso de selección de lotes
+   * Si el origen no se encuentra en opciones (race condition), usa el ID como fallback
    */
   const handleOriginSelect = (originId: string) => {
+    const origin = getOriginById(originId)
     setSelectedOriginId(originId)
-    setSelectedOriginName(getOriginNameById(originId))
+    // Usa el nombre del origen si existe, sino usa el ID como fallback
+    setSelectedOriginName(origin?.nombre ?? originId)
     setSelectedLoteIds(new Set()) // Reset lote selection
     setError(null)
     setCurrentStep('lotes')
@@ -288,6 +292,7 @@ export function CreateFlujoWithBuilder({
 
   /**
    * Maneja la apertura del diálogo y carga origen inicial si existe
+   * IMPORTANTE: Espera a que opciones esté disponible antes de seleccionar automáticamente
    */
   useEffect(() => {
     if (!open) return
@@ -303,12 +308,13 @@ export function CreateFlujoWithBuilder({
     setError(null)
     setFlujoCreado(null)
 
-    // Si hay origen inicial, lo carga automáticamente
-    if (initialOriginId) {
+    // Si hay origen inicial Y opciones están cargadas, lo carga automáticamente
+    // Si opciones no está listo, el siguiente useEffect lo manejará cuando cargue
+    if (initialOriginId && opciones?.origenes?.length) {
       handleOriginSelect(initialOriginId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleOriginSelect is stable in intent, recreated per render
-  }, [open, initialOriginId])
+  }, [open, initialOriginId, opciones?.origenes?.length])
 
   /**
    * Valida y avanza a step de builder CON prospectos
@@ -580,7 +586,7 @@ export function CreateFlujoWithBuilder({
                 {currentStep === 'origin' &&
                   'Selecciona el origen de datos para obtener los prospectos'}
                 {currentStep === 'lotes' &&
-                  `${selectedOriginName} - Selecciona lotes específicos o usa todos`}
+                  `${selectedOriginName ?? 'Origen'} - Selecciona lotes específicos o usa todos`}
                 {currentStep === 'prospects' &&
                   `${selectedOriginName} - Elige qué prospectos incluir en el flujo`}
                 {currentStep === 'builder' &&

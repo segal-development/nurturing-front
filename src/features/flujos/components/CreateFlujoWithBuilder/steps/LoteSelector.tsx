@@ -85,12 +85,12 @@ export function LoteSelector({
       <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 p-8">
-            <div className="h-16 w-16 rounded-full bg-segal-blue/10 flex items-center justify-center">
+            <div className="h-16 w-16 rounded-full bg-segal-blue/10 dark:bg-segal-blue/20 flex items-center justify-center">
               <Loader2 className="h-8 w-8 text-segal-blue animate-spin" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-segal-dark">Cargando Lotes</h3>
-              <p className="text-sm text-segal-dark/60">
+              <h3 className="text-lg font-semibold text-segal-dark dark:text-segal-light">Cargando Lotes</h3>
+              <p className="text-sm text-segal-dark/60 dark:text-segal-light/60">
                 Obteniendo los lotes de {originName}...
               </p>
             </div>
@@ -105,12 +105,12 @@ export function LoteSelector({
     return (
       <div className="flex flex-col h-full p-6">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-red-600">
+          <div className="text-center text-red-600 dark:text-red-400">
             <p>Error al cargar los lotes</p>
             <p className="text-sm">{String(error)}</p>
           </div>
         </div>
-        <div className="flex justify-between gap-3 pt-6 border-t">
+        <div className="flex justify-between gap-3 pt-6 border-t border-segal-blue/10 dark:border-segal-blue/30">
           <Button variant="outline" onClick={onBack}>
             Atrás
           </Button>
@@ -127,13 +127,13 @@ export function LoteSelector({
     return (
       <div className="flex flex-col h-full p-6">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-segal-dark/60">
+          <div className="text-center text-segal-dark/60 dark:text-segal-light/60">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron lotes para este origen</p>
             <p className="text-sm mt-2">Podés continuar sin seleccionar lotes y agregarlos después</p>
           </div>
         </div>
-        <div className="flex justify-between gap-3 pt-6 border-t">
+        <div className="flex justify-between gap-3 pt-6 border-t border-segal-blue/10 dark:border-segal-blue/30">
           <Button variant="outline" onClick={onBack}>
             Atrás
           </Button>
@@ -159,11 +159,11 @@ export function LoteSelector({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-segal-dark/60">Origen seleccionado</p>
-            <p className="text-lg font-bold text-segal-dark">{originName}</p>
+            <p className="text-sm text-segal-dark/60 dark:text-segal-light/60">Origen seleccionado</p>
+            <p className="text-lg font-bold text-segal-dark dark:text-segal-light">{originName}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-segal-dark/60">Total en origen</p>
+            <p className="text-sm text-segal-dark/60 dark:text-segal-light/60">Total en origen</p>
             <p className="text-lg font-bold text-segal-blue">
               {totalProspectos.toLocaleString('es-CL')} prospectos
             </p>
@@ -171,14 +171,14 @@ export function LoteSelector({
         </div>
 
         {/* Select all / Skip option */}
-        <div className="flex items-center justify-between bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+        <div className="flex items-center justify-between bg-segal-blue/5 dark:bg-segal-blue/10 rounded-lg p-3 border border-segal-blue/10 dark:border-segal-blue/30">
           <label className="flex items-center gap-3 cursor-pointer">
             <Checkbox
               checked={selectAll}
               onCheckedChange={handleToggleSelectAll}
               className="border-segal-blue data-[state=checked]:bg-segal-blue"
             />
-            <span className="text-sm font-medium text-segal-dark">
+            <span className="text-sm font-medium text-segal-dark dark:text-segal-light">
               Seleccionar todos los lotes ({lotes.length})
             </span>
           </label>
@@ -216,11 +216,11 @@ export function LoteSelector({
         )}
 
         {/* Summary */}
-        <div className="bg-segal-green/10 border border-segal-green/30 rounded-lg p-4">
+        <div className="bg-segal-green/10 dark:bg-segal-green/20 border border-segal-green/30 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-segal-green" />
-              <span className="font-medium text-segal-dark">
+              <span className="font-medium text-segal-dark dark:text-segal-light">
                 {selectedLoteIds.size} lotes seleccionados
                 {selectedNivelDeuda.size > 0 && ` · ${selectedNivelDeuda.size} niveles de deuda`}
               </span>
@@ -233,19 +233,17 @@ export function LoteSelector({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-segal-blue/10 bg-white p-6 flex justify-between gap-3">
+      <div className="border-t border-segal-blue/10 dark:border-segal-blue/30 bg-white dark:bg-gray-900 p-6 flex justify-between gap-3">
         <div className="flex gap-3">
           <Button
             variant="outline"
             onClick={onBack}
-            className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
           >
             Atrás
           </Button>
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
           >
             Cancelar
           </Button>
@@ -289,8 +287,8 @@ function LoteCard({
         w-full p-4 rounded-lg border-2 text-left transition-all duration-200
         ${
           isSelected
-            ? 'border-segal-blue bg-segal-blue/5 shadow-sm'
-            : 'border-segal-blue/20 bg-white hover:border-segal-blue/40'
+            ? 'border-segal-blue bg-segal-blue/5 dark:bg-segal-blue/10 shadow-sm'
+            : 'border-segal-blue/20 dark:border-segal-blue/40 bg-white dark:bg-gray-800 hover:border-segal-blue/40 dark:hover:border-segal-blue/60'
         }
       `}
     >
@@ -302,9 +300,9 @@ function LoteCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
-              <h4 className="font-semibold text-segal-dark truncate">{lote.nombre}</h4>
+              <h4 className="font-semibold text-segal-dark dark:text-segal-light truncate">{lote.nombre}</h4>
               {lote.clasificacion_value && (
-                <span className="bg-segal-dark/10 px-2 py-0.5 rounded text-xs text-segal-dark/60">
+                <span className="bg-segal-dark/10 dark:bg-segal-light/10 px-2 py-0.5 rounded text-xs text-segal-dark/60 dark:text-segal-light/60">
                   {lote.clasificacion_value}
                 </span>
               )}
