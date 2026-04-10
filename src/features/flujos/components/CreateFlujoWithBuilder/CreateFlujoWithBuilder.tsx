@@ -570,19 +570,19 @@ export function CreateFlujoWithBuilder({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[90vw] h-[90vh] bg-white border border-segal-blue/20 shadow-2xl p-0">
+      <DialogContent className="w-[90vw] h-[90vh] bg-white dark:bg-gray-900 border border-segal-blue/20 dark:border-segal-blue/40 shadow-2xl p-0">
         {/* Header */}
-        <DialogHeader className="border-b border-segal-blue/10 px-6 py-4 sticky top-0 bg-white z-10">
+        <DialogHeader className="border-b border-segal-blue/10 dark:border-segal-blue/30 px-6 py-4 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl font-bold text-segal-dark">
+              <DialogTitle className="text-2xl font-bold text-segal-dark dark:text-segal-light">
                 {currentStep === 'origin' && 'Crear Nuevo Flujo'}
                 {currentStep === 'lotes' && 'Selecciona Lotes'}
                 {currentStep === 'prospects' && 'Selecciona Prospectos'}
                 {currentStep === 'builder' && 'Constructor de Flujos'}
                 {currentStep === 'processing' && 'Procesando Flujo'}
               </DialogTitle>
-              <DialogDescription className="text-segal-dark/70 mt-1">
+              <DialogDescription className="text-segal-dark/70 dark:text-segal-light/70 mt-1">
                 {currentStep === 'origin' &&
                   'Selecciona el origen de datos para obtener los prospectos'}
                 {currentStep === 'lotes' &&
@@ -690,7 +690,7 @@ export function CreateFlujoWithBuilder({
         {/* Loading overlay */}
         {saving && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-            <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-3">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 flex flex-col items-center gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-segal-blue" />
               <p className="text-segal-dark font-semibold">Creando flujo...</p>
             </div>

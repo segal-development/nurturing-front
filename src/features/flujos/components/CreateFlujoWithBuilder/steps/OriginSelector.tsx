@@ -29,15 +29,15 @@ export function OriginSelector({
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 p-8">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full bg-segal-blue/10 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-segal-blue/10 dark:bg-segal-blue/20 flex items-center justify-center">
                 <Loader2 className="h-8 w-8 text-segal-blue animate-spin" />
               </div>
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-segal-dark">
+              <h3 className="text-lg font-semibold text-segal-dark dark:text-segal-light">
                 Cargando Prospectos
               </h3>
-              <p className="text-sm text-segal-dark/60 max-w-xs">
+              <p className="text-sm text-segal-dark/60 dark:text-segal-light/60 max-w-xs">
                 Obteniendo la lista de prospectos del origen seleccionado...
               </p>
             </div>
@@ -57,20 +57,20 @@ export function OriginSelector({
               key={origin.id}
               onClick={() => onSelect(origin.id)}
               disabled={loading}
-              className="p-6 rounded-lg border-2 border-segal-blue/20 bg-white hover:border-segal-blue/40 hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-6 rounded-lg border-2 border-segal-blue/20 dark:border-segal-blue/40 bg-white dark:bg-gray-800 hover:border-segal-blue/40 dark:hover:border-segal-blue/60 hover:shadow-md transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h3 className="font-bold text-lg text-segal-dark">{origin.nombre}</h3>
-                  <p className="text-sm text-segal-dark/60 mt-1">
+                  <h3 className="font-bold text-lg text-segal-dark dark:text-segal-light">{origin.nombre}</h3>
+                  <p className="text-sm text-segal-dark/60 dark:text-segal-light/60 mt-1">
                     {origin.total_flujos} flujos existentes
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-segal-blue/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-segal-blue/10 dark:bg-segal-blue/20">
                   <span className="text-sm font-bold text-segal-blue">📊</span>
                 </div>
               </div>
-              <p className="text-xs text-segal-dark/50 mt-3">
+              <p className="text-xs text-segal-dark/50 dark:text-segal-light/50 mt-3">
                 Click para seleccionar este origen
               </p>
             </button>
@@ -79,18 +79,17 @@ export function OriginSelector({
 
         {/* Empty state */}
         {!opciones?.origenes || opciones.origenes.length === 0 && (
-          <div className="rounded-lg bg-segal-blue/5 border border-segal-blue/10 p-6 text-center">
-            <p className="text-segal-dark/60">No hay orígenes disponibles</p>
+          <div className="rounded-lg bg-segal-blue/5 dark:bg-segal-blue/10 border border-segal-blue/10 dark:border-segal-blue/30 p-6 text-center">
+            <p className="text-segal-dark/60 dark:text-segal-light/60">No hay orígenes disponibles</p>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="border-t border-segal-blue/10 bg-white p-6 flex justify-between gap-3">
+      <div className="border-t border-segal-blue/10 dark:border-segal-blue/30 bg-white dark:bg-gray-900 p-6 flex justify-between gap-3">
         <Button
           variant="outline"
           onClick={onClose}
-          className="border-segal-blue/20 text-segal-blue hover:bg-segal-blue/5"
         >
           Cancelar
         </Button>
@@ -100,7 +99,7 @@ export function OriginSelector({
           <Button
             variant="outline"
             onClick={onSkipToBuilder}
-            className="border-amber-500/30 text-amber-600 hover:bg-amber-50"
+            className="border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
           >
             Crear flujo vacío (sin prospectos)
           </Button>
