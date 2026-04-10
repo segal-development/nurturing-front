@@ -130,9 +130,12 @@ export function Flujos() {
 
   /**
    * Abre modal para crear nuevo flujo con origen preseleccionado si existe
+   * No preselecciona si el filtro actual es un valor especial (_todos, _sin_origen)
    */
   const handleCreateFlujo = () => {
-    setInitialOriginIdForCreation(filtros.origenId)
+    // Solo preseleccionar si es un origen real (no valores especiales de filtro)
+    const isRealOrigin = filtros.origenId && !filtros.origenId.startsWith('_')
+    setInitialOriginIdForCreation(isRealOrigin ? filtros.origenId : null)
     setCreateDialogOpen(true)
   }
 
