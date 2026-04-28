@@ -1030,49 +1030,20 @@ function FlowExecutionContent({
             </span>
           </div>
 
-          {/* Progreso de envíos (más detallado) */}
-          {executionData?.progreso_envios && (
+          {/* Progreso - solo barra y porcentaje */}
+          {(executionData?.progreso_envios || executionData?.progreso) && (
             <div className="px-4 py-3 border-b border-segal-blue/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-segal-dark/70">Progreso</span>
-                <span className="text-xs font-semibold text-segal-blue">{executionData.progreso_envios.porcentaje}%</span>
+                <span className="text-xs font-semibold text-segal-blue">
+                  {executionData.progreso_envios?.porcentaje ?? executionData.progreso?.porcentaje}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${executionData.progreso_envios.porcentaje}%` }}
+                  style={{ width: `${executionData.progreso_envios?.porcentaje ?? executionData.progreso?.porcentaje}%` }}
                 />
-              </div>
-              <div className="flex flex-col gap-1 mt-2 text-xs text-segal-dark/60">
-                <div className="flex justify-between">
-                  <span>✅ {executionData.progreso_envios.exitosos?.toLocaleString()} enviados</span>
-                  <span>❌ {executionData.progreso_envios.fallidos?.toLocaleString()} fallidos</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>📊 {executionData.progreso_envios.procesados?.toLocaleString()} / {executionData.progreso_envios.total_prospectos?.toLocaleString()}</span>
-                  <span>⏱️ {executionData.progreso_envios.tiempo_restante_texto}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Progreso de etapas (secundario) */}
-          {executionData?.progreso && !executionData?.progreso_envios && (
-            <div className="px-4 py-3 border-b border-segal-blue/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-segal-dark/70">Progreso</span>
-                <span className="text-xs font-semibold text-segal-blue">{executionData.progreso.porcentaje}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                <div
-                  className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${executionData.progreso.porcentaje}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-segal-dark/60">
-                <span>✅ {executionData.progreso.completadas}</span>
-                <span>⏳ {executionData.progreso.pendientes}</span>
-                <span>❌ {executionData.progreso.fallidas}</span>
               </div>
             </div>
           )}
@@ -1153,14 +1124,14 @@ function FlowExecutionContent({
           />
         )}
 
-        {/* Etapas compactas - horizontal badges */}
-        {executionData?.etapas && executionData.etapas.length > 0 && (
+        {/* Etapa seleccionada - solo muestra la etapa del nodo clickeado */}
+        {selectedNodeId && selectedStage && (
           <div className="bg-white rounded-lg shadow-lg p-3 border border-segal-blue/20 min-w-64 max-w-sm">
-            <p className="text-xs font-semibold text-segal-dark mb-2">Etapas ({executionData.etapas.length})</p>
+            <p className="text-xs font-semibold text-segal-dark mb-2">Etapa seleccionada</p>
             <div className="flex flex-wrap gap-1.5">
-              {executionData.etapas.map(stage => {
+              {(() => {
                 const getStatusStyle = () => {
-                  switch (stage.estado) {
+                  switch (selectedStage.estado) {
                     case 'completed':
                       return 'bg-green-100 text-green-700 border-green-200'
                     case 'executing':
@@ -1172,7 +1143,7 @@ function FlowExecutionContent({
                   }
                 }
                 const getStatusIcon = () => {
-                  switch (stage.estado) {
+                  switch (selectedStage.estado) {
                     case 'completed': return '✓'
                     case 'executing': return '⚡'
                     case 'failed': return '✗'
@@ -1180,26 +1151,17 @@ function FlowExecutionContent({
                   }
                 }
 
-                // Obtener el label del nodo (nombre legible)
-                const nodeLabel = nodeLabelsByNodeId.get(stage.node_id) || stage.node_id
-                const isSelected = selectedNodeId === stage.node_id
+                const nodeLabel = nodeLabelsByNodeId.get(selectedStage.node_id) || selectedStage.node_id
 
                 return (
-                  <button
-                    key={stage.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedNodeId(stage.node_id)
-                      setSelectedStage(stage)
-                    }}
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border hover:opacity-80 transition-opacity ${getStatusStyle()} ${isSelected ? 'ring-2 ring-segal-blue ring-offset-1' : ''}`}
-                    title={`${nodeLabel} - ${stage.estado}`}
+                  <div
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ring-2 ring-segal-blue ring-offset-1 ${getStatusStyle()}`}
                   >
                     <span>{getStatusIcon()}</span>
-                    <span className="truncate max-w-[60px]">{nodeLabel}</span>
-                  </button>
+                    <span>{nodeLabel}</span>
+                  </div>
                 )
-              })}
+              })()}
             </div>
           </div>
         )}
