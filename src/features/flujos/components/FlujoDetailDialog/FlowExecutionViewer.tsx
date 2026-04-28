@@ -1030,21 +1030,47 @@ function FlowExecutionContent({
             </span>
           </div>
 
-          {/* Progreso - solo barra y porcentaje */}
-          {(executionData?.progreso_envios || executionData?.progreso) && (
+          {/* Progreso - basado en nodo seleccionado o progreso general */}
+          {executionData?.etapas && executionData.etapas.length > 0 && (
             <div className="px-4 py-3 border-b border-segal-blue/10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-segal-dark/70">Progreso</span>
-                <span className="text-xs font-semibold text-segal-blue">
-                  {executionData.progreso_envios?.porcentaje ?? executionData.progreso?.porcentaje}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                <div
-                  className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${executionData.progreso_envios?.porcentaje ?? executionData.progreso?.porcentaje}%` }}
-                />
-              </div>
+              {(() => {
+                const totalEtapas = executionData.etapas.length
+                let porcentaje: number
+                let label: string
+
+                if (selectedNodeId && selectedStage) {
+                  // Calcular posición del nodo seleccionado en el orden de ejecución
+                  const sortedEtapas = [...executionData.etapas].sort((a, b) => {
+                    // Ordenar por fecha_programada o por orden en el array
+                    if (a.fecha_programada && b.fecha_programada) {
+                      return new Date(a.fecha_programada).getTime() - new Date(b.fecha_programada).getTime()
+                    }
+                    return 0
+                  })
+                  const posicion = sortedEtapas.findIndex(e => e.node_id === selectedNodeId) + 1
+                  porcentaje = Math.round((posicion / totalEtapas) * 100)
+                  label = `Etapa ${posicion} de ${totalEtapas}`
+                } else {
+                  // Progreso general
+                  porcentaje = executionData.progreso_envios?.porcentaje ?? executionData.progreso?.porcentaje ?? 0
+                  label = 'Progreso general'
+                }
+
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-segal-dark/70">{label}</span>
+                      <span className="text-xs font-semibold text-segal-blue">{porcentaje}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div
+                        className="bg-segal-blue h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${porcentaje}%` }}
+                      />
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           )}
 
