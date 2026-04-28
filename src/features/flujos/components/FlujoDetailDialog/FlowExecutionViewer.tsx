@@ -209,168 +209,276 @@ function StageDetailPanel({
 /**
  * Panel inline que muestra estadísticas del nodo seleccionado
  * Se muestra en el panel lateral cuando el usuario hace click en un nodo
+ * 
+ * Diseño: Funnel visual que muestra la conversión Enviados → Abiertos → Clicks
+ * con métricas de salud (tasa de entrega, apertura, clicks) coloreadas por umbral
  */
 interface SelectedNodePanelProps {
   nodeId: string | null
   stage: StageExecution | null
   nodeLabel: string
   onClear: () => void
-  onViewDetail: () => void
 }
 
-function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear, onViewDetail }: SelectedNodePanelProps) {
+/**
+ * Obtiene el color según el valor del porcentaje y los umbrales
+ * Verde >= bueno, Amarillo >= regular, Rojo < regular
+ */
+function getHealthColor(value: number, goodThreshold: number, regularThreshold: number): string {
+  if (value >= goodThreshold) return 'text-green-600'
+  if (value >= regularThreshold) return 'text-amber-600'
+  return 'text-red-600'
+}
+
+function getHealthBgColor(value: number, goodThreshold: number, regularThreshold: number): string {
+  if (value >= goodThreshold) return 'bg-green-50 border-green-200'
+  if (value >= regularThreshold) return 'bg-amber-50 border-amber-200'
+  return 'bg-red-50 border-red-200'
+}
+
+function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear }: SelectedNodePanelProps) {
   if (!nodeId) return null
 
-  const getStateIcon = () => {
-    if (!stage) return <AlertCircle className="h-5 w-5 text-gray-400" />
+  // Estado visual config
+  const getStateConfig = () => {
+    if (!stage) return { 
+      label: 'Sin ejecución', 
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-600',
+      dotColor: 'bg-gray-400'
+    }
     switch (stage.estado) {
       case 'completed':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />
+        return { 
+          label: 'Completada', 
+          bgColor: 'bg-green-100',
+          textColor: 'text-green-700',
+          dotColor: 'bg-green-500'
+        }
       case 'executing':
-        return <Loader2 className="h-5 w-5 text-amber-600 animate-spin" />
+        return { 
+          label: 'Ejecutándose', 
+          bgColor: 'bg-amber-100',
+          textColor: 'text-amber-700',
+          dotColor: 'bg-amber-500 animate-pulse'
+        }
       case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-600" />
+        return { 
+          label: 'Falló', 
+          bgColor: 'bg-red-100',
+          textColor: 'text-red-700',
+          dotColor: 'bg-red-500'
+        }
+      case 'paused':
+        return { 
+          label: 'Pausada', 
+          bgColor: 'bg-orange-100',
+          textColor: 'text-orange-700',
+          dotColor: 'bg-orange-500'
+        }
       default:
-        return <AlertCircle className="h-5 w-5 text-gray-400" />
+        return { 
+          label: 'Pendiente', 
+          bgColor: 'bg-gray-100',
+          textColor: 'text-gray-600',
+          dotColor: 'bg-gray-400'
+        }
     }
   }
 
-  const getStateLabel = () => {
-    if (!stage) return 'Sin ejecución'
-    switch (stage.estado) {
-      case 'pending':
-        return 'Pendiente'
-      case 'executing':
-        return 'Ejecutándose'
-      case 'completed':
-        return 'Completada'
-      case 'failed':
-        return 'Falló'
-      default:
-        return 'Desconocido'
-    }
-  }
+  const stateConfig = getStateConfig()
 
-  const getStateBgColor = () => {
-    if (!stage) return 'bg-gray-50 border-gray-200'
-    switch (stage.estado) {
-      case 'completed':
-        return 'bg-green-50 border-green-200'
-      case 'executing':
-        return 'bg-amber-50 border-amber-200'
-      case 'failed':
-        return 'bg-red-50 border-red-200'
-      default:
-        return 'bg-gray-50 border-gray-200'
-    }
+  // Calcular métricas del funnel
+  const envios = stage?.envios
+  const enviados = envios?.enviado || 0
+  const fallidos = envios?.fallido || 0
+  const abiertos = envios?.abierto || 0
+  const clickeados = envios?.clickeado || 0
+  const pendientes = envios?.pendiente || 0
+  
+  // Tasas de conversión
+  const totalProcesados = enviados + fallidos
+  const tasaEntrega = totalProcesados > 0 ? (enviados / totalProcesados) * 100 : 0
+  const tasaApertura = enviados > 0 ? (abiertos / enviados) * 100 : 0
+  const tasaClicks = abiertos > 0 ? (clickeados / abiertos) * 100 : 0
+
+  // Porcentajes para las barras del funnel (relativo al máximo = enviados)
+  const maxValue = Math.max(enviados, 1) // Evitar división por 0
+  const abiertosPercent = (abiertos / maxValue) * 100
+  const clicksPercent = (clickeados / maxValue) * 100
+
+  // Formato de fecha legible
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('es-CL', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }) + ' ' + date.toLocaleTimeString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   return (
-    <div className={`rounded-lg border-2 p-4 ${getStateBgColor()} transition-all duration-200`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {getStateIcon()}
-          <div>
-            <p className="font-semibold text-segal-dark text-sm truncate max-w-[150px]" title={nodeLabel}>
+    <div className="rounded-lg border-2 bg-white border-segal-blue/20 overflow-hidden shadow-lg transition-all duration-200 w-64">
+      {/* Header con nombre y estado */}
+      <div className="px-3 py-2.5 bg-gradient-to-r from-segal-blue/5 to-transparent border-b border-segal-blue/10">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-segal-dark text-sm truncate" title={nodeLabel}>
               {nodeLabel}
             </p>
-            <p className="text-xs text-segal-dark/60">{getStateLabel()}</p>
+            {/* Badge de estado */}
+            <span className={`inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${stateConfig.bgColor} ${stateConfig.textColor}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${stateConfig.dotColor}`} />
+              {stateConfig.label}
+            </span>
           </div>
+          <button
+            onClick={onClear}
+            className="text-segal-dark/40 hover:text-segal-dark/70 transition-colors p-1 -mr-1 -mt-0.5"
+            title="Cerrar"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          onClick={onClear}
-          className="text-segal-dark/40 hover:text-segal-dark/70 transition-colors p-1"
-          title="Cerrar detalle"
-        >
-          ✕
-        </button>
+
+        {/* Fecha de ejecución */}
+        {stage?.fecha_ejecucion && (
+          <p className="text-xs text-segal-dark/60 mt-1.5">
+            📅 {formatDate(stage.fecha_ejecucion)}
+          </p>
+        )}
+        {stage?.fecha_programada && !stage?.fecha_ejecucion && (
+          <p className="text-xs text-amber-600 mt-1.5">
+            ⏳ Programado: {formatDate(stage.fecha_programada)}
+          </p>
+        )}
       </div>
 
-      {/* Fecha de ejecución */}
-      {stage?.fecha_ejecucion && (
-        <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-100">
-          <p className="text-xs text-blue-600 font-medium">📅 Ejecutado</p>
-          <p className="text-sm font-semibold text-blue-800">
-            {new Date(stage.fecha_ejecucion).toLocaleDateString('es-CL', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-            {' '}
-            <span className="text-blue-600 font-normal">
-              {new Date(stage.fecha_ejecucion).toLocaleTimeString('es-CL', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </p>
+      {/* Error message si falló */}
+      {stage?.error_mensaje && (
+        <div className="px-3 py-2 bg-red-50 border-b border-red-200">
+          <p className="text-xs text-red-700 font-medium">⚠️ Error:</p>
+          <p className="text-xs text-red-600 mt-0.5 line-clamp-2">{stage.error_mensaje}</p>
         </div>
       )}
 
-      {/* Fecha programada si no se ejecutó aún */}
-      {stage?.fecha_programada && !stage?.fecha_ejecucion && (
-        <div className="mb-3 p-2 bg-amber-50 rounded-lg border border-amber-100">
-          <p className="text-xs text-amber-600 font-medium">⏳ Programado para</p>
-          <p className="text-sm font-semibold text-amber-800">
-            {new Date(stage.fecha_programada).toLocaleDateString('es-CL', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-            {' '}
-            <span className="text-amber-600 font-normal">
-              {new Date(stage.fecha_programada).toLocaleTimeString('es-CL', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
+      {/* Funnel Visual */}
+      {envios && enviados > 0 ? (
+        <div className="px-3 py-3 space-y-2">
+          <p className="text-xs font-semibold text-segal-dark/70 uppercase tracking-wide mb-2">
+            Funnel de conversión
           </p>
-        </div>
-      )}
-
-      {/* Stats del nodo seleccionado */}
-      {stage?.envios && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-segal-dark/70 uppercase tracking-wide">Estadísticas</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
-              <span className="text-green-700">✓ Enviados</span>
-              <span className="font-bold text-green-700">{stage.envios.enviado?.toLocaleString()}</span>
+          
+          {/* Enviados - Base del funnel (100%) */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-segal-dark font-medium">
+                📤 Enviados
+              </span>
+              <span className="font-bold text-segal-dark">{enviados.toLocaleString()}</span>
             </div>
-            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
-              <span className="text-red-700">✗ Fallidos</span>
-              <span className="font-bold text-red-700">{stage.envios.fallido?.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
-              <span className="text-amber-700">⏳ Pendientes</span>
-              <span className="font-bold text-amber-700">{stage.envios.pendiente?.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between bg-white/50 rounded px-2 py-1.5">
-              <span className="text-blue-700">📧 Abiertos</span>
-              <span className="font-bold text-blue-700">{stage.envios.abierto?.toLocaleString()}</span>
+            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-segal-blue h-full rounded-full transition-all duration-500"
+                style={{ width: '100%' }}
+              />
             </div>
           </div>
-          
-          {/* Total y tasa de éxito */}
-          {stage.envios.enviado !== undefined && stage.envios.fallido !== undefined && (
-            <div className="mt-2 pt-2 border-t border-current/10">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-segal-dark/70">Total procesados:</span>
-                <span className="font-bold text-segal-dark">
-                  {((stage.envios.enviado || 0) + (stage.envios.fallido || 0)).toLocaleString()}
+
+          {/* Abiertos */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-segal-dark font-medium">
+                📬 Abiertos
+              </span>
+              <span className="font-bold text-segal-dark">
+                {abiertos.toLocaleString()}
+                <span className="font-normal text-segal-dark/60 ml-1">
+                  ({tasaApertura.toFixed(1)}%)
+                </span>
+              </span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(abiertosPercent, 2)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Clicks */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="flex items-center gap-1.5 text-segal-dark font-medium">
+                🖱️ Clicks
+              </span>
+              <span className="font-bold text-segal-dark">
+                {clickeados.toLocaleString()}
+                <span className="font-normal text-segal-dark/60 ml-1">
+                  ({abiertos > 0 ? tasaClicks.toFixed(1) : '0.0'}%)
+                </span>
+              </span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div 
+                className="bg-purple-500 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(clicksPercent, clickeados > 0 ? 2 : 0)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : envios && enviados === 0 && pendientes > 0 ? (
+        <div className="px-3 py-3">
+          <p className="text-xs text-amber-600 font-medium">
+            ⏳ {pendientes.toLocaleString()} mensajes pendientes de envío
+          </p>
+        </div>
+      ) : null}
+
+      {/* Métricas de Salud */}
+      {envios && totalProcesados > 0 && (
+        <div className="px-3 py-2.5 bg-gray-50/80 border-t border-gray-100">
+          <p className="text-xs font-semibold text-segal-dark/70 uppercase tracking-wide mb-2">
+            Métricas de salud
+          </p>
+          <div className="space-y-1.5">
+            {/* Tasa de entrega */}
+            <div className={`flex items-center justify-between text-xs px-2 py-1.5 rounded border ${getHealthBgColor(tasaEntrega, 95, 85)}`}>
+              <span className="text-segal-dark/80">Tasa de entrega</span>
+              <span className={`font-bold ${getHealthColor(tasaEntrega, 95, 85)}`}>
+                {tasaEntrega.toFixed(1)}%
+              </span>
+            </div>
+            
+            {/* Tasa de apertura */}
+            <div className={`flex items-center justify-between text-xs px-2 py-1.5 rounded border ${getHealthBgColor(tasaApertura, 25, 15)}`}>
+              <span className="text-segal-dark/80">Tasa de apertura</span>
+              <span className={`font-bold ${getHealthColor(tasaApertura, 25, 15)}`}>
+                {tasaApertura.toFixed(1)}%
+              </span>
+            </div>
+            
+            {/* Tasa de clicks (solo si hay abiertos) */}
+            {abiertos > 0 && (
+              <div className={`flex items-center justify-between text-xs px-2 py-1.5 rounded border ${getHealthBgColor(tasaClicks, 5, 2)}`}>
+                <span className="text-segal-dark/80">Tasa de clicks</span>
+                <span className={`font-bold ${getHealthColor(tasaClicks, 5, 2)}`}>
+                  {tasaClicks.toFixed(1)}%
                 </span>
               </div>
-              {(stage.envios.enviado || 0) + (stage.envios.fallido || 0) > 0 && (
-                <div className="flex items-center justify-between text-xs mt-1">
-                  <span className="text-segal-dark/70">Tasa de éxito:</span>
-                  <span className="font-bold text-green-700">
-                    {(((stage.envios.enviado || 0) / ((stage.envios.enviado || 0) + (stage.envios.fallido || 0))) * 100).toFixed(1)}%
-                  </span>
-                </div>
-              )}
+            )}
+          </div>
+          
+          {/* Fallidos si hay */}
+          {fallidos > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-200">
+              <div className="flex items-center justify-between text-xs text-red-600">
+                <span>❌ Fallidos</span>
+                <span className="font-bold">{fallidos.toLocaleString()}</span>
+              </div>
             </div>
           )}
         </div>
@@ -378,22 +486,16 @@ function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear, onViewDetail }: 
 
       {/* Si no hay stats de envío pero hay stage */}
       {stage && !stage.envios && (
-        <p className="text-xs text-segal-dark/60 italic">Sin estadísticas de envío aún</p>
+        <div className="px-3 py-3">
+          <p className="text-xs text-segal-dark/60 italic">Sin estadísticas de envío aún</p>
+        </div>
       )}
 
       {/* Si no hay stage (nodo no ejecutado) */}
       {!stage && (
-        <p className="text-xs text-segal-dark/60 italic">Este nodo aún no tiene datos de ejecución</p>
-      )}
-
-      {/* Botón para ver más detalles */}
-      {stage && (
-        <button
-          onClick={onViewDetail}
-          className="w-full mt-3 px-3 py-1.5 text-xs font-medium text-segal-blue border border-segal-blue/30 rounded hover:bg-segal-blue/10 transition-colors"
-        >
-          Ver detalles completos
-        </button>
+        <div className="px-3 py-3">
+          <p className="text-xs text-segal-dark/60 italic">Este nodo aún no tiene datos de ejecución</p>
+        </div>
       )}
     </div>
   )
@@ -1048,7 +1150,6 @@ function FlowExecutionContent({
               setSelectedNodeId(null)
               setSelectedStage(null)
             }}
-            onViewDetail={() => setShowStageDetail(true)}
           />
         )}
 
