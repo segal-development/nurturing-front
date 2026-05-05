@@ -277,21 +277,30 @@ export function AddProspectsModal({
           {/* Step 1: Select Origin */}
           <div className="space-y-3">
             <label className="text-sm font-semibold text-segal-dark">1. Selecciona el origen</label>
-            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-              {opciones?.origenes?.map((origen: OrigenFlujo) => (
-                <Button
-                  key={origen.id}
-                  variant={selectedOriginId === origen.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleSelectOrigin(origen)}
-                  className={selectedOriginId === origen.id 
-                    ? 'bg-segal-blue text-white' 
-                    : 'border-segal-blue/30 text-segal-blue hover:bg-segal-blue/5'
-                  }
-                >
-                  {origen.nombre}
-                </Button>
-              ))}
+            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+              {opciones?.origenes?.map((origen: OrigenFlujo) => {
+                const isSelected = selectedOriginId === origen.id
+                return (
+                  <button
+                    key={origen.id}
+                    type="button"
+                    onClick={() => handleSelectOrigin(origen)}
+                    className={`
+                      w-full text-left px-4 py-3 transition-colors duration-150
+                      flex items-center justify-between gap-3
+                      ${isSelected 
+                        ? 'bg-segal-blue text-white' 
+                        : 'bg-white text-segal-dark hover:bg-segal-blue/5'
+                      }
+                    `}
+                  >
+                    <span className="text-sm font-medium truncate">{origen.nombre}</span>
+                    {isSelected && (
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
