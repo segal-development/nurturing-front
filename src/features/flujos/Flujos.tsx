@@ -219,11 +219,14 @@ export function Flujos() {
   }
 
   /**
-   * Abre panel de ejecución para un flujo específico
+   * Abre el detalle del flujo para ejecutarlo
+   * (El FlujoDetailDialog tiene el ExecuteFlowModal que realmente ejecuta el flujo)
    */
   const handleEjecutarFlujo = (flujoId: number) => {
+    const flujo = flujos.find((f) => f.id === flujoId) || null
+    setSelectedFlujo(flujo)
     setSelectedFlujoId(flujoId)
-    setProgressPanelOpen(true)
+    setDetailDialogOpen(true)
   }
 
   // Loading estado inicial de opciones
