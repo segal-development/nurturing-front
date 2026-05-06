@@ -97,15 +97,28 @@ interface VariableItemProps {
 function VariableItem({ variable, onInsert }: VariableItemProps) {
   const variableTag = `{{${variable.key}}}`
 
-  const handleClick = () => {
-    onInsert(variableTag)
-    toast.success(`Variable ${variableTag} insertada`, { duration: 1500 })
+  const handleClick = async () => {
+    // Copiar al portapapeles Y insertar
+    try {
+      await navigator.clipboard.writeText(variableTag)
+      onInsert(variableTag)
+      toast.success(`${variableTag} insertada y copiada`, { duration: 1500 })
+    } catch {
+      // Si falla el clipboard, al menos insertar
+      onInsert(variableTag)
+      toast.success(`Variable ${variableTag} insertada`, { duration: 1500 })
+    }
   }
 
-  const handleCopy = (e: React.MouseEvent) => {
+  const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    navigator.clipboard.writeText(variableTag)
-    toast.success(`${variableTag} copiada al portapapeles`, { duration: 1500 })
+    e.preventDefault()
+    try {
+      await navigator.clipboard.writeText(variableTag)
+      toast.success(`${variableTag} copiada`, { duration: 1500 })
+    } catch {
+      toast.error('Error al copiar al portapapeles')
+    }
   }
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -131,10 +144,14 @@ function VariableItem({ variable, onInsert }: VariableItemProps) {
             <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
               {variable.label}
             </span>
-            <Copy
-              className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+            <button
+              type="button"
               onClick={handleCopy}
-            />
+              className="h-5 w-5 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Copiar variable"
+            >
+              <Copy className="h-3 w-3 text-gray-400" />
+            </button>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-xs">
@@ -143,7 +160,7 @@ function VariableItem({ variable, onInsert }: VariableItemProps) {
             <p className="text-xs text-gray-400">
               Ejemplo: <span className="text-gray-300">{variable.ejemplo}</span>
             </p>
-            <p className="text-xs text-gray-500">Click o arrastra para insertar</p>
+            <p className="text-xs text-gray-500">Click para insertar y copiar</p>
           </div>
         </TooltipContent>
       </Tooltip>
