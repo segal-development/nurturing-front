@@ -7,6 +7,7 @@
  * - Colores de texto
  * - Enlaces
  * - Listas
+ * - Tablas
  * - Soporte para variables {{variable}}
  * - Output HTML limpio para emails
  */
@@ -19,6 +20,10 @@ import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import { Underline } from '@tiptap/extension-underline'
 import { Placeholder } from '@tiptap/extension-placeholder'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { 
   Bold, 
   Italic, 
@@ -32,6 +37,10 @@ import {
   Undo,
   Redo,
   Palette,
+  Table as TableIcon,
+  Plus,
+  Minus,
+  Trash2,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from './button'
@@ -232,6 +241,100 @@ function ColorPopover({ editor }: { editor: Editor }) {
   )
 }
 
+// Table Popover Component
+function TablePopover({ editor }: { editor: Editor }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const isInTable = editor.isActive('table')
+
+  const insertTable = () => {
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+    setIsOpen(false)
+  }
+
+  const addColumnBefore = () => editor.chain().focus().addColumnBefore().run()
+  const addColumnAfter = () => editor.chain().focus().addColumnAfter().run()
+  const deleteColumn = () => editor.chain().focus().deleteColumn().run()
+  const addRowBefore = () => editor.chain().focus().addRowBefore().run()
+  const addRowAfter = () => editor.chain().focus().addRowAfter().run()
+  const deleteRow = () => editor.chain().focus().deleteRow().run()
+  const deleteTable = () => editor.chain().focus().deleteTable().run()
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Tabla"
+          className={`
+            p-1.5 rounded transition-colors
+            ${isInTable 
+              ? 'bg-segal-blue text-white' 
+              : 'text-segal-dark hover:bg-segal-blue/10'
+            }
+          `}
+        >
+          <TableIcon className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3" align="start">
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-segal-dark">Tabla</p>
+          
+          {!isInTable ? (
+            <Button 
+              size="sm" 
+              onClick={insertTable}
+              className="w-full bg-segal-blue hover:bg-segal-blue/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Insertar tabla 3x3
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              {/* Column controls */}
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={addColumnBefore} className="flex-1 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Col ←
+                </Button>
+                <Button size="sm" variant="outline" onClick={addColumnAfter} className="flex-1 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Col →
+                </Button>
+                <Button size="sm" variant="outline" onClick={deleteColumn} className="text-red-600 hover:text-red-700">
+                  <Minus className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              {/* Row controls */}
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={addRowBefore} className="flex-1 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Fila ↑
+                </Button>
+                <Button size="sm" variant="outline" onClick={addRowAfter} className="flex-1 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Fila ↓
+                </Button>
+                <Button size="sm" variant="outline" onClick={deleteRow} className="text-red-600 hover:text-red-700">
+                  <Minus className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              {/* Delete table */}
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={deleteTable}
+                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar tabla
+              </Button>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 // Main Toolbar Component
 function EditorToolbar({ editor }: { editor: Editor }) {
   return (
@@ -329,6 +432,11 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
       {/* Link */}
       <LinkPopover editor={editor} />
+
+      <ToolbarSeparator />
+
+      {/* Table */}
+      <TablePopover editor={editor} />
     </div>
   )
 }
@@ -367,6 +475,15 @@ function transformHtmlForEmail(html: string): string {
   result = result
     .replace(/<u>/g, '<u style="text-decoration: underline;">')
   
+  // Replace table elements with email-safe inline styles
+  result = result
+    .replace(/<table>/g, '<table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">')
+    .replace(/<tr>/g, '<tr style="border-bottom: 1px solid #e5e7eb;">')
+    .replace(/<th>/g, '<th style="padding: 12px 8px; text-align: left; font-weight: bold; background-color: #f3f4f6; border: 1px solid #e5e7eb;">')
+    .replace(/<th colspan=/g, '<th style="padding: 12px 8px; text-align: left; font-weight: bold; background-color: #f3f4f6; border: 1px solid #e5e7eb;" colspan=')
+    .replace(/<td>/g, '<td style="padding: 12px 8px; border: 1px solid #e5e7eb;">')
+    .replace(/<td colspan=/g, '<td style="padding: 12px 8px; border: 1px solid #e5e7eb;" colspan=')
+  
   return result
 }
 
@@ -400,6 +517,15 @@ export function RichTextEditor({
       Placeholder.configure({
         placeholder,
       }),
+      Table.configure({
+        resizable: false, // Emails don't support resizable tables
+        HTMLAttributes: {
+          class: 'email-table',
+        },
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -501,6 +627,30 @@ export function RichTextEditor({
         .ProseMirror a {
           color: #1e3a5f;
           text-decoration: underline;
+        }
+        /* Table styles for editor */
+        .ProseMirror table {
+          border-collapse: collapse;
+          margin: 16px 0;
+          width: 100%;
+        }
+        .ProseMirror th,
+        .ProseMirror td {
+          border: 1px solid #e5e7eb;
+          padding: 8px 12px;
+          position: relative;
+        }
+        .ProseMirror th {
+          background-color: #f3f4f6;
+          font-weight: bold;
+        }
+        .ProseMirror .selectedCell:after {
+          background: rgba(30, 58, 95, 0.1);
+          content: "";
+          left: 0; right: 0; top: 0; bottom: 0;
+          pointer-events: none;
+          position: absolute;
+          z-index: 2;
         }
       `}</style>
     </div>
