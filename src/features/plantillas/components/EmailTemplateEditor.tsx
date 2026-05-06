@@ -514,8 +514,8 @@ export function EmailTemplateEditor({
 
       {/* Variables Panel */}
       {showVariablesPanel && (
-        <div className="w-72 shrink-0 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 overflow-hidden h-fit max-h-[80vh] sticky top-4">
-          <VariablesPanel onInsertVariable={handleInsertVariable} />
+        <div className="w-72 shrink-0 bg-white dark:bg-gray-900 rounded-lg border border-segal-blue/10 dark:border-gray-700 overflow-hidden flex flex-col max-h-[calc(100vh-120px)] sticky top-4">
+          <VariablesPanel onInsertVariable={handleInsertVariable} className="flex-1 min-h-0" />
         </div>
       )}
     </div>
