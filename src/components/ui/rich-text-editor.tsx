@@ -333,6 +333,43 @@ function EditorToolbar({ editor }: { editor: Editor }) {
   )
 }
 
+/**
+ * Transforms TipTap HTML to email-safe HTML with inline styles
+ * Email clients ignore external CSS, so all styles must be inline
+ */
+function transformHtmlForEmail(html: string): string {
+  // Replace <p> tags with inline-styled paragraphs (with margin for spacing)
+  let result = html
+    .replace(/<p>/g, '<p style="margin: 0 0 16px 0; line-height: 1.6;">')
+    .replace(/<p style="text-align: center">/g, '<p style="margin: 0 0 16px 0; line-height: 1.6; text-align: center;">')
+    .replace(/<p style="text-align: right">/g, '<p style="margin: 0 0 16px 0; line-height: 1.6; text-align: right;">')
+    .replace(/<p style="text-align: left">/g, '<p style="margin: 0 0 16px 0; line-height: 1.6; text-align: left;">')
+  
+  // Replace <ul> and <ol> with inline styles
+  result = result
+    .replace(/<ul>/g, '<ul style="margin: 0 0 16px 0; padding-left: 24px; list-style-type: disc;">')
+    .replace(/<ol>/g, '<ol style="margin: 0 0 16px 0; padding-left: 24px; list-style-type: decimal;">')
+  
+  // Replace <li> with inline styles
+  result = result
+    .replace(/<li>/g, '<li style="margin: 0 0 8px 0; line-height: 1.6;">')
+  
+  // Replace <a> tags with inline link styles
+  result = result
+    .replace(/<a href=/g, '<a style="color: #1e3a5f; text-decoration: underline;" href=')
+  
+  // Replace <strong> and <em> (already work in email but add explicit styles)
+  result = result
+    .replace(/<strong>/g, '<strong style="font-weight: bold;">')
+    .replace(/<em>/g, '<em style="font-style: italic;">')
+  
+  // Replace <u> for underline
+  result = result
+    .replace(/<u>/g, '<u style="text-decoration: underline;">')
+  
+  return result
+}
+
 export function RichTextEditor({
   content,
   onChange,
@@ -366,7 +403,10 @@ export function RichTextEditor({
     ],
     content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      // Transform HTML for email compatibility before sending to parent
+      const rawHtml = editor.getHTML()
+      const emailHtml = transformHtmlForEmail(rawHtml)
+      onChange(emailHtml)
     },
     editorProps: {
       attributes: {
