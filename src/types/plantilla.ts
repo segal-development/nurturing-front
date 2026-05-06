@@ -218,5 +218,7 @@ export interface VariableDisponible {
 export interface VariablesDisponiblesResponse {
   basicas: VariableDisponible[]
   sistema: VariableDisponible[]
+  abogado: VariableDisponible[]
+  cuotas: VariableDisponible[]
   metadata: VariableDisponible[]
 }

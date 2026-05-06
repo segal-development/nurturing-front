@@ -180,7 +180,7 @@ export function VariablesPanel({ onInsertVariable, className = '' }: VariablesPa
 
   const hasResults =
     searchTerm === '' ||
-    [...data.basicas, ...data.sistema, ...data.metadata].some(
+    [...data.basicas, ...data.sistema, ...(data.abogado || []), ...(data.cuotas || []), ...data.metadata].some(
       (v) =>
         v.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.label.toLowerCase().includes(searchTerm.toLowerCase())
@@ -246,6 +246,26 @@ export function VariablesPanel({ onInsertVariable, className = '' }: VariablesPa
               defaultOpen={true}
               searchTerm={searchTerm}
             />
+            {data.abogado && data.abogado.length > 0 && (
+              <CategorySection
+                title="Abogado Asignado"
+                icon="⚖️"
+                variables={data.abogado}
+                onInsert={onInsertVariable}
+                defaultOpen={true}
+                searchTerm={searchTerm}
+              />
+            )}
+            {data.cuotas && data.cuotas.length > 0 && (
+              <CategorySection
+                title="Cuotas y Pagos"
+                icon="💰"
+                variables={data.cuotas}
+                onInsert={onInsertVariable}
+                defaultOpen={true}
+                searchTerm={searchTerm}
+              />
+            )}
             {data.metadata.length > 0 && (
               <CategorySection
                 title="Metadata (Importaciones)"
