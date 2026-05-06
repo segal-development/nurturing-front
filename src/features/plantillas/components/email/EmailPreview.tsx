@@ -81,11 +81,12 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                       fontWeight: contenido.negrita ? 'bold' : 'normal',
                       fontStyle: contenido.italica ? 'italic' : 'normal',
                       marginBottom: '16px',
-                      whiteSpace: 'pre-line',
                     }}
-                  >
-                    {renderTextoConEnlaces(contenido.texto, contenido.enlaces)}
-                  </div>
+                    // Render HTML content from WYSIWYG editor
+                    dangerouslySetInnerHTML={{
+                      __html: contenido.html || contenido.texto || ''
+                    }}
+                  />
                 )}
 
                 {componente.tipo === 'boton' && (
@@ -212,18 +213,5 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
   )
 }
 
-/**
- * Renderiza texto con enlaces insertados
- */
-function renderTextoConEnlaces(
-  texto: string,
-  enlaces?: Array<{ url: string; texto: string; posicion: number }>
-): React.ReactNode {
-  if (!enlaces || enlaces.length === 0) {
-    return texto
-  }
-
-  // Para simplificar, mostramos solo el texto
-  // En una implementación real, se reemplazaría el texto dentro del contenido con enlaces
-  return texto
-}
+// Note: renderTextoConEnlaces removed - WYSIWYG editor now generates HTML 
+// that is rendered directly via dangerouslySetInnerHTML
