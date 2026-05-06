@@ -31,7 +31,7 @@ export function SMSTemplateEditor({
 }: SMSTemplateEditorProps) {
   const [showVariablesPanel, setShowVariablesPanel] = useState(true)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [autocompletePos, setAutocompletePos] = useState({ top: 0, left: 0 })
+  const [_autocompletePos, _setAutocompletePos] = useState({ top: 0, left: 0 })
   const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(0)
 
   const form = useForm<PlantillaSMSFormData>({
@@ -49,8 +49,8 @@ export function SMSTemplateEditor({
   // Variables hook for autocomplete
   const {
     filteredVariables,
-    showAutocomplete,
-    autocompleteFilter,
+    showAutocomplete: _showAutocomplete,
+    autocompleteFilter: _autocompleteFilter,
     closeAutocomplete,
     insertVariable,
   } = useVariables()
@@ -359,7 +359,7 @@ export function SMSTemplateEditor({
                         }
                       }
                     }}
-                    onBlur={(e) => {
+                    onBlur={() => {
                       field.onBlur()
                       // Delay closing to allow click on autocomplete
                       setTimeout(() => setLocalShowAutocomplete(false), 200)
@@ -375,9 +375,6 @@ export function SMSTemplateEditor({
                         const currentValue = field.value || ''
                         // Get drop position from caret position in textarea
                         const textarea = e.currentTarget
-                        const rect = textarea.getBoundingClientRect()
-                        const x = e.clientX - rect.left
-                        const y = e.clientY - rect.top
                         
                         // Approximate cursor position - insert at end if can't determine
                         // For simplicity, we'll insert at current cursor or end

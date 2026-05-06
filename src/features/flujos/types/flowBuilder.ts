@@ -75,6 +75,13 @@ export interface StageNodeData extends ExecutionStateData {
     titulo: string
   }
   activo?: boolean
+  // Aggregated historical stats (when not in active execution)
+  aggregatedStats?: {
+    enviado: number
+    fallido: number
+    abierto: number
+    clickeado: number
+  }
 }
 
 export interface OfferNodeData {

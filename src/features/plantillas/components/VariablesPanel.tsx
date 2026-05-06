@@ -8,7 +8,6 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Copy, Info, Loader2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { plantillasService } from '@/api/plantillas.service'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Tooltip,

@@ -19,8 +19,8 @@ import { Button } from '@/components/ui/button'
 import {
   CheckCircle2,
   Clock,
-  Mail,
-  MessageSquare,
+  // Mail,
+  // MessageSquare,
   Loader2,
   X,
   Users,

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useLogin } from './hooks/useLogin'
 import { LoginForm } from './components/LoginForm'
 import type { LoginFormData } from './utils/validation'
-import { Clock, Info } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 /**
  * Validates that a return URL is safe (internal path only)

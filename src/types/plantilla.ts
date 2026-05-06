@@ -58,6 +58,7 @@ export interface TextoComponent extends EmailComponent {
   tipo: 'texto'
   contenido: {
     texto: string
+    html?: string // HTML rendered by WYSIWYG editor
     alineacion?: 'left' | 'center' | 'right'
     tamanio_fuente?: number
     color?: string

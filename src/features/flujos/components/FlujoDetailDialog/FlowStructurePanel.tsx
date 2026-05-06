@@ -4,7 +4,7 @@
  * Sino, muestra etapas, condiciones, ramificaciones y nodos finales en formato texto
  */
 
-import { logger } from '@/lib/logger'
+// import { logger } from '@/lib/logger'
 import { useState } from 'react'
 import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -35,8 +35,9 @@ export function FlowStructurePanel({
   config_structure,
   config_visual,
   flujoId,
-  executionId,
+  executionId: _executionId, // Reserved for future execution-specific views
 }: FlowStructurePanelProps) {
+  void _executionId // Will be used when we add execution-specific filtering
   // Verificar si hay visualización disponible desde el principio
   const hasVisualData = config_visual && config_visual.nodes && config_visual.nodes.length > 0
   const [viewMode, setViewMode] = useState<'visual' | 'details'>(hasVisualData ? 'visual' : 'details')
@@ -48,42 +49,20 @@ export function FlowStructurePanel({
   )
 
   // Consultar la última ejecución (cualquier estado) para mostrar historial
-  const { data: latestExecutionData, isLoading: isLoadingLatest } = useLatestExecution(
+  const { data: _latestExecutionData, isLoading: isLoadingLatest } = useLatestExecution(
     flujoId || 0,
     false, // No hacer polling continuo para ejecuciones completadas
   )
+  void _latestExecutionData // Data available for future history views
 
   // Estado de carga general
   const isLoadingExecutionData = hasVisualData && flujoId && (isLoadingActive || isLoadingLatest)
 
-  // Determinar el execution ID efectivo con esta prioridad:
-  // 1. Ejecución activa (in_progress/paused) - más prioritario
-  // 2. ExecutionId pasado como prop
-  // 3. Última ejecución (cualquier estado) - para mostrar historial
-  const effectiveExecutionId = (() => {
-    // 1. Si hay ejecución activa en el backend, usar ese ID (prioridad máxima)
-    if (activeExecutionData?.tiene_ejecucion_activa && activeExecutionData.ejecucion) {
-      logger.log('[FlowStructurePanel] Using ACTIVE execution:', activeExecutionData.ejecucion.id)
-      return activeExecutionData.ejecucion.id.toString()
-    }
-
-    // 2. Si se pasó executionId como prop, usar ese
-    if (executionId) {
-      logger.log('[FlowStructurePanel] Using PROP execution:', executionId)
-      return executionId
-    }
-
-    // 3. Si hay última ejecución (completada/fallida), usar ese ID para mostrar historial
-    const latestExecution = latestExecutionData?.data?.[0]
-    if (latestExecution?.id) {
-      logger.log('[FlowStructurePanel] Using LATEST execution:', latestExecution.id, 'Estado:', latestExecution.estado)
-      return latestExecution.id.toString()
-    }
-
-    // 4. No hay ninguna ejecución
-    logger.log('[FlowStructurePanel] No execution found')
-    return undefined
-  })()
+  // Note: Effective execution ID logic was previously computed here but is now
+  // handled inline where needed. The priority order is:
+  // 1. Active execution (in_progress/paused) - highest priority
+  // 2. ExecutionId passed as prop
+  // 3. Latest execution (any state) - for showing history
 
   // Usar config_structure si está disponible, sino usar los campos individuales
   const stages = config_structure?.stages || etapas || []

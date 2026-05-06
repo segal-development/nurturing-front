@@ -80,11 +80,12 @@ export function EmailTemplateEditor({
         
         setPlantilla({
           ...plantilla,
+          // Type assertion needed: TypeScript cannot infer discriminated union through map+spread
           componentes: plantilla.componentes.map(c =>
             c.id === componenteSeleccionado
               ? { ...c, contenido: { ...c.contenido, texto: nuevoTexto } }
               : c
-          ),
+          ) as typeof plantilla.componentes,
         })
         
         toast.success(`Variable insertada en el componente de texto`, { duration: 1500 })

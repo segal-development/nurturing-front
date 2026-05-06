@@ -5,7 +5,7 @@
  * Automatically displays "Sí" / "No" labels for conditional branches
  */
 
-import { logger } from '@/lib/logger'
+// import { logger } from '@/lib/logger'
 import {
   BaseEdge,
   EdgeLabelRenderer,

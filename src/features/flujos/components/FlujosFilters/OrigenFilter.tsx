@@ -3,7 +3,7 @@
  * Filtro obligatorio que debe seleccionarse primero
  */
 
-import { logger } from '@/lib/logger'
+// import { logger } from '@/lib/logger'
 import {
   Select,
   SelectContent,

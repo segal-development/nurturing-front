@@ -53,6 +53,7 @@ export const textoComponentSchema = z.object({
     texto: z
       .string()
       .min(1, 'El texto es obligatorio'),
+    html: z.string().optional(), // HTML rendered by WYSIWYG editor
     alineacion: z.enum(['left', 'center', 'right']).default('left'),
     tamanio_fuente: z
       .number()

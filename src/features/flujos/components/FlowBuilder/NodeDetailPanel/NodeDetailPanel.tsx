@@ -59,11 +59,7 @@ export function NodeDetailPanel({
   if (!selectedNode) return null
 
   const handleClose = () => {
-    if (onClearSelection) {
-      onClearSelection()
-    } else {
-      storeSetSelectedNodeId(null)
-    }
+    setSelectedNodeId(null)
   }
 
   const handleDelete = (nodeId: string) => {

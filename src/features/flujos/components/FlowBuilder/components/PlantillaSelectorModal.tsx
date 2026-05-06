@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import type { PlantillaSMS, PlantillaEmail, AnyPlantilla } from '@/types/plantilla'
+import type { AnyPlantilla, PlantillaEmail } from '@/types/plantilla'
 
 // ============================================================================
 // TYPES
@@ -259,7 +259,9 @@ export function PlantillaSelectorModal({
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [previewPlantilla, setPreviewPlantilla] = useState<AnyPlantilla | null>(null)
+  // highlightedId for keyboard navigation (setter reserved for future use)
   const [highlightedId, setHighlightedId] = useState<number | null>(null)
+  void setHighlightedId // Reserved for keyboard navigation
   
   // Filter plantillas
   const filteredPlantillas = useMemo(() => {

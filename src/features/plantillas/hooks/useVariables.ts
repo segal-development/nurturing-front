@@ -3,7 +3,7 @@
  * Provee funcionalidad de inserción y autocompletado
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { plantillasService } from '@/api/plantillas.service'
 import type { VariableDisponible } from '@/types/plantilla'

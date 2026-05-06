@@ -56,7 +56,8 @@ export const prospectosService = {
       return {
         lotes: backendData.lotes || [],
         importaciones: backendData.importaciones || [],
-        estados: backendData.estados?.map((estado: string) => ({
+        // Backend returns estados as strings, transform to {value, label} objects
+        estados: (backendData.estados as unknown as string[])?.map((estado: string) => ({
           value: estado,
           label: estado.charAt(0).toUpperCase() + estado.slice(1),
         })) || [],

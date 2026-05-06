@@ -428,8 +428,9 @@ export function CreateFlujoWithBuilder({
     const loteIdsArray = Array.from(selectedLoteIds)
 
     // Derive nivel_deuda_target from metadata filters for flujo-level persistence
+    // Cast to NivelDeuda[] since metadataFilters stores as string[]
     const nivelDeudaTarget = metadataFilters?.nivel_deuda?.length
-      ? metadataFilters.nivel_deuda
+      ? (metadataFilters.nivel_deuda as import('@/types/flujo').NivelDeuda[])
       : undefined
 
     return {

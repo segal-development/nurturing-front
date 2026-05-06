@@ -526,7 +526,8 @@ function FlowExecutionContent({
 
   // Get cohorts data for "Últimos ingresos" panel
   const { data: cohortesData } = useCohortesActivas(flujoId, true)
-  const ultimosIngresos = cohortesData?.data?.ultimos_ingresos
+  // Note: ultimos_ingresos available for future use
+  // const ultimosIngresos = cohortesData?.data?.ultimos_ingresos
 
   // Node types for compact rendering — execution state data is injected into node.data
   // and displayed via the StageDetailPanel / SelectedNodePanel, not on the node itself.
@@ -1221,13 +1222,13 @@ function FlowExecutionContent({
                   <div className="flex justify-between">
                     <span className="text-green-700">✓ Ya en nodo actual</span>
                     <span className="font-semibold text-green-700">
-                      {cohortesData.data.nuevos_ultimo_sync.progreso.ya_alcanzaron.toLocaleString()}
+                      {(cohortesData.data.nuevos_ultimo_sync.progreso.ya_alcanzaron ?? 0).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-amber-700">⏳ Alcanzando</span>
                     <span className="font-semibold text-amber-700">
-                      {cohortesData.data.nuevos_ultimo_sync.progreso.alcanzando.toLocaleString()}
+                      {(cohortesData.data.nuevos_ultimo_sync.progreso.alcanzando ?? 0).toLocaleString()}
                     </span>
                   </div>
                   {cohortesData.data.nuevos_ultimo_sync.progreso.nodo_actual_label && (
@@ -1241,19 +1242,19 @@ function FlowExecutionContent({
                 </div>
 
                 {/* Estadísticas de envíos */}
-                {cohortesData.data.nuevos_ultimo_sync.progreso.envios.total > 0 && (
+                {(cohortesData.data.nuevos_ultimo_sync.progreso.envios?.total ?? 0) > 0 && (
                   <div className="pt-2 border-t border-gray-200">
                     <p className="text-xs text-segal-dark/70 mb-1">Envíos totales</p>
                     <div className="flex gap-3 text-xs">
                       <span className="text-green-700">
-                        ✓ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.enviados.toLocaleString()}
+                        ✓ {(cohortesData.data.nuevos_ultimo_sync.progreso.envios?.enviados ?? 0).toLocaleString()}
                       </span>
                       <span className="text-red-600">
-                        ✗ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.fallidos.toLocaleString()}
+                        ✗ {(cohortesData.data.nuevos_ultimo_sync.progreso.envios?.fallidos ?? 0).toLocaleString()}
                       </span>
-                      {cohortesData.data.nuevos_ultimo_sync.progreso.envios.pendientes > 0 && (
+                      {(cohortesData.data.nuevos_ultimo_sync.progreso.envios?.pendientes ?? 0) > 0 && (
                         <span className="text-amber-600">
-                          ⏳ {cohortesData.data.nuevos_ultimo_sync.progreso.envios.pendientes.toLocaleString()}
+                          ⏳ {(cohortesData.data.nuevos_ultimo_sync.progreso.envios?.pendientes ?? 0).toLocaleString()}
                         </span>
                       )}
                     </div>

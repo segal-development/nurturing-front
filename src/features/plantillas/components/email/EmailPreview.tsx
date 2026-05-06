@@ -46,8 +46,9 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
             </div>
           ) : (
             plantilla.componentes.map((componente) => {
-              // Guard against missing contenido
-              const contenido = componente.contenido || {}
+              // Type assertion - runtime discrimination is handled by componente.tipo checks
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const contenido = (componente.contenido || {}) as any
               
               return (
               <div key={componente.id} className="mb-4">
@@ -74,7 +75,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                 {componente.tipo === 'texto' && (
                   <div
                     style={{
-                      textAlign: contenido.alineacion as any,
+                      textAlign: contenido.alineacion,
                       fontSize: `${contenido.tamanio_fuente || 14}px`,
                       color: contenido.color || '#000000',
                       fontWeight: contenido.negrita ? 'bold' : 'normal',
@@ -172,7 +173,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                     <p>{contenido.texto}</p>
                     {contenido.enlaces && contenido.enlaces.length > 0 && (
                       <div style={{ marginTop: '8px' }}>
-                        {contenido.enlaces.map((enlace, idx) => (
+                        {contenido.enlaces.map((enlace: { url: string; etiqueta: string }, idx: number) => (
                           <span key={`footer-preview-${idx}`}>
                             <a
                               href={enlace.url}
@@ -185,7 +186,7 @@ export function EmailPreview({ plantilla }: EmailPreviewProps) {
                             >
                               {enlace.etiqueta}
                             </a>
-                            {idx < contenido.enlaces!.length - 1 && ' | '}
+                            {idx < contenido.enlaces.length - 1 && ' | '}
                           </span>
                         ))}
                       </div>
