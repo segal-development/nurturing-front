@@ -117,32 +117,41 @@ export function ProspectSelector({
 
   /**
    * Find the "Todos" tipo (special type for selecting all prospects)
+   * Falls back to first available tipo if "Todos" doesn't exist
    */
   const getTodosTipoId = (): number | null => {
     if (!tiposProspecto || tiposProspecto.length === 0) return null
 
+    // Try to find "Todos" first
     const todosTipo = tiposProspecto.find(
       (tipo) => tipo.nombre.toLowerCase() === 'todos'
     )
 
-    return todosTipo?.id ?? null
+    if (todosTipo) {
+      return todosTipo.id
+    }
+
+    // Fallback: use first available tipo (migration might not have run)
+    logger.warn('Tipo "Todos" not found, using first available tipo as fallback')
+    return tiposProspecto[0]?.id ?? null
   }
 
   /**
-   * Select ALL prospects from origin (all types) - uses "Todos" tipo
+   * Select ALL prospects from origin (all types) - uses "Todos" tipo or fallback
    */
   const handleSelectAllFromOriginAllTypes = () => {
-    const todosTipoId = getTodosTipoId()
+    const tipoId = getTodosTipoId()
 
-    if (todosTipoId === null) {
-      logger.warn('No se encontró el tipo "Todos" en la base de datos')
+    if (tipoId === null) {
+      logger.error('No hay tipos de prospecto disponibles')
+      return
     }
 
     onSelectAllFromOriginChange(true)
     onSelectionChange(new Set())
-    setSelectedTipoId(todosTipoId)
+    setSelectedTipoId(tipoId)
     setIsAllTypesSelected(true) // ALL types selected
-    onTipoChange?.(todosTipoId)
+    onTipoChange?.(tipoId)
     onSelectedCountChange?.(totalEnBD) // All prospects from origin
   }
 
