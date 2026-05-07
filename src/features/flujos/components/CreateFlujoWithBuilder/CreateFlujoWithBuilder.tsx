@@ -26,6 +26,7 @@ import { FlujoProcesamientoIndicator } from '../FlujoProcesamientoIndicator'
 import { useFlujoProcesamiento } from '../../hooks/useFlujoProcesamiento'
 import { prospectosService } from '@/api/prospectos.service'
 import { flujosService } from '@/api/flujos.service'
+import { useTiposProspecto } from '@/hooks/useTiposProspecto'
 
 type Step = 'origin' | 'lotes' | 'prospects' | 'builder' | 'processing'
 
@@ -154,6 +155,9 @@ export function CreateFlujoWithBuilder({
   // Estado para flujo creado (usado en step processing)
   const [flujoCreado, setFlujoCreado] = useState<{ id: number; nombre: string } | null>(null)
 
+  // Tipos de prospecto (para fallback cuando se salta ProspectSelector)
+  const { data: tiposProspecto } = useTiposProspecto()
+
   // Hook de procesamiento async
   const { estado: estadoProcesamiento, iniciarTracking, detenerTracking } = useFlujoProcesamiento({
     onComplete: () => {
@@ -217,6 +221,24 @@ export function CreateFlujoWithBuilder({
   }
 
   /**
+   * Get fallback tipo_prospecto_id when skipping ProspectSelector
+   * Prefers "Todos" tipo, falls back to first available
+   */
+  const getFallbackTipoProspectoId = (): number | null => {
+    if (!tiposProspecto || tiposProspecto.length === 0) return null
+
+    // Try "Todos" first
+    const todosTipo = tiposProspecto.find(
+      (tipo) => tipo.nombre.toLowerCase() === 'todos'
+    )
+    if (todosTipo) return todosTipo.id
+
+    // Fallback to first available
+    logger.warn('Tipo "Todos" not found, using first tipo as fallback')
+    return tiposProspecto[0]?.id ?? null
+  }
+
+  /**
    * Continúa desde lotes seleccionados directo al FlowBuilder
    * Ya no pasa por ProspectSelector porque los lotes definen el filtro
    * Now supports metadata filters (e.g., nivel_deuda)
@@ -243,6 +265,17 @@ export function CreateFlujoWithBuilder({
       setTotalProspectosEnBD(totalCount)
       setSelectedCount(totalCount)
       setSelectAllFromOrigin(true) // Will use lote_ids filter in backend
+
+      // Set tipo_prospecto since we're skipping ProspectSelector
+      // Use "Todos" or first available as fallback
+      const tipoId = getFallbackTipoProspectoId()
+      if (tipoId) {
+        setSelectedTipoProspectoId(tipoId)
+      } else {
+        logger.error('No hay tipos de prospecto disponibles')
+        setError('Error: No hay tipos de prospecto configurados en el sistema')
+        return
+      }
 
       // Skip ProspectSelector, go directly to FlowBuilder
       setCurrentStep('builder')
