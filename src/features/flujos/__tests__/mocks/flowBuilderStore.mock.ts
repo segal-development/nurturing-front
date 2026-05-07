@@ -8,20 +8,14 @@ import type { CustomNode, CustomEdge, FlowBuilderState } from '@/features/flujos
 
 /**
  * Initial nodes as defined in the actual store
- * The store starts with an initial node and an end node by default
+ * The store starts with only the initial node - end node is added explicitly
  */
 const INITIAL_NODES: CustomNode[] = [
   {
     id: 'initial-1',
     data: { label: 'Inicio - Selecciona prospectos' },
-    position: { x: 400, y: 50 },
+    position: { x: 100, y: 200 },
     type: 'initial',
-  },
-  {
-    id: 'end-1',
-    data: { label: 'Fin' },
-    position: { x: 400, y: 800 },
-    type: 'end',
   },
 ]
 

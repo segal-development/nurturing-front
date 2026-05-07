@@ -47,18 +47,33 @@ interface FlowBuilderStore {
   getConditionalCount: () => number
 }
 
+// =============================================================================
+// LAYOUT CONSTANTS
+// =============================================================================
+
+/** Horizontal spacing between nodes */
+const NODE_SPACING_X = 280
+
+/** Vertical center line for horizontal layout */
+const NODE_CENTER_Y = 200
+
+/** Initial node X position (left side) */
+const INITIAL_NODE_X = 100
+
+// =============================================================================
+// INITIAL STATE
+// =============================================================================
+
+/**
+ * Initial nodes: Only the start node.
+ * End node is added explicitly by the user when needed.
+ */
 const INITIAL_NODES: CustomNode[] = [
   {
     id: 'initial-1',
     data: { label: 'Inicio - Selecciona prospectos' },
-    position: { x: 400, y: 50 },
+    position: { x: INITIAL_NODE_X, y: NODE_CENTER_Y },
     type: 'initial',
-  },
-  {
-    id: 'end-1',
-    data: { label: 'Fin' },
-    position: { x: 400, y: 800 },
-    type: 'end',
   },
 ]
 
@@ -70,25 +85,31 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   flowDescription: '',
   selectedNodeId: null,
 
-  // Helper to find the rightmost node position
+  /**
+   * Calculate position for the next node in horizontal layout.
+   * Places new nodes to the right of the rightmost existing node.
+   * Excludes 'end' nodes from position calculation to keep them at the end.
+   */
   _getNextNodePosition: (): { x: number; y: number } => {
     const state = get()
-    const nonInitialNodes = state.nodes.filter((n) => n.type !== 'initial')
     
-    if (nonInitialNodes.length === 0) {
-      // First node after initial - position to the right of initial
-      return { x: 400, y: 200 }
+    // Get all nodes except 'end' type (end nodes should be placed after all other nodes)
+    const workflowNodes = state.nodes.filter((n) => n.type !== 'end')
+    
+    if (workflowNodes.length === 0) {
+      // Edge case: no nodes at all, start from initial position
+      return { x: INITIAL_NODE_X, y: NODE_CENTER_Y }
     }
     
-    // Find the rightmost node
-    const rightmostNode = nonInitialNodes.reduce((prev, curr) => 
+    // Find the rightmost workflow node
+    const rightmostNode = workflowNodes.reduce((prev, curr) => 
       curr.position.x > prev.position.x ? curr : prev
     )
     
-    // Position new node to the right of the rightmost node
+    // Position new node to the right with consistent spacing
     return {
-      x: rightmostNode.position.x + 250,
-      y: rightmostNode.position.y,
+      x: rightmostNode.position.x + NODE_SPACING_X,
+      y: NODE_CENTER_Y,
     }
   },
 
@@ -238,23 +259,22 @@ export const useFlowBuilderStore = create<FlowBuilderStore>((set, get) => ({
   },
 
   initializeWithOrigin: (originId: string, originName: string, prospectoCount: number) => {
-    const updatedNodes = INITIAL_NODES.map((node) =>
-      node.id === 'initial-1'
-        ? {
-            ...node,
-            data: {
-              ...node.data,
-              label: `Inicio - ${originName}`,
-              origen_id: originId,
-              origen_nombre: originName,
-              prospectos_count: prospectoCount,
-            },
-          }
-        : node
-    )
+    // Create fresh initial node with origin data (no end node by default)
+    const initialNode: CustomNode = {
+      id: 'initial-1',
+      data: {
+        label: `Inicio - ${originName}`,
+        origen_id: originId,
+        origen_nombre: originName,
+        prospectos_count: prospectoCount,
+      },
+      position: { x: INITIAL_NODE_X, y: NODE_CENTER_Y },
+      type: 'initial',
+    }
 
     set({
-      nodes: updatedNodes,
+      nodes: [initialNode],
+      edges: [],
     })
   },
 

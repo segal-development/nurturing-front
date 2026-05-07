@@ -30,14 +30,12 @@ describe('flowBuilderStore', () => {
   })
 
   describe('Initial State', () => {
-    it('should have initial nodes (initial + end) on initialization', () => {
+    it('should have only initial node on initialization (no end node)', () => {
       const state = useFlowBuilderStore.getState()
-      // Store starts with initial node and end node by default
-      expect(state.nodes).toHaveLength(2)
+      // Store starts with only the initial node - end node is added explicitly
+      expect(state.nodes).toHaveLength(1)
       expect(state.nodes[0].type).toBe('initial')
       expect(state.nodes[0].id).toBe('initial-1')
-      expect(state.nodes[1].type).toBe('end')
-      expect(state.nodes[1].id).toBe('end-1')
       expect(state.edges).toEqual([])
       expect(state.flowName).toBe('')
       expect(state.flowDescription).toBe('')
@@ -52,8 +50,8 @@ describe('flowBuilderStore', () => {
         addStageNode()
 
         const state = useFlowBuilderStore.getState()
-        // Initial state has 2 nodes (initial + end), so now should have 3
-        expect(state.nodes).toHaveLength(3)
+        // Initial state has 1 node (initial only), so now should have 2
+        expect(state.nodes).toHaveLength(2)
         const stageNodes = state.nodes.filter((n) => n.type === 'stage')
         expect(stageNodes).toHaveLength(1)
         expect(stageNodes[0].id).toMatch(/^stage-/)
@@ -66,8 +64,8 @@ describe('flowBuilderStore', () => {
         addStageNode()
 
         const state = useFlowBuilderStore.getState()
-        // Initial 2 nodes + 2 stage nodes = 4
-        expect(state.nodes).toHaveLength(4)
+        // Initial 1 node + 2 stage nodes = 3
+        expect(state.nodes).toHaveLength(3)
         const stageNodes = state.nodes.filter((n) => n.type === 'stage')
         expect(stageNodes).toHaveLength(2)
       })
@@ -92,8 +90,8 @@ describe('flowBuilderStore', () => {
         addConditionalNode()
 
         const state = useFlowBuilderStore.getState()
-        // Initial 2 nodes + 1 conditional = 3
-        expect(state.nodes).toHaveLength(3)
+        // Initial 1 node + 1 conditional = 2
+        expect(state.nodes).toHaveLength(2)
         const conditionalNodes = state.nodes.filter((n) => n.type === 'conditional')
         expect(conditionalNodes).toHaveLength(1)
       })
@@ -119,10 +117,10 @@ describe('flowBuilderStore', () => {
         addEndNode()
 
         const state = useFlowBuilderStore.getState()
-        // Initial 2 nodes (including 1 end) + 1 new end = 3
-        expect(state.nodes).toHaveLength(3)
+        // Initial 1 node + 1 new end = 2
+        expect(state.nodes).toHaveLength(2)
         const endNodes = state.nodes.filter((n) => n.type === 'end')
-        expect(endNodes).toHaveLength(2) // Original end-1 plus new one
+        expect(endNodes).toHaveLength(1)
       })
     })
 
@@ -140,8 +138,8 @@ describe('flowBuilderStore', () => {
         removeNode(nodeToRemove.id)
 
         const state = useFlowBuilderStore.getState()
-        // Had 4 nodes (2 initial + 2 stage), now 3
-        expect(state.nodes).toHaveLength(3)
+        // Had 3 nodes (1 initial + 2 stage), now 2
+        expect(state.nodes).toHaveLength(2)
         expect(state.nodes.find((n) => n.id === nodeToRemove.id)).toBeUndefined()
       })
 
@@ -257,13 +255,14 @@ describe('flowBuilderStore', () => {
       })
 
       it('should handle conditional path labels', () => {
-        const { addConditionalNode, addEdge } = useFlowBuilderStore.getState()
+        const { addConditionalNode, addEndNode, addEdge } = useFlowBuilderStore.getState()
 
         addConditionalNode()
+        addEndNode() // Explicitly add end node
 
         const state = useFlowBuilderStore.getState()
         const condNode = state.nodes.find((n) => n.type === 'conditional')!
-        const endNode = state.nodes.find((n) => n.type === 'end')! // Use existing end node
+        const endNode = state.nodes.find((n) => n.type === 'end')!
 
         const edgeYes = createEdge(condNode.id, endNode.id, 'Sí')
         // Use different target handle for 'No' to avoid duplicate detection
@@ -440,8 +439,8 @@ describe('flowBuilderStore', () => {
         initializeWithOrigin('1', 'Web Origin', 500)
 
         const state = useFlowBuilderStore.getState()
-        // Store has 2 nodes: initial + end
-        expect(state.nodes).toHaveLength(2)
+        // Store has 1 node: initial only (no end node by default)
+        expect(state.nodes).toHaveLength(1)
         const initialNode = state.nodes.find((n) => n.type === 'initial')!
         expect(initialNode).toBeDefined()
         expect(initialNode.data.origen_nombre).toBe('Web Origin')
@@ -463,8 +462,8 @@ describe('flowBuilderStore', () => {
         state.initializeWithOrigin('2', 'Email', 200)
 
         state = useFlowBuilderStore.getState()
-        // Still has 2 nodes (initial + end)
-        expect(state.nodes).toHaveLength(2)
+        // Still has 1 node (initial only)
+        expect(state.nodes).toHaveLength(1)
         const initialNode = state.nodes.find((n) => n.type === 'initial')!
         expect(initialNode.data.origen_nombre).toBe('Email')
         expect(initialNode.data.prospectos_count).toBe(200)
@@ -495,8 +494,8 @@ describe('flowBuilderStore', () => {
 
       const finalState = useFlowBuilderStore.getState()
       expect(finalState.flowName).toBe('Welcome Series')
-      // 2 initial nodes (initial + end) + 2 stage nodes = 4
-      expect(finalState.nodes.length).toBe(4)
+      // 1 initial node + 2 stage nodes = 3
+      expect(finalState.nodes.length).toBe(3)
       expect(finalState.edges.length).toBe(2)
     })
 
