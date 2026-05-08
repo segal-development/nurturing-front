@@ -92,7 +92,7 @@ export function mapStagesToBackend(storeNodes: ReactFlowNode[]): StageData[] {
         label: data.label || `Stage ${index + 1}`,
         tiempo_espera: data.tiempo_espera ?? data.dia_envio ?? 0, // Use tiempo_espera first, fallback to dia_envio for legacy
         tipo_mensaje: data.tipo_mensaje || 'email',
-        type: data.tipo_mensaje || 'email', // Backend expects this field
+        type: 'stage', // Node type is always 'stage', tipo_mensaje determines the channel
         plantilla_mensaje: data.plantilla_mensaje,
         plantilla_id: data.plantilla_id,
         plantilla_id_email: data.plantilla_id_email,
