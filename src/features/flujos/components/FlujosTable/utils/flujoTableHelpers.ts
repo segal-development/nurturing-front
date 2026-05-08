@@ -47,6 +47,8 @@ export function getProgressBarColor(estado: string): string {
       return 'bg-green-500'
     case 'failed':
       return 'bg-red-500'
+    case 'waiting':
+      return 'bg-purple-500'
     default:
       return 'bg-gray-500'
   }
@@ -65,6 +67,8 @@ export function getStatusTextColor(estado: string): string {
       return 'text-green-600'
     case 'failed':
       return 'text-red-600'
+    case 'waiting':
+      return 'text-purple-600'
     default:
       return 'text-gray-600'
   }
@@ -83,6 +87,8 @@ export function getStatusLabel(estado: string): string {
       return 'Completada'
     case 'failed':
       return 'Fallida'
+    case 'waiting':
+      return '♾️ Perpetuo'
     default:
       return 'Desconocido'
   }
