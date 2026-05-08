@@ -200,6 +200,8 @@ export function FlujoDetailDialog({
   const hasCompletedExecution = latestExecution?.estado === 'completed'
   const hasFailedExecution = latestExecution?.estado === 'failed'
   const hasCancelledExecution = latestExecution?.estado === 'cancelled'
+  const hasWaitingExecution = latestExecution?.estado === 'waiting'
+  const isPerpetualFlow = flujo?.auto_asignar_nuevos ?? false
 
   // Determinar si el flujo tiene prospectos
   const prospectoCount = flujo?.prospectos_en_flujo_count ?? flujo?.prospectos_en_flujo?.length ?? 0
@@ -986,6 +988,16 @@ export function FlujoDetailDialog({
                     Ver Ejecución
                   </>
                 )}
+              </Button>
+            ) : hasWaitingExecution || (isPerpetualFlow && hasCompletedExecution) ? (
+              // Flujo perpetuo esperando nuevos prospectos
+              <Button
+                onClick={() => handleTabChange('ejecuciones')}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={showDeleteConfirm}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                ♾️ Perpetuo - Esperando nuevos
               </Button>
             ) : hasCompletedExecution ? (
               // Flujo ya completado exitosamente - NO se puede volver a ejecutar
