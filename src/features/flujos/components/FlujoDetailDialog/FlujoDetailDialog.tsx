@@ -293,7 +293,7 @@ export function FlujoDetailDialog({
           : 'Auto-asignación desactivada',
         {
           description: newValue 
-            ? 'Los nuevos prospectos se agregarán automáticamente cada viernes'
+            ? 'Los nuevos prospectos se agregarán automáticamente después de cada sync'
             : 'Los nuevos prospectos ya no se agregarán automáticamente',
         }
       )
@@ -544,7 +544,7 @@ export function FlujoDetailDialog({
                       <div className="flex-1">
                         <p className="font-semibold text-segal-dark">Auto-asignación activa</p>
                         <p className="text-sm text-segal-dark/70 mt-1">
-                          Cada viernes después del sync, los nuevos prospectos del origen "{flujo.origen}" se agregarán automáticamente a este flujo, empezando desde la Etapa 1.
+                          Después de cada sync, los nuevos prospectos del origen "{flujo.origen}" se agregarán automáticamente a este flujo y comenzarán desde la primera etapa.
                         </p>
                       </div>
                     </div>
