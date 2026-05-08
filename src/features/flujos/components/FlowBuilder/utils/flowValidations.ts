@@ -15,8 +15,9 @@ export interface ValidationResult {
 
 /**
  * Tipos válidos para stages según el backend
+ * Nota: 'ambos' permite enviar email + SMS desde el mismo nodo
  */
-const VALID_STAGE_TYPES = ['email', 'sms', 'stage', 'condition', 'end']
+const VALID_STAGE_TYPES = ['email', 'sms', 'ambos', 'stage', 'condition', 'end']
 
 /**
  * Valida que el flujo tenga un nodo inicial
