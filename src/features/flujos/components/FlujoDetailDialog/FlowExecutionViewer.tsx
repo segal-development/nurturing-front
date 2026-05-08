@@ -16,7 +16,7 @@ import ReactFlow, {
   useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, Pause, PauseCircle, Play, Trash2, UserPlus } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Eye, Loader2, Pause, PauseCircle, Play, RefreshCw, Trash2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -969,6 +969,7 @@ function FlowExecutionContent({
   const isPaused = executionData?.estado === 'paused'
   const isCompleted = executionData?.estado === 'completed'
   const isFailed = executionData?.estado === 'failed'
+  const isWaiting = executionData?.estado === 'waiting'
 
   return (
     <>
@@ -1014,20 +1015,23 @@ function FlowExecutionContent({
           <div className={`px-4 py-3 flex items-center gap-2 ${
             isExecuting ? 'bg-amber-50 border-b border-amber-200' :
             isPaused ? 'bg-blue-50 border-b border-blue-200' :
+            isWaiting ? 'bg-purple-50 border-b border-purple-200' :
             isCompleted ? 'bg-green-50 border-b border-green-200' :
             isFailed ? 'bg-red-50 border-b border-red-200' : 'bg-gray-50 border-b border-gray-200'
           }`}>
             {isExecuting && <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />}
             {isPaused && <Pause className="h-5 w-5 text-blue-500" />}
+            {isWaiting && <RefreshCw className="h-5 w-5 text-purple-500" />}
             {isCompleted && <CheckCircle2 className="h-5 w-5 text-green-600" />}
             {isFailed && <AlertCircle className="h-5 w-5 text-red-600" />}
             <span className={`text-sm font-semibold ${
               isExecuting ? 'text-amber-700' :
               isPaused ? 'text-blue-700' :
+              isWaiting ? 'text-purple-700' :
               isCompleted ? 'text-green-700' :
               isFailed ? 'text-red-700' : 'text-gray-700'
             }`}>
-              {isExecuting ? 'En progreso' : isPaused ? 'Pausada' : isCompleted ? 'Completada' : isFailed ? 'Falló' : 'Desconocido'}
+              {isExecuting ? 'En progreso' : isPaused ? 'Pausada' : isWaiting ? '♾️ Perpetuo - Esperando nuevos' : isCompleted ? 'Completada' : isFailed ? 'Falló' : 'Desconocido'}
             </span>
           </div>
 
