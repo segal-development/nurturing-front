@@ -13,6 +13,7 @@ import {
   Clock,
   Loader2,
   Pause,
+  RefreshCw,
   XCircle,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -101,6 +102,13 @@ const STATE_CONFIG: Record<string, StateConfig> = {
     color: 'bg-slate-50 border-slate-200 text-slate-500',
     label: 'Pendiente',
     icon: (size) => <Clock className={size} />,
+  },
+  
+  // Waiting state (perpetual flows)
+  waiting: {
+    color: 'bg-purple-50 border-purple-200 text-purple-600',
+    label: '♾️ Perpetuo',
+    icon: (size) => <RefreshCw className={size} />,
   },
 }
 
