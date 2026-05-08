@@ -244,6 +244,7 @@ export function EditFlujoBuilder({
             conditions: config.structure.conditions,
             branches: config.structure.branches,
             end_nodes: config.structure.end_nodes,
+            initial_node: config.structure.initial_node,
           },
         }
 
