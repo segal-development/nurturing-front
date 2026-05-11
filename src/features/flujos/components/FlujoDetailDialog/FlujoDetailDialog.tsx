@@ -85,6 +85,7 @@ export function FlujoDetailDialog({
   const [isExecuteModalOpen, setIsExecuteModalOpen] = useState(false)
   const [isAddProspectsModalOpen, setIsAddProspectsModalOpen] = useState(false)
   const [isTogglingAutoAsignar, setIsTogglingAutoAsignar] = useState(false)
+  const [isTogglingPerpetuo, setIsTogglingPerpetuo] = useState(false)
   const [isEditingNivelDeuda, setIsEditingNivelDeuda] = useState(false)
   const [editNivelDeudaValues, setEditNivelDeudaValues] = useState<Set<string>>(new Set())
   const [isSavingNivelDeuda, setIsSavingNivelDeuda] = useState(false)
@@ -201,7 +202,7 @@ export function FlujoDetailDialog({
   const hasFailedExecution = latestExecution?.estado === 'failed'
   const hasCancelledExecution = latestExecution?.estado === 'cancelled'
   const hasWaitingExecution = latestExecution?.estado === 'waiting'
-  const isPerpetualFlow = flujo?.auto_asignar_nuevos ?? false
+  const isPerpetualFlow = flujo?.es_perpetuo ?? false
 
   // Determinar si el flujo tiene prospectos
   const prospectoCount = flujo?.prospectos_en_flujo_count ?? flujo?.prospectos_en_flujo?.length ?? 0
@@ -308,6 +309,36 @@ export function FlujoDetailDialog({
       })
     } finally {
       setIsTogglingAutoAsignar(false)
+    }
+  }
+
+  const handleTogglePerpetuo = async () => {
+    if (!flujo?.id) return
+
+    const newValue = !flujo.es_perpetuo
+    setIsTogglingPerpetuo(true)
+    
+    try {
+      await flujosService.togglePerpetuo(flujo.id, newValue)
+      toast.success(
+        newValue 
+          ? 'Modo perpetuo activado' 
+          : 'Modo perpetuo desactivado',
+        {
+          description: newValue 
+            ? 'El flujo quedará en espera cuando no haya prospectos pendientes'
+            : 'El flujo se marcará como completado cuando termine',
+        }
+      )
+      // Refrescar datos del flujo
+      refetchFlujo()
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Error al cambiar configuración'
+      toast.error('Error al cambiar modo perpetuo', {
+        description: errorMessage,
+      })
+    } finally {
+      setIsTogglingPerpetuo(false)
     }
   }
 
@@ -537,7 +568,50 @@ export function FlujoDetailDialog({
                       </div>
                       <p className="text-xs text-segal-dark/50 mt-1">Click para cambiar</p>
                     </button>
+
+                    {/* Modo Perpetuo - Clickeable */}
+                    <button
+                      onClick={handleTogglePerpetuo}
+                      disabled={isTogglingPerpetuo}
+                      className={`rounded-lg p-4 border text-left transition-all hover:shadow-md ${
+                        flujo.es_perpetuo 
+                          ? 'bg-purple-50 border-purple-200 hover:border-purple-400' 
+                          : 'bg-segal-blue/5 border-segal-blue/10 hover:border-segal-blue/30'
+                      } ${isTogglingPerpetuo ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+                    >
+                      <p className="text-sm text-segal-dark/60 font-semibold mb-1 flex items-center gap-2">
+                        <Sparkles className={`h-4 w-4 ${isTogglingPerpetuo ? 'animate-pulse' : ''}`} />
+                        Perpetuo
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {flujo.es_perpetuo ? (
+                          <>
+                            <CheckCircle2 className="h-5 w-5 text-purple-600" />
+                            <span className="text-lg font-bold text-purple-600">Activo</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-5 w-5 text-segal-dark/40" />
+                            <span className="text-lg font-bold text-segal-dark/60">Inactivo</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-segal-dark/50 mt-1">Click para cambiar</p>
+                    </button>
                   </div>
+
+                  {/* Info: Modo Perpetuo explicación */}
+                  {flujo.es_perpetuo && (
+                    <div className="p-4 rounded-lg bg-purple-50 border border-purple-200 flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-segal-dark">Modo perpetuo activo</p>
+                        <p className="text-sm text-segal-dark/70 mt-1">
+                          El flujo quedará en estado "esperando" cuando no haya prospectos pendientes, en vez de marcarse como completado. Esto permite que siga recibiendo nuevos prospectos continuamente.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Info: Auto-asignación explicación */}
                   {flujo.auto_asignar_nuevos && (

@@ -371,6 +371,24 @@ export const flujosService = {
   },
 
   /**
+   * Toggle modo perpetuo del flujo
+   * Cuando está activo, el flujo queda en estado "waiting" en vez de "completed"
+   * cuando no hay prospectos pendientes, permitiendo que siga recibiendo nuevos.
+   */
+  async togglePerpetuo(id: number, enabled: boolean): Promise<FlujoNurturing> {
+    try {
+      const { data } = await apiClient.put<{ data: FlujoNurturing; mensaje: string }>(
+        `/flujos/${id}`,
+        { es_perpetuo: enabled }
+      )
+      return data.data
+    } catch (error) {
+      logger.error(`flujosService.togglePerpetuo(${id}, ${enabled}) failed:`, getApiErrorMessage(error))
+      throw error
+    }
+  },
+
+  /**
    * Actualizar configuración visual y estructura de un flujo (para el flow builder)
    */
   async updateFlowConfiguration(

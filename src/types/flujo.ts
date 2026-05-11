@@ -310,6 +310,11 @@ export interface FlujoNurturing {
    * null means no filter (all prospects regardless of debt level).
    */
   nivel_deuda_target?: NivelDeuda[] | null;
+  /**
+   * Si true, el flujo es perpetuo: queda en estado "waiting" en vez de "completed"
+   * cuando no hay prospectos pendientes, permitiendo recibir nuevos continuamente.
+   */
+  es_perpetuo?: boolean;
   user_id?: number;
   user?: {
     id: number;
