@@ -17,7 +17,7 @@ import { logger } from '@/lib/logger'
 import type { StageProgressStats, StageExecutionState } from '@/types/flowExecutionTracking'
 import { flowExecutionTrackingService } from '@/api/flowExecutionTracking.service'
 
-const POLLING_INTERVAL = 2000 // 2 segundos
+const POLLING_INTERVAL = 15000 // 15 segundos - evita rate limiting
 
 /**
  * Hook to check if flow has an active execution

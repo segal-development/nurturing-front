@@ -15,7 +15,7 @@ import {
   type BatchExecutionState,
 } from '@/api/flowExecutionTracking.service';
 
-const POLLING_INTERVAL = 5000; // 5 seconds (less aggressive since it's batch)
+const POLLING_INTERVAL = 30000; // 30 seconds - evita rate limiting
 
 /**
  * Hook to get execution state for multiple flows in one request.
