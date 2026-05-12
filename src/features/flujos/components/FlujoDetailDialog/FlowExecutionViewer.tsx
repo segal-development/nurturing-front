@@ -217,6 +217,7 @@ interface SelectedNodePanelProps {
   nodeId: string | null
   stage: StageExecution | null
   nodeLabel: string
+  nodeData?: NodeVisualData
   onClear: () => void
 }
 
@@ -236,8 +237,14 @@ function getHealthBgColor(value: number, goodThreshold: number, regularThreshold
   return 'bg-red-50 border-red-200'
 }
 
-function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear }: SelectedNodePanelProps) {
+function SelectedNodePanel({ nodeId, stage, nodeLabel, nodeData, onClear }: SelectedNodePanelProps) {
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  
   if (!nodeId) return null
+  
+  // Check if node has plantilla configured
+  const hasPlantilla = nodeData?.plantilla_type === 'reference' && 
+    (nodeData?.plantilla_id || nodeData?.plantilla_id_email)
 
   // Estado visual config
   const getStateConfig = () => {
@@ -496,6 +503,31 @@ function SelectedNodePanel({ nodeId, stage, nodeLabel, onClear }: SelectedNodePa
         <div className="px-3 py-3">
           <p className="text-xs text-segal-dark/60 italic">Este nodo aún no tiene datos de ejecución</p>
         </div>
+      )}
+
+      {/* Botón Ver Plantilla - siempre visible si hay plantilla configurada */}
+      {hasPlantilla && (
+        <div className="px-3 py-3 border-t border-segal-blue/10">
+          <button
+            onClick={() => setIsPreviewOpen(true)}
+            className="w-full px-4 py-2.5 bg-segal-blue text-white rounded-lg hover:bg-segal-blue/90 transition-colors flex items-center justify-center gap-2 font-medium text-sm"
+          >
+            <Eye className="h-4 w-4" />
+            Ver Plantilla
+          </button>
+        </div>
+      )}
+
+      {/* Drawer de preview de plantilla */}
+      {hasPlantilla && (
+        <PlantillaPreviewDrawer
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          plantillaId={nodeData?.plantilla_id}
+          plantillaIdEmail={nodeData?.plantilla_id_email}
+          tipoMensaje={nodeData?.tipo_mensaje}
+          nodeLabel={nodeLabel}
+        />
       )}
     </div>
   )
@@ -1132,6 +1164,7 @@ function FlowExecutionContent({
             nodeId={selectedNodeId}
             stage={selectedStage}
             nodeLabel={nodeLabelsByNodeId.get(selectedNodeId) || selectedNodeId}
+            nodeData={selectedNodeData}
             onClear={() => {
               setSelectedNodeId(null)
               setSelectedStage(null)
