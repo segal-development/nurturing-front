@@ -453,6 +453,18 @@ export interface NuevosUltimoSync {
 }
 
 /**
+ * Estadísticas de envíos totales del flujo
+ */
+export interface EstadisticasEnvios {
+  total_prospectos: number
+  enviados: number
+  abiertos: number
+  clicks: number
+  tasa_apertura: number
+  tasa_clicks: number
+}
+
+/**
  * Response from GET /flujos/:id/cohortes-activas
  */
 export interface CohortesActivasResponse {
@@ -463,6 +475,7 @@ export interface CohortesActivasResponse {
     resumen_por_nodo: Record<string, CohorteResumenNodo>
     ultimos_ingresos?: UltimoIngreso[]
     nuevos_ultimo_sync?: NuevosUltimoSync
+    estadisticas_envios?: EstadisticasEnvios
   }
 }
 

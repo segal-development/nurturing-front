@@ -286,43 +286,46 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos }: StageT
           )}
         </div>
 
-        {/* Metrics for completed/executing stages */}
+        {/* Metrics for completed/executing stages - FORMATO CLARO */}
         {(isCompleted || isExecuting) && metrics && metrics.alcanzados > 0 && (
-          <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
-            {/* Total metrics row */}
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1 text-segal-dark/80">
-                <Users className="h-3 w-3" />
-                <strong>{metrics.alcanzados.toLocaleString()}</strong> alcanzados
-              </span>
-              <span className="flex items-center gap-1 text-green-600">
-                <Eye className="h-3 w-3" />
-                {metrics.porcentajeAbiertos}% abiertos
-              </span>
-              <span className="flex items-center gap-1 text-blue-600">
-                <MousePointer className="h-3 w-3" />
-                {metrics.porcentajeClicks}% clicks
-              </span>
-            </div>
-
-            {/* Nuevos desde sync - highlighted row */}
-            {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
-              <div className="mt-2 pt-2 border-t border-slate-200 flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1 text-purple-700 font-medium">
-                  <Mail className="h-3 w-3" />
-                  <strong>{metricasNuevos.prospectos_alcanzados}</strong> nuevos
-                </span>
-                <span className="text-purple-600">
-                  {metricasNuevos.enviados} enviados
-                </span>
-                <span className="text-green-600">
-                  {metricasNuevos.abiertos} abiertos ({metricasNuevos.tasa_apertura}%)
-                </span>
-                <span className="text-blue-600">
-                  {metricasNuevos.clicks} clicks ({metricasNuevos.tasa_clicks}%)
-                </span>
+          <div className="mt-2 p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200">
+            <div className="flex items-center gap-2 flex-wrap text-sm">
+              {/* Entraron */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-slate-200">
+                <Users className="h-4 w-4 text-slate-600" />
+                <span className="font-bold text-slate-800">{metrics.alcanzados}</span>
+                <span className="text-slate-500 text-xs">entraron</span>
               </div>
-            )}
+              
+              <span className="text-slate-400">→</span>
+              
+              {/* Enviados */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-blue-200">
+                <Mail className="h-4 w-4 text-blue-600" />
+                <span className="font-bold text-blue-700">{stage.envios?.enviado ?? 0}</span>
+                <span className="text-blue-500 text-xs">enviados</span>
+              </div>
+              
+              <span className="text-slate-400">→</span>
+              
+              {/* Abiertos */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-green-200">
+                <Eye className="h-4 w-4 text-green-600" />
+                <span className="font-bold text-green-700">{stage.envios?.abierto ?? 0}</span>
+                <span className="text-green-500 text-xs">abiertos</span>
+                <span className="text-green-600 text-xs font-medium">({metrics.porcentajeAbiertos}%)</span>
+              </div>
+              
+              <span className="text-slate-400">→</span>
+              
+              {/* Clicks */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-purple-200">
+                <MousePointer className="h-4 w-4 text-purple-600" />
+                <span className="font-bold text-purple-700">{stage.envios?.clickeado ?? 0}</span>
+                <span className="text-purple-500 text-xs">clicks</span>
+                <span className="text-purple-600 text-xs font-medium">({metrics.porcentajeClicks}%)</span>
+              </div>
+            </div>
           </div>
         )}
 
