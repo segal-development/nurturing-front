@@ -130,11 +130,11 @@ export interface MetricasNuevosPorEtapa {
 }
 
 /**
- * Métricas de sync para flujos perpetuos
+ * Métricas de nuevos prospectos para flujos perpetuos (últimas 24 horas)
  */
 export interface MetricasSync {
-  fecha_ultimo_sync: string
-  fecha_ultimo_sync_legible: string
+  periodo: string
+  periodo_legible: string
   total_nuevos: number
   nuevos_por_etapa: Record<string, MetricasNuevosPorEtapa>
   resumen: {

@@ -438,16 +438,16 @@ export function EtapasHistoryTimeline({
         Historial de Etapas
       </h4>
 
-      {/* Resumen de nuevos desde último sync */}
+      {/* Resumen de nuevos en últimas 24 horas */}
       {metricasSync && metricasSync.total_nuevos > 0 && (
         <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold text-purple-800 flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Nuevos desde último sync
+              Nuevos en últimas 24 horas
             </span>
             <span className="text-xs text-purple-600">
-              {metricasSync.fecha_ultimo_sync_legible}
+              {metricasSync.periodo_legible ?? 'Últimas 24 horas'}
             </span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
