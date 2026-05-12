@@ -330,7 +330,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
-                  Prospectos únicos que alcanzaron esta etapa
+                  Prospectos que ingresaron al flujo y recibieron este envío
                 </TooltipContent>
               </Tooltip>
               
