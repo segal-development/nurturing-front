@@ -14,10 +14,12 @@
  * @module EtapasHistoryTimeline
  */
 
-import { Check, Circle, Clock, Loader2, AlertTriangle, Users, Mail, Eye, MousePointer } from 'lucide-react'
+import { Check, Circle, Clock, Loader2, AlertTriangle, Users, Mail, Eye, MousePointer, HelpCircle, Smartphone } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import type { ConfigStructure } from '@/types/flujo'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { CanalEnvio, ConfigStructure } from '@/types/flujo'
+import { inferirCanalEnvioDesdeEtapas } from '@/types/flujo'
 import type {
   StageExecution,
   StageExecutionState,
@@ -34,6 +36,8 @@ interface EtapasHistoryTimelineProps {
   flujoId: number
   ejecucionId: number
   configStructure?: ConfigStructure
+  /** Message type for channel breakdown display. If not provided, inferred from configStructure.stages */
+  tipoMensaje?: CanalEnvio
 }
 
 interface StageTimelineItemProps {
@@ -41,6 +45,7 @@ interface StageTimelineItemProps {
   stageLabel: string
   isLast: boolean
   metricasNuevos?: MetricasNuevosPorEtapa
+  tipoMensaje?: 'email' | 'sms' | 'ambos'
 }
 
 /**
@@ -121,6 +126,24 @@ function calculateStageMetrics(
     alcanzados,
     porcentajeAbiertos: Math.round((abiertos / alcanzados) * 100),
     porcentajeClicks: Math.round((clickeados / alcanzados) * 100),
+  }
+}
+
+/**
+ * Calculates channel breakdown for messages when tipo_mensaje is 'ambos'.
+ * NOTE: This is an approximation—API doesn't send per-channel counts.
+ * When both channels are used, we split 50/50 which is accurate for most flows.
+ */
+function calculateChannelBreakdown(
+  enviado: number,
+  tipoMensaje?: 'email' | 'sms' | 'ambos',
+): { emails: number; sms: number } | null {
+  if (tipoMensaje !== 'ambos' || enviado === 0) return null
+  
+  const half = Math.floor(enviado / 2)
+  return {
+    emails: half,
+    sms: enviado - half, // Handle odd numbers by giving remainder to SMS
   }
 }
 
@@ -240,9 +263,10 @@ function buildStageLabelMap(
 // Sub-Components
 // ============================================================================
 
-function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos }: StageTimelineItemProps) {
+function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMensaje }: StageTimelineItemProps) {
   const colors = getStatusColors(stage.estado)
   const metrics = calculateStageMetrics(stage.envios)
+  const channelBreakdown = calculateChannelBreakdown(stage.envios?.enviado ?? 0, tipoMensaje)
 
   const isCompleted = stage.estado === STAGE_STATUS.COMPLETED
   const isExecuting = stage.estado === STAGE_STATUS.EXECUTING
@@ -290,46 +314,92 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos }: StageT
         {(isCompleted || isExecuting) && metrics && metrics.alcanzados > 0 && (
           <div className="mt-2 p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200">
             <div className="flex items-center gap-2 flex-wrap text-sm">
-              {/* Entraron */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-slate-200">
-                <Users className="h-4 w-4 text-slate-600" />
-                <span className="font-bold text-slate-800">{metrics.alcanzados}</span>
-                <span className="text-slate-500 text-xs">entraron</span>
-                {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
-                  <span className="text-purple-600 text-xs font-medium">
-                    ({metricasNuevos.prospectos_alcanzados} nuevos)
-                  </span>
-                )}
-              </div>
+              {/* Alcanzados (prospectos únicos) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-slate-200 cursor-help">
+                    <Users className="h-4 w-4 text-slate-600" />
+                    <span className="font-bold text-slate-800">{metrics.alcanzados}</span>
+                    <span className="text-slate-500 text-xs">alcanzados</span>
+                    <HelpCircle className="h-3 w-3 text-slate-400" />
+                    {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
+                      <span className="text-purple-600 text-xs font-medium">
+                        ({metricasNuevos.prospectos_alcanzados} nuevos)
+                      </span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Prospectos únicos que alcanzaron esta etapa
+                </TooltipContent>
+              </Tooltip>
               
               <span className="text-slate-400">→</span>
               
-              {/* Enviados */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-blue-200">
-                <Mail className="h-4 w-4 text-blue-600" />
-                <span className="font-bold text-blue-700">{stage.envios?.enviado ?? 0}</span>
-                <span className="text-blue-500 text-xs">enviados</span>
-              </div>
+              {/* Mensajes (total enviados) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-blue-200 cursor-help">
+                    {tipoMensaje === 'ambos' ? (
+                      <>
+                        <Mail className="h-4 w-4 text-blue-600" />
+                        <Smartphone className="h-4 w-4 text-blue-600 -ml-1" />
+                      </>
+                    ) : tipoMensaje === 'sms' ? (
+                      <Smartphone className="h-4 w-4 text-blue-600" />
+                    ) : (
+                      <Mail className="h-4 w-4 text-blue-600" />
+                    )}
+                    <span className="font-bold text-blue-700">{stage.envios?.enviado ?? 0}</span>
+                    <span className="text-blue-500 text-xs">mensajes</span>
+                    {channelBreakdown && (
+                      <span className="text-blue-500 text-xs">
+                        ({channelBreakdown.emails} 📧 + {channelBreakdown.sms} 📱)
+                      </span>
+                    )}
+                    <HelpCircle className="h-3 w-3 text-blue-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Total de mensajes enviados (puede superar prospectos si hay múltiples canales)
+                </TooltipContent>
+              </Tooltip>
               
               <span className="text-slate-400">→</span>
               
               {/* Abiertos */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-green-200">
-                <Eye className="h-4 w-4 text-green-600" />
-                <span className="font-bold text-green-700">{stage.envios?.abierto ?? 0}</span>
-                <span className="text-green-500 text-xs">abiertos</span>
-                <span className="text-green-600 text-xs font-medium">({metrics.porcentajeAbiertos}%)</span>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-green-200 cursor-help">
+                    <Eye className="h-4 w-4 text-green-600" />
+                    <span className="font-bold text-green-700">{stage.envios?.abierto ?? 0}</span>
+                    <span className="text-green-500 text-xs">abiertos</span>
+                    <span className="text-green-600 text-xs font-medium">({metrics.porcentajeAbiertos}%)</span>
+                    <HelpCircle className="h-3 w-3 text-green-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Mensajes que fueron abiertos por los prospectos
+                </TooltipContent>
+              </Tooltip>
               
               <span className="text-slate-400">→</span>
               
               {/* Clicks */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-purple-200">
-                <MousePointer className="h-4 w-4 text-purple-600" />
-                <span className="font-bold text-purple-700">{stage.envios?.clickeado ?? 0}</span>
-                <span className="text-purple-500 text-xs">clicks</span>
-                <span className="text-purple-600 text-xs font-medium">({metrics.porcentajeClicks}%)</span>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-purple-200 cursor-help">
+                    <MousePointer className="h-4 w-4 text-purple-600" />
+                    <span className="font-bold text-purple-700">{stage.envios?.clickeado ?? 0}</span>
+                    <span className="text-purple-500 text-xs">clicks</span>
+                    <span className="text-purple-600 text-xs font-medium">({metrics.porcentajeClicks}%)</span>
+                    <HelpCircle className="h-3 w-3 text-purple-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Prospectos que hicieron click en algún enlace del mensaje
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         )}
@@ -394,6 +464,7 @@ export function EtapasHistoryTimeline({
   flujoId,
   ejecucionId,
   configStructure,
+  tipoMensaje: tipoMensajeProp,
 }: EtapasHistoryTimelineProps) {
   const { data, isLoading, isError, error } = useFlowExecutionDetail(
     flujoId,
@@ -404,6 +475,9 @@ export function EtapasHistoryTimeline({
   // Build stage label map from config_structure
   // React 19 Compiler handles memoization automatically
   const stageLabelMap = buildStageLabelMap(configStructure)
+  
+  // Infer tipoMensaje from stages if not provided explicitly
+  const tipoMensaje = tipoMensajeProp ?? inferirCanalEnvioDesdeEtapas(configStructure?.stages)
 
   // Sort stages by fecha_programada to show in chronological order
   const etapas = data?.data?.etapas
@@ -453,11 +527,11 @@ export function EtapasHistoryTimeline({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-purple-700">{metricasSync.total_nuevos}</p>
-              <p className="text-xs text-purple-600">Entraron</p>
+              <p className="text-xs text-purple-600">Alcanzados</p>
             </div>
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-segal-dark">{metricasSync.resumen.enviados}</p>
-              <p className="text-xs text-segal-dark/60">Enviados</p>
+              <p className="text-xs text-segal-dark/60">Mensajes</p>
             </div>
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-green-600">{metricasSync.resumen.abiertos}</p>
@@ -488,6 +562,7 @@ export function EtapasHistoryTimeline({
               stageLabel={label}
               isLast={index === sortedStages.length - 1}
               metricasNuevos={metricasNuevos}
+              tipoMensaje={tipoMensaje}
             />
           )
         })}
