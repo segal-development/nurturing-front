@@ -14,13 +14,15 @@
  * @module EtapasHistoryTimeline
  */
 
-import { Check, Circle, Clock, Loader2, AlertTriangle } from 'lucide-react'
+import { Check, Circle, Clock, Loader2, AlertTriangle, Users, Mail, Eye, MousePointer } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import type { ConfigStructure } from '@/types/flujo'
 import type {
   StageExecution,
   StageExecutionState,
+  MetricasSync,
+  MetricasNuevosPorEtapa,
 } from '@/types/flowExecutionTracking'
 import { useFlowExecutionDetail } from '../../hooks/useFlowExecutionTracking'
 
@@ -38,6 +40,7 @@ interface StageTimelineItemProps {
   stage: StageExecution
   stageLabel: string
   isLast: boolean
+  metricasNuevos?: MetricasNuevosPorEtapa
 }
 
 /**
@@ -237,7 +240,7 @@ function buildStageLabelMap(
 // Sub-Components
 // ============================================================================
 
-function StageTimelineItem({ stage, stageLabel, isLast }: StageTimelineItemProps) {
+function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos }: StageTimelineItemProps) {
   const colors = getStatusColors(stage.estado)
   const metrics = calculateStageMetrics(stage.envios)
 
@@ -285,16 +288,41 @@ function StageTimelineItem({ stage, stageLabel, isLast }: StageTimelineItemProps
 
         {/* Metrics for completed/executing stages */}
         {(isCompleted || isExecuting) && metrics && metrics.alcanzados > 0 && (
-          <div className="flex items-center gap-3 mt-1 text-xs text-segal-dark/70">
-            <span>
-              <strong>{metrics.alcanzados.toLocaleString()}</strong> alcanzados
-            </span>
-            <span className="text-green-600">
-              {metrics.porcentajeAbiertos}% abiertos
-            </span>
-            <span className="text-blue-600">
-              {metrics.porcentajeClicks}% clicks
-            </span>
+          <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+            {/* Total metrics row */}
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1 text-segal-dark/80">
+                <Users className="h-3 w-3" />
+                <strong>{metrics.alcanzados.toLocaleString()}</strong> alcanzados
+              </span>
+              <span className="flex items-center gap-1 text-green-600">
+                <Eye className="h-3 w-3" />
+                {metrics.porcentajeAbiertos}% abiertos
+              </span>
+              <span className="flex items-center gap-1 text-blue-600">
+                <MousePointer className="h-3 w-3" />
+                {metrics.porcentajeClicks}% clicks
+              </span>
+            </div>
+
+            {/* Nuevos desde sync - highlighted row */}
+            {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
+              <div className="mt-2 pt-2 border-t border-slate-200 flex items-center gap-4 text-xs">
+                <span className="flex items-center gap-1 text-purple-700 font-medium">
+                  <Mail className="h-3 w-3" />
+                  <strong>{metricasNuevos.prospectos_alcanzados}</strong> nuevos
+                </span>
+                <span className="text-purple-600">
+                  {metricasNuevos.enviados} enviados
+                </span>
+                <span className="text-green-600">
+                  {metricasNuevos.abiertos} abiertos ({metricasNuevos.tasa_apertura}%)
+                </span>
+                <span className="text-blue-600">
+                  {metricasNuevos.clicks} clicks ({metricasNuevos.tasa_clicks}%)
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -371,6 +399,7 @@ export function EtapasHistoryTimeline({
 
   // Sort stages by fecha_programada to show in chronological order
   const etapas = data?.data?.etapas
+  const metricasSync = data?.data?.metricas_sync
   const sortedStages = etapas
     ? [...etapas].sort((a, b) => {
         const dateA = new Date(a.fecha_programada).getTime()
@@ -401,12 +430,48 @@ export function EtapasHistoryTimeline({
         Historial de Etapas
       </h4>
 
+      {/* Resumen de nuevos desde último sync */}
+      {metricasSync && metricasSync.total_nuevos > 0 && (
+        <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Nuevos desde último sync
+            </span>
+            <span className="text-xs text-purple-600">
+              {metricasSync.fecha_ultimo_sync_legible}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+            <div className="bg-white rounded p-2 border border-purple-100">
+              <p className="text-lg font-bold text-purple-700">{metricasSync.total_nuevos}</p>
+              <p className="text-xs text-purple-600">Entraron</p>
+            </div>
+            <div className="bg-white rounded p-2 border border-purple-100">
+              <p className="text-lg font-bold text-segal-dark">{metricasSync.resumen.enviados}</p>
+              <p className="text-xs text-segal-dark/60">Enviados</p>
+            </div>
+            <div className="bg-white rounded p-2 border border-purple-100">
+              <p className="text-lg font-bold text-green-600">{metricasSync.resumen.abiertos}</p>
+              <p className="text-xs text-green-600">{metricasSync.resumen.tasa_apertura}% abiertos</p>
+            </div>
+            <div className="bg-white rounded p-2 border border-purple-100">
+              <p className="text-lg font-bold text-blue-600">{metricasSync.resumen.clicks}</p>
+              <p className="text-xs text-blue-600">{metricasSync.resumen.tasa_clicks}% clicks</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-0">
         {sortedStages.map((stage, index) => {
           const stageInfo = stageLabelMap.get(stage.node_id)
           const label = stageInfo
             ? `${stageInfo.dayLabel} | ${stageInfo.label}`
             : stage.node_id
+          
+          // Get nuevos metrics for this stage
+          const metricasNuevos = metricasSync?.nuevos_por_etapa?.[stage.node_id]
 
           return (
             <StageTimelineItem
@@ -414,6 +479,7 @@ export function EtapasHistoryTimeline({
               stage={stage}
               stageLabel={label}
               isLast={index === sortedStages.length - 1}
+              metricasNuevos={metricasNuevos}
             />
           )
         })}

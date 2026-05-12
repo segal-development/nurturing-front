@@ -118,6 +118,35 @@ export interface ExecutionConditionEvaluation {
 }
 
 /**
+ * Métricas de nuevos prospectos por etapa (desde último sync)
+ */
+export interface MetricasNuevosPorEtapa {
+  prospectos_alcanzados: number
+  enviados: number
+  abiertos: number
+  clicks: number
+  tasa_apertura: number
+  tasa_clicks: number
+}
+
+/**
+ * Métricas de sync para flujos perpetuos
+ */
+export interface MetricasSync {
+  fecha_ultimo_sync: string
+  fecha_ultimo_sync_legible: string
+  total_nuevos: number
+  nuevos_por_etapa: Record<string, MetricasNuevosPorEtapa>
+  resumen: {
+    enviados: number
+    abiertos: number
+    clicks: number
+    tasa_apertura: number
+    tasa_clicks: number
+  }
+}
+
+/**
  * Detalles completos de una ejecución de flujo con tracking por etapa
  */
 export interface FlowExecutionDetail {
@@ -145,6 +174,8 @@ export interface FlowExecutionDetail {
   condiciones_evaluadas?: ExecutionConditionEvaluation[]
   nodo_actual?: string // ID del nodo que se está ejecutando ahora
   proximo_nodo?: string // ID del nodo que se ejecutará después
+  // Métricas de sync para flujos perpetuos
+  metricas_sync?: MetricasSync
 }
 
 /**
