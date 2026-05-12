@@ -329,7 +329,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
                   Prospectos únicos que alcanzaron esta etapa
                 </TooltipContent>
               </Tooltip>
@@ -360,7 +360,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                     <HelpCircle className="h-3 w-3 text-blue-400" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
                   Total de mensajes enviados (puede superar prospectos si hay múltiples canales)
                 </TooltipContent>
               </Tooltip>
@@ -378,7 +378,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                     <HelpCircle className="h-3 w-3 text-green-400" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
                   Mensajes que fueron abiertos por los prospectos
                 </TooltipContent>
               </Tooltip>
@@ -396,7 +396,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                     <HelpCircle className="h-3 w-3 text-purple-400" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
                   Prospectos que hicieron click en algún enlace del mensaje
                 </TooltipContent>
               </Tooltip>
