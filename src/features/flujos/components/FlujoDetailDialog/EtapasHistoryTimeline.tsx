@@ -295,6 +295,11 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos }: StageT
                 <Users className="h-4 w-4 text-slate-600" />
                 <span className="font-bold text-slate-800">{metrics.alcanzados}</span>
                 <span className="text-slate-500 text-xs">entraron</span>
+                {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
+                  <span className="text-purple-600 text-xs font-medium">
+                    ({metricasNuevos.prospectos_alcanzados} nuevos)
+                  </span>
+                )}
               </div>
               
               <span className="text-slate-400">→</span>
