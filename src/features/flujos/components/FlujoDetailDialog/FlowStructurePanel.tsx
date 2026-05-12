@@ -6,12 +6,13 @@
 
 // import { logger } from '@/lib/logger'
 import { useState } from 'react'
-import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List, Loader2 } from 'lucide-react'
+import { ArrowRight, GitBranch, CheckCircle2, AlertCircle, Eye, List, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FlowVisualizationViewer } from './FlowVisualizationViewer'
 import { FlowExecutionViewer } from './FlowExecutionViewer'
+import { PlantillaPreviewDrawer } from '../FlowBuilder/components/PlantillaPreviewDrawer'
 import { useActiveExecution, useLatestExecution } from '../../hooks/useFlowExecutionTracking'
-import type { EtapaFlujo, CondicionFlujo, RamificacionFlujo, NodoFinalFlujo, ConfigStructure, ConfigVisual } from '@/types/flujo'
+import type { EtapaFlujo, CondicionFlujo, RamificacionFlujo, NodoFinalFlujo, ConfigStructure, ConfigVisual, TipoMensaje } from '@/types/flujo'
 
 // Alias para mayor claridad
 const FlowExecutionViewerDynamic = FlowExecutionViewer
@@ -41,6 +42,15 @@ export function FlowStructurePanel({
   // Verificar si hay visualización disponible desde el principio
   const hasVisualData = config_visual && config_visual.nodes && config_visual.nodes.length > 0
   const [viewMode, setViewMode] = useState<'visual' | 'details'>(hasVisualData ? 'visual' : 'details')
+  
+  // Estado para preview de plantilla
+  const [previewState, setPreviewState] = useState<{
+    isOpen: boolean
+    plantillaId?: number
+    plantillaIdEmail?: number
+    tipoMensaje?: TipoMensaje
+    nodeLabel?: string
+  }>({ isOpen: false })
 
   // Consultar si hay una ejecución activa desde el backend (in_progress o paused)
   const { data: activeExecutionData, isLoading: isLoadingActive } = useActiveExecution(
@@ -190,6 +200,29 @@ export function FlowStructurePanel({
                             <span className="font-medium">Oferta:</span> {etapa.oferta.titulo}
                           </p>
                         )}
+                        
+                        {/* Botón para ver plantilla */}
+                        {(etapa.plantilla_id || etapa.plantilla_id_email) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-11 mt-2 text-segal-blue border-segal-blue/30 hover:bg-segal-blue/5"
+                            onClick={() => setPreviewState({
+                              isOpen: true,
+                              plantillaId: etapa.plantilla_id,
+                              plantillaIdEmail: etapa.plantilla_id_email,
+                              tipoMensaje: etapa.tipo_mensaje,
+                              nodeLabel: `Día ${etapa.dia_envio} - ${
+                                etapa.tipo_mensaje === 'email' ? 'Email' :
+                                etapa.tipo_mensaje === 'sms' ? 'SMS' :
+                                etapa.tipo_mensaje === 'ambos' ? 'Email + SMS' : ''
+                              }`,
+                            })}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Ver Plantilla
+                          </Button>
+                        )}
                       </div>
 
                       {!etapa.activo && (
@@ -317,6 +350,16 @@ export function FlowStructurePanel({
           <p className="text-sm text-segal-dark/40 mt-1">Este flujo no tiene configuración visual ni estructura</p>
         </div>
       )}
+      
+      {/* Modal de preview de plantilla */}
+      <PlantillaPreviewDrawer
+        isOpen={previewState.isOpen}
+        onClose={() => setPreviewState({ isOpen: false })}
+        plantillaId={previewState.plantillaId}
+        plantillaIdEmail={previewState.plantillaIdEmail}
+        tipoMensaje={previewState.tipoMensaje}
+        nodeLabel={previewState.nodeLabel}
+      />
     </div>
   )
 }

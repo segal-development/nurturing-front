@@ -260,6 +260,7 @@ function ActionsCell({
   canExecute,
   isExecuting,
   isProcessing,
+  esPerpetuo,
   onEjecutarFlujo,
   onViewFlujo,
   onEditFlujo,
@@ -269,6 +270,7 @@ function ActionsCell({
   canExecute: boolean
   isExecuting: boolean
   isProcessing: boolean
+  esPerpetuo: boolean
   onEjecutarFlujo?: (id: number) => void
   onViewFlujo?: (id: number) => void
   onEditFlujo?: (id: number) => void
@@ -310,7 +312,8 @@ function ActionsCell({
               <span className="text-segal-dark">Ver detalles</span>
             </DropdownMenuItem>
           )}
-          {onEditFlujo && (
+          {/* Ocultar editar si el flujo está en ejecución o es perpetuo */}
+          {onEditFlujo && !isExecuting && !esPerpetuo && (
             <DropdownMenuItem onClick={() => onEditFlujo(flujoId)} className="cursor-pointer">
               <Edit2 className="h-4 w-4 text-segal-blue mr-2" />
               <span className="text-segal-dark">Editar</span>
@@ -385,6 +388,7 @@ export const FlujoTableRow = memo(function FlujoTableRow({
         canExecute={canExecute}
         isExecuting={isExecuting}
         isProcessing={isProcesamientoEnCurso}
+        esPerpetuo={flujo.es_perpetuo ?? false}
         onEjecutarFlujo={onEjecutarFlujo}
         onViewFlujo={onViewFlujo}
         onEditFlujo={onEditFlujo}

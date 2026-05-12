@@ -65,9 +65,10 @@ interface FlujoDetailDialogProps {
 const TABS = [
   { id: 'general' as TabType, label: 'General', icon: AlertCircle },
   { id: 'estructura' as TabType, label: 'Estructura', icon: GitBranch },
-  { id: 'estadisticas' as TabType, label: 'Estadísticas', icon: BarChart3 },
+  // Estadísticas y Monitoreo ocultas temporalmente - código mantenido pero no visible
+  // { id: 'estadisticas' as TabType, label: 'Estadísticas', icon: BarChart3 },
   { id: 'ejecuciones' as TabType, label: 'Ejecuciones', icon: Clock },
-  { id: 'monitoreo' as TabType, label: 'Monitoreo', icon: Activity },
+  // { id: 'monitoreo' as TabType, label: 'Monitoreo', icon: Activity },
 ]
 
 export function FlujoDetailDialog({
