@@ -326,7 +326,7 @@ function CohortSummary({
               <p className="text-2xl font-bold text-slate-700">
                 {estadisticasEnvios.total_prospectos.toLocaleString()}
               </p>
-              <p className="text-xs text-slate-600 font-medium">Alcanzados</p>
+              <p className="text-xs text-slate-600 font-medium">Prospectos únicos</p>
             </div>
           </div>
         </div>
@@ -953,8 +953,8 @@ export function ExecutionHistoryPanel({
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-segal-dark/60 bg-segal-blue/10 px-2 py-1 rounded-full">
-              Flujo Perpetuo
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+              ∞ Perpetuo
             </span>
             {onStartTour && (
               <Button

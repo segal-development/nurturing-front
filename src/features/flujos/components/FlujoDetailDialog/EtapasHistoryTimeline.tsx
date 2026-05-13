@@ -314,13 +314,13 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
         {(isCompleted || isExecuting) && metrics && metrics.alcanzados > 0 && (
           <div className="mt-2 p-3 bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg border border-slate-200">
             <div className="flex items-center gap-2 flex-wrap text-sm">
-              {/* Alcanzados (prospectos únicos) */}
+              {/* Prospectos únicos */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-slate-200 cursor-help">
                     <Users className="h-4 w-4 text-slate-600" />
                     <span className="font-bold text-slate-800">{metrics.alcanzados}</span>
-                    <span className="text-slate-500 text-xs">alcanzados</span>
+                    <span className="text-slate-500 text-xs">prospectos</span>
                     <HelpCircle className="h-3 w-3 text-slate-400" />
                     {metricasNuevos && metricasNuevos.prospectos_alcanzados > 0 && (
                       <span className="text-purple-600 text-xs font-medium">
@@ -330,13 +330,13 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
-                  Prospectos que ingresaron al flujo y recibieron este envío
+                  Personas únicas que recibieron este mensaje
                 </TooltipContent>
               </Tooltip>
               
               <span className="text-slate-400">→</span>
               
-              {/* Mensajes (total enviados) */}
+              {/* Envíos (total enviados) */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1 px-2 py-1 bg-white rounded border border-blue-200 cursor-help">
@@ -351,7 +351,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                       <Mail className="h-4 w-4 text-blue-600" />
                     )}
                     <span className="font-bold text-blue-700">{stage.envios?.enviado ?? 0}</span>
-                    <span className="text-blue-500 text-xs">mensajes</span>
+                    <span className="text-blue-500 text-xs">envíos</span>
                     {channelBreakdown && (
                       <span className="text-blue-500 text-xs">
                         ({channelBreakdown.emails} 📧 + {channelBreakdown.sms} 📱)
@@ -361,7 +361,7 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-slate-900 text-white px-3 py-2 rounded-lg shadow-lg">
-                  Total de mensajes enviados (puede superar prospectos si hay múltiples canales)
+                  Total de mensajes enviados
                 </TooltipContent>
               </Tooltip>
               
@@ -527,11 +527,11 @@ export function EtapasHistoryTimeline({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-purple-700">{metricasSync.total_nuevos}</p>
-              <p className="text-xs text-purple-600">Alcanzados</p>
+              <p className="text-xs text-purple-600">Prospectos únicos</p>
             </div>
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-segal-dark">{metricasSync.resumen.enviados}</p>
-              <p className="text-xs text-segal-dark/60">Mensajes</p>
+              <p className="text-xs text-segal-dark/60">Envíos</p>
             </div>
             <div className="bg-white rounded p-2 border border-purple-100">
               <p className="text-lg font-bold text-green-600">{metricasSync.resumen.abiertos}</p>
