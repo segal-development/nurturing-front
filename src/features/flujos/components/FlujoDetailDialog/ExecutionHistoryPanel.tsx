@@ -41,6 +41,12 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatCurrency, useRecalcularCosto } from "@/features/costos/hooks";
 import type {
   ExecutionListItem,
@@ -326,7 +332,19 @@ function CohortSummary({
               <p className="text-2xl font-bold text-slate-700">
                 {estadisticasEnvios.total_prospectos.toLocaleString()}
               </p>
-              <p className="text-xs text-slate-600 font-medium">Prospectos únicos</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <p className="text-xs text-slate-600 font-medium inline-flex items-center gap-1 cursor-help">
+                      Prospectos únicos
+                      <HelpCircle className="h-3 w-3 text-slate-400" />
+                    </p>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Personas únicas que recibieron mensajes de este flujo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </div>
