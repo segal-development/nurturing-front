@@ -22,6 +22,7 @@ import {
   AperturasChart,
   TopFlujosTable,
   NuevosProspectosChart,
+  EnviosHoyCard,
 } from './components';
 
 // ============================================================
@@ -241,6 +242,11 @@ export function MetricasPage() {
         <EnviosChart data={dashboard.envios.por_dia} />
         <AperturasChart data={dashboard.aperturas.por_dia} />
       </div>
+
+      {/* Envíos de hoy con fallback histórico — solo cuando hay flujo seleccionado */}
+      {selectedFlujoId !== null && dashboard.envios_hoy && (
+        <EnviosHoyCard data={dashboard.envios_hoy} />
+      )}
 
       {/* Nuevos prospectos por día (siempre visible, especialmente útil con flujo seleccionado) */}
       {dashboard.nuevos_prospectos && (

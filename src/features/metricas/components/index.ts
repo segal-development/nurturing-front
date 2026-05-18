@@ -10,3 +10,4 @@ export { KpiSummary } from './KpiSummary';
 export { EnviosChart } from './EnviosChart';
 export { AperturasChart } from './AperturasChart';
 export { NuevosProspectosChart } from './NuevosProspectosChart';
+export { EnviosHoyCard } from './EnviosHoyCard';

@@ -276,6 +276,20 @@ export interface NuevosProspectosMetric {
   por_dia: Array<{ fecha: string; total: number }>;
 }
 
+export interface EnviosHoyEtapa {
+  node_id: string;
+  etapa_nombre: string;
+  total: number;
+  ultimo?: string | null;
+}
+
+export interface EnviosHoyMetric {
+  total_hoy: number;
+  por_etapa_hoy: EnviosHoyEtapa[];
+  /** Solo populated cuando total_hoy === 0: último envío histórico por etapa */
+  ultimo_por_etapa: EnviosHoyEtapa[];
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -285,6 +299,7 @@ export interface MetricasDashboard {
   conversiones: ConversionesMetrics;
   tendencias: TrendsMetrics;
   nuevos_prospectos: NuevosProspectosMetric;
+  envios_hoy?: EnviosHoyMetric;
   top_flujos: TopFlujoMetric[];
   generado_at: string;
 }
