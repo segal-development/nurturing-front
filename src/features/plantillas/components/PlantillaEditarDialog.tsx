@@ -54,6 +54,8 @@ export function PlantillaEditarDialog({
     tipo: 'email',
     activo: true,
     asunto: '',
+    modo: 'componentes',
+    contenido: '',
     componentes: [],
   })
 
@@ -80,6 +82,8 @@ export function PlantillaEditarDialog({
           tipo: 'email',
           activo: email.activo,
           asunto: email.asunto,
+          modo: email.modo || 'componentes',
+          contenido: email.contenido || '',
           componentes: email.componentes as any,
         })
       }

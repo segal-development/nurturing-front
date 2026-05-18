@@ -279,10 +279,23 @@ export const plantillaEmailSchema = plantillaBaseSchema.extend({
     .string()
     .min(1, 'El asunto es obligatorio')
     .max(200, 'El asunto no puede exceder 200 caracteres'),
+  modo: z.enum(['componentes', 'html_personalizado']).default('componentes'),
+  contenido: z.string().optional().default(''),
   componentes: z
     .array(emailComponentSchema)
-    .min(1, 'La plantilla debe tener al menos un componente'),
-})
+    .default([]),
+}).refine(
+  (data) => {
+    if (data.modo === 'html_personalizado') {
+      return data.contenido.trim().length > 0
+    }
+    return data.componentes.length >= 1
+  },
+  {
+    message: 'Debes pegar HTML (modo HTML personalizado) o agregar al menos un componente',
+    path: ['componentes'],
+  }
+)
 
 export type PlantillaEmailFormData = z.infer<typeof plantillaEmailSchema>
 

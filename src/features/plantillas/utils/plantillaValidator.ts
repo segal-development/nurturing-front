@@ -104,13 +104,22 @@ export function validarPlantillaEmail(plantilla: Omit<PlantillaEmail, 'id'>): Va
     errores.push('El asunto no puede exceder 200 caracteres')
   }
 
-  // Validar componentes
-  if (!plantilla.componentes || plantilla.componentes.length === 0) {
-    errores.push('La plantilla debe contener al menos un componente')
+  // Validar contenido según el modo
+  const modo = plantilla.modo ?? 'componentes'
+
+  if (modo === 'html_personalizado') {
+    if (!plantilla.contenido || !plantilla.contenido.trim()) {
+      errores.push('El HTML personalizado no puede estar vacío')
+    }
+  } else {
+    // Modo componentes (default): exigir al menos uno
+    if (!plantilla.componentes || plantilla.componentes.length === 0) {
+      errores.push('La plantilla debe contener al menos un componente')
+    }
   }
 
-  // Validar cada componente
-  plantilla.componentes?.forEach((componente, index) => {
+  // Validar cada componente (solo en modo componentes)
+  if (modo === 'componentes') plantilla.componentes?.forEach((componente, index) => {
     switch (componente.tipo) {
       case 'logo':
         if (!componente.contenido?.url) {

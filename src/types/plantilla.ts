@@ -150,6 +150,8 @@ export type AnyEmailComponent =
 export interface PlantillaEmail extends PlantillaBase {
   tipo: 'email'
   asunto: string
+  modo?: 'componentes' | 'html_personalizado'
+  contenido?: string
   componentes: AnyEmailComponent[]
   preview?: string // HTML preview
 }

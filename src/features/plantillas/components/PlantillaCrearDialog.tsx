@@ -53,6 +53,8 @@ export function PlantillaCrearDialog({
     tipo: 'email',
     activo: true,
     asunto: '',
+    modo: 'componentes',
+    contenido: '',
     componentes: [],
   })
 

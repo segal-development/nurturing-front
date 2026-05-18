@@ -10,6 +10,39 @@ interface EmailPreviewProps {
 }
 
 export function EmailPreview({ plantilla }: EmailPreviewProps) {
+  // Modo HTML personalizado: renderizar el contenido tal cual en un iframe sandbox
+  if (plantilla.modo === 'html_personalizado') {
+    return (
+      <div className="space-y-4">
+        <div className="bg-segal-blue/5 rounded-lg p-4 border border-segal-blue/10 space-y-2">
+          <div>
+            <p className="text-xs text-segal-dark/60">Asunto:</p>
+            <p className="font-medium text-segal-dark">{plantilla.asunto}</p>
+          </div>
+          <div>
+            <p className="text-xs text-segal-dark/60">De:</p>
+            <p className="text-sm text-segal-dark">Grupo Segal &lt;contacto@gruposegal.com&gt;</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-segal-blue/10 overflow-hidden shadow-sm">
+          <div className="bg-gray-50 border-b border-gray-200 px-4 py-3 text-xs text-gray-600">
+            Vista previa del email (HTML personalizado)
+          </div>
+          <iframe
+            title="Email preview"
+            srcDoc={plantilla.contenido || '<p style="padding:20px; color:#999; font-family:sans-serif;">Vacío.</p>'}
+            className="w-full bg-white"
+            style={{ minHeight: '700px', border: 0 }}
+            sandbox=""
+          />
+        </div>
+        <div className="text-xs text-segal-dark/60 bg-segal-blue/5 rounded-lg p-3 border border-segal-blue/10">
+          <p>💡 Las variables {`{{nombre}}`}, {`{{email}}`}, etc. se reemplazan al enviar.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Información del email */}

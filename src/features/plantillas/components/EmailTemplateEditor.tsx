@@ -48,13 +48,34 @@ export function EmailTemplateEditor({
     descripcion: initialData?.descripcion || '',
     activo: initialData?.activo !== false,
     asunto: initialData?.asunto || '',
+    modo: initialData?.modo || 'componentes',
+    contenido: initialData?.contenido || '',
     componentes: initialData?.componentes || [],
   })
+  const contenidoHtmlRef = useRef<HTMLTextAreaElement>(null)
 
   /**
    * Inserta una variable en el campo activo
    */
   const handleInsertVariable = (variable: string) => {
+    // Modo HTML personalizado: insertar en el textarea de HTML
+    if (plantilla.modo === 'html_personalizado' && contenidoHtmlRef.current) {
+      const textarea = contenidoHtmlRef.current
+      const start = textarea.selectionStart ?? plantilla.contenido.length
+      const end = textarea.selectionEnd ?? plantilla.contenido.length
+      const newValue = plantilla.contenido.substring(0, start) + variable + plantilla.contenido.substring(end)
+
+      setPlantilla({ ...plantilla, contenido: newValue })
+
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + variable.length
+        textarea.focus()
+      }, 0)
+
+      toast.success(`Variable insertada en el HTML`, { duration: 1500 })
+      return
+    }
+
     if (activeField === 'asunto' && asuntoInputRef.current) {
       // Insertar en el asunto
       const input = asuntoInputRef.current
@@ -122,6 +143,14 @@ export function EmailTemplateEditor({
 
   const handleActivoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPlantilla({ ...plantilla, activo: e.target.checked })
+  }
+
+  const handleModoChange = (nuevoModo: 'componentes' | 'html_personalizado') => {
+    setPlantilla({ ...plantilla, modo: nuevoModo })
+  }
+
+  const handleContenidoHtmlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPlantilla({ ...plantilla, contenido: e.target.value })
   }
 
   /**
@@ -327,7 +356,93 @@ export function EmailTemplateEditor({
         </div>
       </div>
 
-      {/* Editor de componentes */}
+      {/* Toggle modo: componentes vs HTML personalizado */}
+      <div className="border-t border-segal-blue/10 dark:border-gray-700 pt-6">
+        <div className="flex items-center justify-between bg-segal-blue/5 dark:bg-gray-800 rounded-lg p-3 border border-segal-blue/10 dark:border-gray-700">
+          <div>
+            <Label htmlFor="email-modo-html" className="text-sm font-semibold text-segal-dark dark:text-white cursor-pointer">
+              Modo HTML personalizado
+            </Label>
+            <p className="text-xs text-segal-dark/60 dark:text-gray-400 mt-0.5">
+              Pegá tu propio HTML completo. Se mantiene tal cual al enviar (con variables interpoladas).
+            </p>
+          </div>
+          <input
+            id="email-modo-html"
+            type="checkbox"
+            checked={plantilla.modo === 'html_personalizado'}
+            onChange={(e) =>
+              handleModoChange(e.target.checked ? 'html_personalizado' : 'componentes')
+            }
+            className="h-5 w-5 rounded border-segal-blue/30 dark:border-gray-600 text-segal-blue dark:text-segal-turquoise cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* Editor: HTML personalizado */}
+      {plantilla.modo === 'html_personalizado' && (
+        <div className="border-t border-segal-blue/10 dark:border-gray-700 pt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-segal-dark dark:text-white">HTML del Email</h3>
+            <div className="flex gap-2 border-b-0">
+              <button
+                type="button"
+                onClick={() => setVistaActiva('editor')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  vistaActiva === 'editor'
+                    ? 'bg-segal-blue/10 dark:bg-gray-700 text-segal-blue dark:text-segal-turquoise'
+                    : 'text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
+                }`}
+              >
+                Código
+              </button>
+              <button
+                type="button"
+                onClick={() => setVistaActiva('preview')}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors flex items-center gap-1 ${
+                  vistaActiva === 'preview'
+                    ? 'bg-segal-blue/10 dark:bg-gray-700 text-segal-blue dark:text-segal-turquoise'
+                    : 'text-segal-dark/60 dark:text-gray-400 hover:text-segal-dark dark:hover:text-white'
+                }`}
+              >
+                <Eye className="h-4 w-4" />
+                Preview
+              </button>
+            </div>
+          </div>
+
+          {vistaActiva === 'editor' && (
+            <div className="space-y-2">
+              <textarea
+                ref={contenidoHtmlRef}
+                value={plantilla.contenido}
+                onChange={handleContenidoHtmlChange}
+                placeholder={'Pegá tu HTML aquí. Podés usar variables como {{nombre}}, {{email}}, etc.\n\nSi pegás un documento HTML completo (<!DOCTYPE html>... <html>...), se envía tal cual.\nSi pegás solo un fragmento, el sistema lo envuelve mínimamente para que sea un email válido.'}
+                className="w-full h-96 px-3 py-2 rounded-md border border-segal-blue/30 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-segal-blue/20 dark:focus:ring-segal-turquoise/20 focus:border-segal-blue dark:focus:border-segal-turquoise"
+                spellCheck={false}
+              />
+              <p className="text-xs text-segal-dark/60 dark:text-gray-400">
+                {plantilla.contenido.length.toLocaleString()} caracteres • Para insertar variables, hacé clic en el panel de la derecha
+              </p>
+            </div>
+          )}
+
+          {vistaActiva === 'preview' && (
+            <div className="border border-segal-blue/10 dark:border-gray-700 rounded-lg overflow-hidden bg-white">
+              <iframe
+                title="Preview HTML"
+                srcDoc={plantilla.contenido || '<p style="padding:20px; color:#999; font-family:sans-serif;">Vacío — pegá HTML para ver el preview.</p>'}
+                className="w-full"
+                style={{ minHeight: '600px', border: 0 }}
+                sandbox=""
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Editor: Componentes (modo default) */}
+      {plantilla.modo === 'componentes' && (
       <div className="border-t border-segal-blue/10 dark:border-gray-700 pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-segal-dark dark:text-white">Componentes del Email</h3>
@@ -460,6 +575,7 @@ export function EmailTemplateEditor({
           <EmailPreview plantilla={plantilla} />
         )}
       </div>
+      )}
 
       {/* Validación */}
       {!validacion.esValida || validacion.advertencias.length > 0 ? (
