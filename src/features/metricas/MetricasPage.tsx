@@ -13,12 +13,15 @@ import { useMetricasDashboard, useRefreshMetricas } from './hooks/useMetricas';
 import { METRIC_PERIOD, type MetricPeriod, type DateRange, type MetricsParams } from '@/types/metricas';
 import { getPeriodLabel, formatDateRange } from './utils/formatters';
 import { getApiErrorMessage } from '@/api/client';
+import { useFlujos } from '@/features/flujos/hooks/useFlujos';
+import { FlujoSelector } from '@/features/flujos/components/FlujosFilters/FlujoSelector';
 import {
   KpiSummary,
   PeriodSelector,
   EnviosChart,
   AperturasChart,
   TopFlujosTable,
+  NuevosProspectosChart,
 } from './components';
 
 // ============================================================
@@ -57,6 +60,11 @@ function PageHeader({
   onDateRangeChange,
   onRefresh,
   isRefreshing,
+  selectedFlujoId,
+  onFlujoChange,
+  flujos,
+  isLoadingFlujos,
+  flujoNombre,
 }: {
   period: MetricPeriod;
   onPeriodChange: (value: MetricPeriod) => void;
@@ -64,6 +72,11 @@ function PageHeader({
   onDateRangeChange: (range: DateRange | undefined) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
+  selectedFlujoId: number | null;
+  onFlujoChange: (id: number | null) => void;
+  flujos: { id: number; nombre: string }[];
+  isLoadingFlujos: boolean;
+  flujoNombre?: string;
 }) {
   // Display period label or custom date range
   const periodDisplay =
@@ -71,28 +84,42 @@ function PageHeader({
       ? formatDateRange(dateRange.from, dateRange.to)
       : getPeriodLabel(period);
 
+  const subtitle = flujoNombre
+    ? `${flujoNombre} · ${periodDisplay}`
+    : `Resumen de rendimiento · ${periodDisplay}`;
+
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Métricas y Analytics</h1>
-        <p className="text-muted-foreground mt-1">Resumen de rendimiento - {periodDisplay}</p>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Métricas y Analytics</h1>
+          <p className="text-muted-foreground mt-1">{subtitle}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <PeriodSelector
+            value={period}
+            onChange={onPeriodChange}
+            dateRange={dateRange}
+            onDateRangeChange={onDateRangeChange}
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Actualizar datos"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <PeriodSelector
-          value={period}
-          onChange={onPeriodChange}
-          dateRange={dateRange}
-          onDateRangeChange={onDateRangeChange}
+      <div className="max-w-md">
+        <FlujoSelector
+          selectedId={selectedFlujoId}
+          flujos={flujos as any}
+          onChange={onFlujoChange}
+          isLoading={isLoadingFlujos}
         />
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          title="Actualizar datos"
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
       </div>
     </div>
   );
@@ -112,17 +139,30 @@ function toISODateString(date: Date): string {
 export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null);
 
-  // Build MetricsParams based on period selection
+  // Cargar lista de flujos para el selector
+  const { data: flujosResponse, isLoading: isLoadingFlujos } = useFlujos({ per_page: 100 });
+  const flujosList = flujosResponse?.data ?? [];
+  const flujoNombre = selectedFlujoId
+    ? flujosList.find((f) => f.id === selectedFlujoId)?.nombre
+    : undefined;
+
+  // Build MetricsParams based on period selection + flujo selection
   const metricsParams = useMemo<MetricsParams>(() => {
-    if (period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to) {
-      return {
-        fecha_inicio: toISODateString(dateRange.from),
-        fecha_fin: toISODateString(dateRange.to),
-      };
+    const base: MetricsParams =
+      period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to
+        ? {
+            fecha_inicio: toISODateString(dateRange.from),
+            fecha_fin: toISODateString(dateRange.to),
+          }
+        : { dias: period };
+
+    if (selectedFlujoId !== null) {
+      base.flujo_id = selectedFlujoId;
     }
-    return { dias: period };
-  }, [period, dateRange]);
+    return base;
+  }, [period, dateRange, selectedFlujoId]);
 
   const {
     data: dashboard,
@@ -146,6 +186,11 @@ export function MetricasPage() {
     dateRange,
     onDateRangeChange: setDateRange,
     onRefresh: handleRefresh,
+    selectedFlujoId,
+    onFlujoChange: setSelectedFlujoId,
+    flujos: flujosList,
+    isLoadingFlujos,
+    flujoNombre,
   };
 
   // Loading state
@@ -197,8 +242,13 @@ export function MetricasPage() {
         <AperturasChart data={dashboard.aperturas.por_dia} />
       </div>
 
-      {/* Top Flujos */}
-      <TopFlujosTable flujos={dashboard.top_flujos} />
+      {/* Nuevos prospectos por día (siempre visible, especialmente útil con flujo seleccionado) */}
+      {dashboard.nuevos_prospectos && (
+        <NuevosProspectosChart data={dashboard.nuevos_prospectos} />
+      )}
+
+      {/* Top Flujos: solo cuando no hay filtro de flujo seleccionado */}
+      {selectedFlujoId === null && <TopFlujosTable flujos={dashboard.top_flujos} />}
 
       {/* Footer with generation time */}
       <p className="text-xs text-muted-foreground text-right">

@@ -54,6 +54,10 @@ class MetricasService {
       queryParams.dias = 30;
     }
 
+    if (params.flujo_id != null) {
+      queryParams.flujo_id = params.flujo_id;
+    }
+
     return queryParams;
   }
 

@@ -31,6 +31,7 @@ export interface MetricsParams {
   dias?: MetricPeriod;
   fecha_inicio?: string; // ISO date string YYYY-MM-DD
   fecha_fin?: string; // ISO date string YYYY-MM-DD
+  flujo_id?: number | null; // null/omitido = todos los flujos
 }
 
 export const TREND_DIRECTION = {
@@ -269,6 +270,12 @@ export interface TopFlujoMetric {
 // FULL DASHBOARD RESPONSE
 // ============================================================
 
+export interface NuevosProspectosMetric {
+  total: number;
+  promedio_diario: number;
+  por_dia: Array<{ fecha: string; total: number }>;
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -277,6 +284,7 @@ export interface MetricasDashboard {
   desuscripciones: DesuscripcionesMetrics;
   conversiones: ConversionesMetrics;
   tendencias: TrendsMetrics;
+  nuevos_prospectos: NuevosProspectosMetric;
   top_flujos: TopFlujoMetric[];
   generado_at: string;
 }
