@@ -289,9 +289,11 @@ function ActionsCell({
   // Determine disabled message
   const getExecuteLabel = (): string => {
     if (isProcessing) return 'Asignando prospectos...'
-    if (isExecuting) return 'En ejecución...'
+    if (isExecuting) return esPerpetuo ? '♾️ Perpetuo activo' : 'En ejecución...'
     return 'Ejecutar Flujo'
   }
+
+  const deleteLabel = isExecuting ? (esPerpetuo ? '♾️ Perpetuo activo' : 'En ejecución...') : 'Eliminar'
 
   return (
     <TableCell className="text-right">
@@ -338,7 +340,7 @@ function ActionsCell({
             >
               <Trash2 className={`h-4 w-4 mr-2 ${isExecuting ? 'text-gray-400' : 'text-segal-red'}`} />
               <span className={isExecuting ? 'text-gray-400' : 'text-segal-red'}>
-                {isExecuting ? 'En ejecución...' : 'Eliminar'}
+                {deleteLabel}
               </span>
             </DropdownMenuItem>
           )}
@@ -371,9 +373,15 @@ export const FlujoTableRow = memo(function FlujoTableRow({
 
   // Get execution info from batch state
   const ejecucion = executionState.ejecucion
+  const esPerpetuo = flujo.es_perpetuo ?? false
 
-  // Check if flow is currently executing (in_progress or paused)
-  const isExecuting = ejecucion?.estado === 'in_progress' || ejecucion?.estado === 'paused'
+  // Para flujos perpetuos: in_progress, paused, waiting Y completed son estados "vivos"
+  // (la ejecución sigue activa esperando nuevos prospectos del sync).
+  // Para flujos no perpetuos: solo in_progress y paused cuentan como "en ejecución".
+  const estadosActivos = esPerpetuo
+    ? ['in_progress', 'paused', 'waiting', 'completed']
+    : ['in_progress', 'paused']
+  const isExecuting = ejecucion ? estadosActivos.includes(ejecucion.estado) : false
 
   // Check if flow is still processing prospect assignment
   const isProcesamientoEnCurso = isProcesamientoActivo(flujo.estado_procesamiento ?? 'completado')
@@ -381,7 +389,8 @@ export const FlujoTableRow = memo(function FlujoTableRow({
   // Flow can only execute if:
   // 1. No active execution (puede_ejecutar from batch API)
   // 2. Prospect assignment is complete (not processing)
-  const canExecute = executionState.puede_ejecutar && !isProcesamientoEnCurso
+  // 3. Not currently in any "alive" state (covers perpetual waiting/completed too)
+  const canExecute = executionState.puede_ejecutar && !isProcesamientoEnCurso && !isExecuting
 
   return (
     <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:border-segal-blue">
