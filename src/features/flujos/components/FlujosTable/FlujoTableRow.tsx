@@ -114,12 +114,14 @@ function StagesCell({ count }: { count: number }) {
  * Renders the progress cell with execution state
  * OPTIMIZED: Receives execution state as prop from batch API (no hook call per row!)
  */
-function ProgressCell({ 
-  executionState, 
-  isLoading 
-}: { 
+function ProgressCell({
+  executionState,
+  isLoading,
+  esPerpetuo,
+}: {
   executionState: BatchExecutionState
-  isLoading: boolean 
+  isLoading: boolean
+  esPerpetuo: boolean
 }) {
   // Show spinner while loading
   if (isLoading) {
@@ -156,9 +158,10 @@ function ProgressCell({
 
   return (
     <TableCell className="min-w-[150px]">
-      <ProgressDisplay 
-        estado={executionState.ejecucion.estado} 
-        progreso={progreso} 
+      <ProgressDisplay
+        estado={executionState.ejecucion.estado}
+        progreso={progreso}
+        esPerpetuo={esPerpetuo}
       />
     </TableCell>
   )
@@ -389,7 +392,11 @@ export const FlujoTableRow = memo(function FlujoTableRow({
       />
       <TipoProspectoCell tipoProspecto={flujo.tipo_prospecto} />
       <StagesCell count={etapasCount} />
-      <ProgressCell executionState={executionState} isLoading={isLoadingExecution} />
+      <ProgressCell
+        executionState={executionState}
+        isLoading={isLoadingExecution}
+        esPerpetuo={flujo.es_perpetuo ?? false}
+      />
       <CostoCell executionState={executionState} isLoading={isLoadingExecution} />
       <StatusCell activo={flujo.activo} />
       <UserCell userName={flujo.user?.name} />
