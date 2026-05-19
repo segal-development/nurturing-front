@@ -21,6 +21,7 @@ const LINE_CONFIG = [
 
 export function NuevosProspectosChart({ data, className = '' }: NuevosProspectosChartProps) {
   const isSingleDay = data.por_dia.length <= 1;
+  const hasFlujoBreakdown = data.por_flujo !== undefined && data.por_flujo.length > 0;
 
   return (
     <Card className={className}>
@@ -58,7 +59,7 @@ export function NuevosProspectosChart({ data, className = '' }: NuevosProspectos
       </CardHeader>
       <CardContent className="pt-0">
         {isSingleDay ? (
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <div className="flex flex-col items-center justify-center py-6 gap-3">
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-500" />
               <p className="text-5xl font-bold">{data.total.toLocaleString('es-CL')}</p>
@@ -70,9 +71,51 @@ export function NuevosProspectosChart({ data, className = '' }: NuevosProspectos
                   ? 'prospecto entró al flujo hoy'
                   : 'prospectos entraron al flujo hoy'}
             </p>
+            {hasFlujoBreakdown && (
+              <div className="w-full max-w-md mt-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 text-center">
+                  Desglose por flujo
+                </p>
+                <div className="space-y-1.5">
+                  {data.por_flujo!.map((f) => (
+                    <div
+                      key={f.flujo_id}
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-segal-blue/5 dark:bg-gray-800"
+                    >
+                      <span className="text-sm font-medium truncate">{f.flujo_nombre}</span>
+                      <span className="text-sm font-semibold ml-3">
+                        {f.total.toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <LineChart title="" data={data.por_dia} lines={LINE_CONFIG} height={250} />
+          <>
+            <LineChart title="" data={data.por_dia} lines={LINE_CONFIG} height={250} />
+            {hasFlujoBreakdown && (
+              <div className="mt-6">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Desglose por flujo
+                </p>
+                <div className="space-y-1.5">
+                  {data.por_flujo!.map((f) => (
+                    <div
+                      key={f.flujo_id}
+                      className="flex items-center justify-between py-2 px-3 rounded-md bg-segal-blue/5 dark:bg-gray-800"
+                    >
+                      <span className="text-sm font-medium truncate">{f.flujo_nombre}</span>
+                      <span className="text-sm font-semibold ml-3">
+                        {f.total.toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

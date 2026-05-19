@@ -270,10 +270,18 @@ export interface TopFlujoMetric {
 // FULL DASHBOARD RESPONSE
 // ============================================================
 
+export interface NuevosProspectosPorFlujo {
+  flujo_id: number;
+  flujo_nombre: string;
+  total: number;
+}
+
 export interface NuevosProspectosMetric {
   total: number;
   promedio_diario: number;
   por_dia: Array<{ fecha: string; total: number }>;
+  /** Solo populated cuando no hay filtro de flujo, para dar contexto al total */
+  por_flujo?: NuevosProspectosPorFlujo[];
 }
 
 export interface EnviosHoyEtapa {
