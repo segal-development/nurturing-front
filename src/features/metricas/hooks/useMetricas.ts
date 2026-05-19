@@ -20,10 +20,11 @@ import type { MetricsParams } from '@/types/metricas';
  * Creates a stable key for the metrics params
  */
 function paramsToKey(params: MetricsParams): string {
+  const flujoSuffix = params.flujo_id ? `:f${params.flujo_id}` : '';
   if (params.fecha_inicio && params.fecha_fin) {
-    return `custom:${params.fecha_inicio}:${params.fecha_fin}`;
+    return `custom:${params.fecha_inicio}:${params.fecha_fin}${flujoSuffix}`;
   }
-  return `dias:${params.dias ?? 30}`;
+  return `dias:${params.dias ?? 30}${flujoSuffix}`;
 }
 
 const QUERY_KEYS = {
