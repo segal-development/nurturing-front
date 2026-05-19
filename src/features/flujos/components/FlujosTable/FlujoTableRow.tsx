@@ -60,19 +60,26 @@ function ProcesamientoBadge({ estado }: { estado?: FlujoNurturing['estado_proces
 }
 
 /**
- * Renders the nombre cell with optional procesamiento badge
+ * Renders the nombre cell with optional procesamiento and perpetuo badges
  */
 function NombreCell({
   nombre,
   estadoProcesamiento,
+  esPerpetuo,
 }: {
   nombre: string
   estadoProcesamiento?: FlujoNurturing['estado_procesamiento']
+  esPerpetuo?: boolean
 }) {
   return (
     <TableCell className="font-medium text-segal-dark dark:text-gray-300">
       <div className="flex items-center gap-2">
         <span>{nombre}</span>
+        {esPerpetuo && (
+          <Badge className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 text-xs">
+            ♾️ Perpetuo
+          </Badge>
+        )}
         <ProcesamientoBadge estado={estadoProcesamiento} />
       </div>
     </TableCell>
@@ -375,7 +382,11 @@ export const FlujoTableRow = memo(function FlujoTableRow({
 
   return (
     <TableRow className="hover:bg-segal-blue/5 border-b border-segal-blue/5 dark:border-segal-blue">
-      <NombreCell nombre={flujo.nombre} estadoProcesamiento={flujo.estado_procesamiento} />
+      <NombreCell
+        nombre={flujo.nombre}
+        estadoProcesamiento={flujo.estado_procesamiento}
+        esPerpetuo={flujo.es_perpetuo ?? false}
+      />
       <TipoProspectoCell tipoProspecto={flujo.tipo_prospecto} />
       <StagesCell count={etapasCount} />
       <ProgressCell executionState={executionState} isLoading={isLoadingExecution} />
