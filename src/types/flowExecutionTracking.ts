@@ -161,6 +161,8 @@ export interface FlowExecutionDetail {
   id: number
   flujo_id: number
   estado: FlowExecutionMainState
+  /** True si el flujo asociado es perpetuo (sigue procesando nuevos prospectos indefinidamente) */
+  es_perpetuo?: boolean
   fecha_inicio_programada: string
   fecha_inicio_real?: string
   fecha_fin?: string

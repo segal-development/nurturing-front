@@ -38,6 +38,8 @@ interface EtapasHistoryTimelineProps {
   configStructure?: ConfigStructure
   /** Message type for channel breakdown display. If not provided, inferred from configStructure.stages */
   tipoMensaje?: CanalEnvio
+  /** Si el flujo es perpetuo, todas las etapas ejecutadas se muestran como "♾️ Recurrente" */
+  esPerpetuo?: boolean
 }
 
 interface StageTimelineItemProps {
@@ -46,6 +48,7 @@ interface StageTimelineItemProps {
   isLast: boolean
   metricasNuevos?: MetricasNuevosPorEtapa
   tipoMensaje?: 'email' | 'sms' | 'ambos'
+  esPerpetuo?: boolean
 }
 
 /**
@@ -263,7 +266,7 @@ function buildStageLabelMap(
 // Sub-Components
 // ============================================================================
 
-function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMensaje }: StageTimelineItemProps) {
+function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMensaje, esPerpetuo }: StageTimelineItemProps) {
   const metrics = calculateStageMetrics(stage.envios)
   const channelBreakdown = calculateChannelBreakdown(stage.envios?.enviado ?? 0, tipoMensaje)
 
@@ -274,10 +277,19 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
   const hasEverExecuted = !!stage.primer_envio_at
   const isFailed = stage.estado === STAGE_STATUS.FAILED
   const isExecuting = stage.estado === STAGE_STATUS.EXECUTING
-  const isRecurring = hasEverExecuted && stage.estado === STAGE_STATUS.PENDING
+
+  // Una etapa es "Recurrente" si:
+  // - El flujo es perpetuo Y ya ejecutó al menos una vez (cualquier estado salvo executing/failed)
+  // - O si tiene estado=pending pero ya ejecutó (caso clásico de perpetual re-pending)
+  const isRecurring =
+    !isExecuting &&
+    !isFailed &&
+    hasEverExecuted &&
+    (esPerpetuo === true || stage.estado === STAGE_STATUS.PENDING)
+
   const isCompleted =
     stage.estado === STAGE_STATUS.COMPLETED ||
-    (hasEverExecuted && stage.estado !== STAGE_STATUS.EXECUTING && stage.estado !== STAGE_STATUS.FAILED)
+    (hasEverExecuted && !isExecuting && !isFailed)
   const isPending = !hasEverExecuted && stage.estado === STAGE_STATUS.PENDING
 
   // Para colors: usar 'completed' visual cuando ya ejecutó alguna vez
@@ -321,11 +333,17 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
               Fallido
             </span>
           )}
-          {isRecurring && (
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-50 text-purple-700 border border-purple-200">
-              ♾️ Recurrente · próximo batch {formatFechaProgramada(stage.fecha_programada)}
-            </span>
-          )}
+          {isRecurring && (() => {
+            const fechaProg = stage.fecha_programada ? new Date(stage.fecha_programada) : null
+            const esFutura = fechaProg && fechaProg.getTime() > Date.now()
+            return (
+              <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-50 text-purple-700 border border-purple-200">
+                {esFutura
+                  ? `♾️ Recurrente · próximo batch ${formatFechaProgramada(stage.fecha_programada)}`
+                  : '♾️ Recurrente · activa'}
+              </span>
+            )
+          })()}
         </div>
 
         {/* Metrics for completed/executing stages - FORMATO CLARO */}
@@ -483,6 +501,7 @@ export function EtapasHistoryTimeline({
   ejecucionId,
   configStructure,
   tipoMensaje: tipoMensajeProp,
+  esPerpetuo: esPerpetuoProp,
 }: EtapasHistoryTimelineProps) {
   const { data, isLoading, isError, error } = useFlowExecutionDetail(
     flujoId,
@@ -493,9 +512,12 @@ export function EtapasHistoryTimeline({
   // Build stage label map from config_structure
   // React 19 Compiler handles memoization automatically
   const stageLabelMap = buildStageLabelMap(configStructure)
-  
+
   // Infer tipoMensaje from stages if not provided explicitly
   const tipoMensaje = tipoMensajeProp ?? inferirCanalEnvioDesdeEtapas(configStructure?.stages)
+
+  // Prefer prop over API response (prop is authoritative when parent knows the flujo is perpetual)
+  const esPerpetuo = esPerpetuoProp ?? data?.data?.es_perpetuo ?? false
 
   // Sort stages by fecha_programada to show in chronological order
   const etapas = data?.data?.etapas
@@ -581,6 +603,7 @@ export function EtapasHistoryTimeline({
               isLast={index === sortedStages.length - 1}
               metricasNuevos={metricasNuevos}
               tipoMensaje={tipoMensaje}
+              esPerpetuo={esPerpetuo}
             />
           )
         })}
