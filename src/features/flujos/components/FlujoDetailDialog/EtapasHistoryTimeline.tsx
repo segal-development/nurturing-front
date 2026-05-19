@@ -264,14 +264,27 @@ function buildStageLabelMap(
 // ============================================================================
 
 function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMensaje }: StageTimelineItemProps) {
-  const colors = getStatusColors(stage.estado)
   const metrics = calculateStageMetrics(stage.envios)
   const channelBreakdown = calculateChannelBreakdown(stage.envios?.enviado ?? 0, tipoMensaje)
 
-  const isCompleted = stage.estado === STAGE_STATUS.COMPLETED
-  const isExecuting = stage.estado === STAGE_STATUS.EXECUTING
-  const isPending = stage.estado === STAGE_STATUS.PENDING
+  // `primer_envio_at` es la verdad sobre "esta etapa ya envió al menos una vez".
+  // En flujos perpetuos, `estado` puede volver a `pending` después de un batch
+  // (para que CatchUp reprocese nuevos prospectos). Por eso no podemos confiar
+  // solo en `estado` para distinguir "nunca se ejecutó" vs "perpetua esperando próximo batch".
+  const hasEverExecuted = !!stage.primer_envio_at
   const isFailed = stage.estado === STAGE_STATUS.FAILED
+  const isExecuting = stage.estado === STAGE_STATUS.EXECUTING
+  const isRecurring = hasEverExecuted && stage.estado === STAGE_STATUS.PENDING
+  const isCompleted =
+    stage.estado === STAGE_STATUS.COMPLETED ||
+    (hasEverExecuted && stage.estado !== STAGE_STATUS.EXECUTING && stage.estado !== STAGE_STATUS.FAILED)
+  const isPending = !hasEverExecuted && stage.estado === STAGE_STATUS.PENDING
+
+  // Para colors: usar 'completed' visual cuando ya ejecutó alguna vez
+  const visualState: StageExecutionState = isRecurring
+    ? STAGE_STATUS.COMPLETED
+    : stage.estado
+  const colors = getStatusColors(visualState)
 
   return (
     <div className="relative flex items-start gap-3 pb-3">
@@ -306,6 +319,11 @@ function StageTimelineItem({ stage, stageLabel, isLast, metricasNuevos, tipoMens
           {isFailed && (
             <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700 border border-red-200">
               Fallido
+            </span>
+          )}
+          {isRecurring && (
+            <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-purple-50 text-purple-700 border border-purple-200">
+              ♾️ Recurrente · próximo batch {formatFechaProgramada(stage.fecha_programada)}
             </span>
           )}
         </div>

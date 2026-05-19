@@ -43,6 +43,14 @@ export interface StageExecution {
   id: number
   node_id: string
   estado: StageExecutionState
+  /**
+   * Marca de tiempo de la PRIMERA vez que la etapa generó envíos.
+   * Source of truth para "¿la etapa ya se ejecutó alguna vez?".
+   * En flujos perpetuos, `estado` puede volver a `pending` después de un batch
+   * para re-procesar nuevos prospectos, pero `primer_envio_at` nunca se resetea.
+   */
+  primer_envio_at?: string | null
+  ejecutado?: boolean
   fecha_programada: string
   fecha_ejecucion?: string
   message_id?: number
