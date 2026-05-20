@@ -74,6 +74,47 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 // ============================================================
+// SINGLE-DAY SUMMARY
+// ============================================================
+
+/**
+ * Cuando el período cubre un solo día, un line chart queda vacío (no hay línea
+ * que dibujar entre puntos). Mostramos los valores de ese día como números
+ * grandes, usando los labels/colores de cada serie. Sirve para que gerencia lea
+ * el dato claro en "Hoy" para cualquier flujo.
+ */
+function SingleDaySummary({
+  point,
+  lines,
+}: {
+  point: Record<string, unknown>;
+  lines: LineConfig[];
+}) {
+  const fecha = typeof point.fecha === 'string' ? point.fecha : '';
+
+  return (
+    <div className="flex min-h-[200px] flex-col items-center justify-center gap-5 py-6">
+      {fecha && (
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {formatDate(fecha)}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-center gap-8">
+        {lines.map((line) => (
+          <div key={line.key} className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: line.color }} />
+              <span className="text-xs text-muted-foreground">{line.label}</span>
+            </div>
+            <span className="text-4xl font-bold">{formatNumber(Number(point[line.key] ?? 0))}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // MAIN COMPONENT
 // ============================================================
 
@@ -86,6 +127,9 @@ export function LineChart<T extends { fecha: string }>({
   className = '',
 }: LineChartProps<T>) {
   const hasData = data.length > 0;
+  // Un line chart no puede dibujar una línea con un solo punto (queda vacío).
+  // En ese caso mostramos los valores del día como números grandes.
+  const isSingleDay = data.length === 1;
 
   // Normalize data: convert string values to numbers (backend sometimes sends strings)
   const normalizedData = data.map((item) => {
@@ -110,6 +154,8 @@ export function LineChart<T extends { fecha: string }>({
           <div className="flex h-[300px] items-center justify-center text-muted-foreground">
             No hay datos para mostrar
           </div>
+        ) : isSingleDay ? (
+          <SingleDaySummary point={normalizedData[0] as Record<string, unknown>} lines={lines} />
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <RechartsLineChart data={normalizedData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
