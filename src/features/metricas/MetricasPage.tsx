@@ -23,6 +23,7 @@ import {
   TopFlujosTable,
   NuevosProspectosChart,
   EnviosHoyCard,
+  ProblemasEnvioCard,
 } from './components';
 
 // ============================================================
@@ -251,6 +252,11 @@ export function MetricasPage() {
       {/* Nuevos prospectos por día (siempre visible, especialmente útil con flujo seleccionado) */}
       {dashboard.nuevos_prospectos && (
         <NuevosProspectosChart data={dashboard.nuevos_prospectos} />
+      )}
+
+      {/* Prospectos con datos que impiden el envío (calidad de dato del origen / SYSGAL) */}
+      {dashboard.problemas_envio && (
+        <ProblemasEnvioCard data={dashboard.problemas_envio} />
       )}
 
       {/* Top Flujos: solo cuando no hay filtro de flujo seleccionado */}

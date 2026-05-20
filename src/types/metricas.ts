@@ -298,6 +298,37 @@ export interface EnviosHoyMetric {
   ultimo_por_etapa: EnviosHoyEtapa[];
 }
 
+export type MotivoProblemaEnvio = 'sin_email' | 'email_invalido' | 'sin_telefono';
+
+export interface ProblemaEnvioDetalle {
+  prospecto_id: number;
+  nombre: string | null;
+  rut: string | null;
+  motivos: MotivoProblemaEnvio[];
+  /** Código del validador, ej: "dominio_typo:gmial.com", "tld_invalido:ccom" */
+  email_invalido_motivo: string | null;
+}
+
+/**
+ * Prospectos del flujo con datos que impiden el envío por algún canal.
+ * El canal se deriva de los stages reales del flujo (tipo_mensaje).
+ */
+export interface ProblemasEnvioMetric {
+  canal: 'email' | 'sms' | 'ambos';
+  por_flujo: boolean;
+  total_miembros: number;
+  total_con_problemas: number;
+  /** No tienen NINGÚN canal válido (no recibieron nada) */
+  no_contactables: number;
+  por_motivo: {
+    sin_email?: number;
+    email_invalido?: number;
+    sin_telefono?: number;
+  };
+  detalle: ProblemaEnvioDetalle[];
+  detalle_truncado: boolean;
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -307,6 +338,7 @@ export interface MetricasDashboard {
   conversiones: ConversionesMetrics;
   tendencias: TrendsMetrics;
   nuevos_prospectos: NuevosProspectosMetric;
+  problemas_envio: ProblemasEnvioMetric;
   envios_hoy?: EnviosHoyMetric;
   top_flujos: TopFlujoMetric[];
   generado_at: string;
