@@ -329,6 +329,12 @@ export interface ProblemasEnvioMetric {
   detalle_truncado: boolean;
 }
 
+/** Clientes que ingresaron al sistema (prospectos creados), independiente de si fueron asignados a un flujo */
+export interface ClientesIngresadosMetric {
+  total: number;
+  por_dia: Array<{ fecha: string; total: number }>;
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -338,6 +344,8 @@ export interface MetricasDashboard {
   conversiones: ConversionesMetrics;
   tendencias: TrendsMetrics;
   nuevos_prospectos: NuevosProspectosMetric;
+  /** Clientes que ingresaron al sistema (prospectos creados). Distinto de nuevos_prospectos que cuenta incorporaciones a flujos. */
+  clientes_ingresados?: ClientesIngresadosMetric;
   problemas_envio: ProblemasEnvioMetric;
   envios_hoy?: EnviosHoyMetric;
   top_flujos: TopFlujoMetric[];

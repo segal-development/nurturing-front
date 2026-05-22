@@ -16,7 +16,7 @@ interface NuevosProspectosChartProps {
 }
 
 const LINE_CONFIG = [
-  { key: 'total', label: 'Nuevos prospectos', color: '#3b82f6' }, // blue-500
+  { key: 'total', label: 'Incorporados a campañas', color: '#3b82f6' }, // blue-500
 ];
 
 export function NuevosProspectosChart({ data, className = '' }: NuevosProspectosChartProps) {
@@ -29,10 +29,10 @@ export function NuevosProspectosChart({ data, className = '' }: NuevosProspectos
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <CardTitle className="text-base font-semibold">
-              {isSingleDay ? 'Nuevos prospectos hoy' : 'Nuevos prospectos por día'}
+              {isSingleDay ? 'Incorporados a campañas hoy' : 'Incorporados a campañas por día'}
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              Prospectos que entraron al flujo en el período seleccionado
+              Prospectos incorporados a un flujo de campaña en el período seleccionado
             </p>
           </div>
           {!isSingleDay && (
@@ -66,10 +66,10 @@ export function NuevosProspectosChart({ data, className = '' }: NuevosProspectos
             </div>
             <p className="text-sm text-muted-foreground">
               {data.total === 0
-                ? 'Sin nuevos prospectos hoy'
+                ? 'Sin incorporaciones a campañas hoy'
                 : data.total === 1
-                  ? 'prospecto entró al flujo hoy'
-                  : 'prospectos entraron al flujo hoy'}
+                  ? 'prospecto incorporado a una campaña hoy'
+                  : 'prospectos incorporados a campañas hoy'}
             </p>
             {hasFlujoBreakdown && (
               <div className="w-full max-w-md mt-4">

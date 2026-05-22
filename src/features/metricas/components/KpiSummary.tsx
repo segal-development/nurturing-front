@@ -4,9 +4,9 @@
  * Displays the main KPI cards at the top of the dashboard.
  */
 
-import { Mail, MousePointerClick, UserMinus, Send, Eye } from 'lucide-react';
+import { Mail, MousePointerClick, UserMinus, Send, Eye, UserPlus } from 'lucide-react';
 import { MetricCard } from './MetricCard';
-import type { MetricSummary, TrendsMetrics } from '@/types/metricas';
+import type { ClientesIngresadosMetric, MetricSummary, TrendsMetrics } from '@/types/metricas';
 
 // ============================================================
 // TYPES
@@ -15,6 +15,7 @@ import type { MetricSummary, TrendsMetrics } from '@/types/metricas';
 interface KpiSummaryProps {
   summary: MetricSummary;
   trends?: TrendsMetrics;
+  clientesIngresados?: ClientesIngresadosMetric;
   className?: string;
 }
 
@@ -22,9 +23,9 @@ interface KpiSummaryProps {
 // MAIN COMPONENT
 // ============================================================
 
-export function KpiSummary({ summary, trends, className = '' }: KpiSummaryProps) {
+export function KpiSummary({ summary, trends, clientesIngresados, className = '' }: KpiSummaryProps) {
   return (
-    <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 ${className}`}>
+    <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 ${className}`}>
       <MetricCard
         title="Total Envíos"
         value={summary.total_envios}
@@ -65,6 +66,13 @@ export function KpiSummary({ summary, trends, className = '' }: KpiSummaryProps)
         trend={trends?.desuscripciones}
         isInverseMetric
         icon={<UserMinus className="h-4 w-4" />}
+      />
+
+      <MetricCard
+        title="Clientes ingresados"
+        value={clientesIngresados?.total ?? 0}
+        subtitle="Clientes que entraron al sistema"
+        icon={<UserPlus className="h-4 w-4" />}
       />
     </div>
   );

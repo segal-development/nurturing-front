@@ -235,7 +235,11 @@ export function MetricasPage() {
       <PageHeader {...pageHeaderProps} isRefreshing={refreshMutation.isPending} />
 
       {/* KPI Summary Cards */}
-      <KpiSummary summary={dashboard.resumen} trends={dashboard.tendencias} />
+      <KpiSummary
+        summary={dashboard.resumen}
+        trends={dashboard.tendencias}
+        clientesIngresados={dashboard.clientes_ingresados}
+      />
 
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
