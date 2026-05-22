@@ -2,12 +2,12 @@
  * PeriodSelector Component
  *
  * Allows user to select the time period for metrics display.
- * Supports predefined periods (Today, Week, Month, etc.) and custom date range.
+ * Preset dropdown and custom date-range picker are always visible side by side.
+ * Picking a preset clears any active date range; picking a date range takes
+ * precedence over the preset (dias) when both are present.
  */
 
-import { X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-picker';
 import { METRIC_PERIOD, type MetricPeriod, type DateRange } from '@/types/metricas';
 import { getPeriodLabel } from '../utils/formatters';
@@ -26,6 +26,7 @@ interface PeriodSelectorProps {
 
 // ============================================================
 // CONSTANTS
+// Excludes CUSTOM — the date-range picker is now always visible alongside.
 // ============================================================
 
 const PERIOD_OPTIONS = [
@@ -34,7 +35,6 @@ const PERIOD_OPTIONS = [
   { value: METRIC_PERIOD.MONTH, label: getPeriodLabel(METRIC_PERIOD.MONTH) },
   { value: METRIC_PERIOD.QUARTER, label: getPeriodLabel(METRIC_PERIOD.QUARTER) },
   { value: METRIC_PERIOD.YEAR, label: getPeriodLabel(METRIC_PERIOD.YEAR) },
-  { value: METRIC_PERIOD.CUSTOM, label: getPeriodLabel(METRIC_PERIOD.CUSTOM) },
 ] as const;
 
 // ============================================================
@@ -48,78 +48,44 @@ export function PeriodSelector({
   onDateRangeChange,
   className = '',
 }: PeriodSelectorProps) {
-  const isCustomRange = value === METRIC_PERIOD.CUSTOM;
-
   const handlePeriodChange = (v: string) => {
-    const newValue = parseInt(v, 10) as MetricPeriod;
-    onChange(newValue);
-
-    // Clear date range when switching away from custom
-    if (newValue !== METRIC_PERIOD.CUSTOM && onDateRangeChange) {
-      onDateRangeChange(undefined);
-    }
+    onChange(parseInt(v, 10) as MetricPeriod);
+    // Preset chosen → clear the custom date range so dias takes over
+    onDateRangeChange?.(undefined);
   };
 
   const handleFromChange = (date: Date | undefined) => {
     if (!onDateRangeChange) return;
-
     if (date && dateRange?.to) {
       onDateRangeChange({ from: date, to: dateRange.to });
     } else if (date) {
-      // Default to same day if no end date
       onDateRangeChange({ from: date, to: date });
+    } else {
+      onDateRangeChange(undefined);
     }
   };
 
   const handleToChange = (date: Date | undefined) => {
     if (!onDateRangeChange) return;
-
     if (date && dateRange?.from) {
       onDateRangeChange({ from: dateRange.from, to: date });
     } else if (date) {
-      // Default to same day if no start date
       onDateRangeChange({ from: date, to: date });
+    } else {
+      onDateRangeChange(undefined);
     }
   };
 
-  const handleExitCustomRange = () => {
-    // Return to default period (Month)
-    onChange(METRIC_PERIOD.MONTH);
-    onDateRangeChange?.(undefined);
-  };
+  // Use the preset value in the dropdown, but fall back to MONTH when CUSTOM
+  // is the current stored value (legacy guard — CUSTOM no longer appears as option).
+  const dropdownValue = value === METRIC_PERIOD.CUSTOM ? METRIC_PERIOD.MONTH : value;
 
-  // When custom range is selected, show only the date pickers
-  if (isCustomRange) {
-    return (
-      <div className={`flex items-center gap-2 ${className}`}>
-        <DateRangePicker
-          from={dateRange?.from}
-          to={dateRange?.to}
-          onFromChange={handleFromChange}
-          onToChange={handleToChange}
-          placeholderFrom="Desde"
-          placeholderTo="Hasta"
-          className="flex-shrink-0"
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleExitCustomRange}
-          title="Volver a períodos predefinidos"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
-
-  // Default: show the period selector dropdown
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <Select value={value.toString()} onValueChange={handlePeriodChange}>
+    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+      {/* Preset dropdown */}
+      <Select value={dropdownValue.toString()} onValueChange={handlePeriodChange}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Seleccionar período">{getPeriodLabel(value)}</SelectValue>
+          <SelectValue placeholder="Seleccionar período">{getPeriodLabel(dropdownValue)}</SelectValue>
         </SelectTrigger>
         <SelectContent
           position="popper"
@@ -133,6 +99,16 @@ export function PeriodSelector({
           ))}
         </SelectContent>
       </Select>
+
+      {/* Custom date-range picker — always visible alongside the dropdown */}
+      <DateRangePicker
+        from={dateRange?.from}
+        to={dateRange?.to}
+        onFromChange={handleFromChange}
+        onToChange={handleToChange}
+        placeholderFrom="Desde"
+        placeholderTo="Hasta"
+      />
     </div>
   );
 }

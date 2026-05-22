@@ -5,7 +5,7 @@
  * Uses composition pattern with extracted components.
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -80,9 +80,9 @@ function PageHeader({
   isLoadingFlujos: boolean;
   flujoNombre?: string;
 }) {
-  // Display period label or custom date range
+  // Show formatted date range when both bounds are set; otherwise show preset label
   const periodDisplay =
-    period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to
+    dateRange?.from && dateRange?.to
       ? formatDateRange(dateRange.from, dateRange.to)
       : getPeriodLabel(period);
 
@@ -150,21 +150,20 @@ export function MetricasPage() {
     ? flujosList.find((f) => f.id === selectedFlujoId)?.nombre
     : undefined;
 
-  // Build MetricsParams based on period selection + flujo selection
-  const metricsParams = useMemo<MetricsParams>(() => {
-    const base: MetricsParams =
-      period === METRIC_PERIOD.CUSTOM && dateRange?.from && dateRange?.to
-        ? {
-            fecha_inicio: toISODateString(dateRange.from),
-            fecha_fin: toISODateString(dateRange.to),
-          }
-        : { dias: period };
+  // Build MetricsParams based on period selection + flujo selection.
+  // Custom date range takes precedence over dias when both from/to are set.
+  const baseParams: MetricsParams =
+    dateRange?.from && dateRange?.to
+      ? {
+          fecha_inicio: toISODateString(dateRange.from),
+          fecha_fin: toISODateString(dateRange.to),
+        }
+      : { dias: period };
 
-    if (selectedFlujoId !== null) {
-      base.flujo_id = selectedFlujoId;
-    }
-    return base;
-  }, [period, dateRange, selectedFlujoId]);
+  const metricsParams: MetricsParams =
+    selectedFlujoId !== null
+      ? { ...baseParams, flujo_id: selectedFlujoId }
+      : baseParams;
 
   const {
     data: dashboard,
