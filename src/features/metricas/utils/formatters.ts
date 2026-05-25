@@ -90,8 +90,23 @@ export function formatChangePercentage(value: number | string | null | undefined
  * @example
  * formatDate("2024-01-15") // "15 ene"
  */
+/**
+ * Parsea un string de fecha SIN correr el día por timezone.
+ *
+ * `new Date("2026-05-25")` lo interpreta como medianoche UTC, que en husos con
+ * offset negativo (Chile, UTC-4) se renderiza como el día ANTERIOR ("24 may").
+ * Para strings date-only (YYYY-MM-DD) construimos la fecha en hora LOCAL.
+ */
+function parseLocalDate(dateString: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  return new Date(dateString);
+}
+
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   return date.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
 }
 
@@ -102,7 +117,7 @@ export function formatDate(dateString: string): string {
  * formatDateFull("2024-01-15") // "15 de enero de 2024"
  */
 export function formatDateFull(dateString: string): string {
-  const date = new Date(dateString);
+  const date = parseLocalDate(dateString);
   return date.toLocaleDateString('es-CL', {
     day: 'numeric',
     month: 'long',
