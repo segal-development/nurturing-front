@@ -24,6 +24,7 @@ import {
   NuevosProspectosChart,
   EnviosHoyCard,
   ProblemasEnvioCard,
+  ReconciliacionSysgalCard,
 } from './components';
 
 // ============================================================
@@ -261,6 +262,9 @@ export function MetricasPage() {
       {dashboard.problemas_envio && (
         <ProblemasEnvioCard data={dashboard.problemas_envio} />
       )}
+
+      {/* Reconciliación SYSGAL ↔ ingresados (GLOBAL, mes en curso): garantiza que no se escape ningún contrato */}
+      <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} />
 
       {/* Top Flujos: solo cuando no hay filtro de flujo seleccionado */}
       {selectedFlujoId === null && <TopFlujosTable flujos={dashboard.top_flujos} />}

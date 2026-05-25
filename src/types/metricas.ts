@@ -335,6 +335,33 @@ export interface ClientesIngresadosMetric {
   por_dia: Array<{ fecha: string; total: number }>;
 }
 
+/** Un endpoint reconciliado (contratos | clientes-ingreso): cuánto reporta SYSGAL vs lo explicado. */
+export interface ReconciliacionEndpoint {
+  endpoint: string;
+  sysgal_total: number;
+  desglose: {
+    ingresado: number;
+    sin_contacto: number;
+    sin_nombre: number;
+    sin_tipo: number;
+    duplicado: number;
+    faltante: number;
+  };
+  explicado: number;
+  sin_explicar: number;
+  cuadra: boolean;
+  faltantes_count: number;
+  faltantes_ids: Array<string | number>;
+}
+
+/** Reconciliación SYSGAL ↔ ingresados (mes en curso), cacheada por nurturing:cache-reconciliacion. */
+export interface ReconciliacionSysgalMetric {
+  contratos?: ReconciliacionEndpoint;
+  'clientes-ingreso'?: ReconciliacionEndpoint;
+  generado_at?: string;
+  desde?: string;
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -347,6 +374,8 @@ export interface MetricasDashboard {
   /** Clientes que ingresaron al sistema (prospectos creados). Distinto de nuevos_prospectos que cuenta incorporaciones a flujos. */
   clientes_ingresados?: ClientesIngresadosMetric;
   problemas_envio: ProblemasEnvioMetric;
+  /** Reconciliación SYSGAL ↔ ingresados (mes en curso), cacheada. null si aún no se computó. */
+  reconciliacion_sysgal?: ReconciliacionSysgalMetric | null;
   envios_hoy?: EnviosHoyMetric;
   top_flujos: TopFlujoMetric[];
   generado_at: string;
