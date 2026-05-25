@@ -240,6 +240,7 @@ export function MetricasPage() {
         summary={dashboard.resumen}
         trends={dashboard.tendencias}
         clientesIngresados={dashboard.clientes_ingresados}
+        porFlujo={selectedFlujoId !== null}
       />
 
       {/* Charts Grid */}
@@ -253,8 +254,9 @@ export function MetricasPage() {
         <EnviosHoyCard data={dashboard.envios_hoy} />
       )}
 
-      {/* Nuevos prospectos por día (siempre visible, especialmente útil con flujo seleccionado) */}
-      {dashboard.nuevos_prospectos && (
+      {/* Incorporados a campañas: SOLO sin flujo seleccionado. Con un flujo elegido, el KPI
+          "Clientes ingresados" ya muestra ese número por flujo, así que evitamos el duplicado. */}
+      {selectedFlujoId === null && dashboard.nuevos_prospectos && (
         <NuevosProspectosChart data={dashboard.nuevos_prospectos} />
       )}
 

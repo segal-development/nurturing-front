@@ -16,6 +16,8 @@ interface KpiSummaryProps {
   summary: MetricSummary;
   trends?: TrendsMetrics;
   clientesIngresados?: ClientesIngresadosMetric;
+  /** true cuando hay un flujo seleccionado: "Clientes ingresados" pasa a ser de ese flujo */
+  porFlujo?: boolean;
   className?: string;
 }
 
@@ -23,7 +25,13 @@ interface KpiSummaryProps {
 // MAIN COMPONENT
 // ============================================================
 
-export function KpiSummary({ summary, trends, clientesIngresados, className = '' }: KpiSummaryProps) {
+export function KpiSummary({
+  summary,
+  trends,
+  clientesIngresados,
+  porFlujo = false,
+  className = '',
+}: KpiSummaryProps) {
   return (
     <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6 ${className}`}>
       <MetricCard
@@ -71,7 +79,7 @@ export function KpiSummary({ summary, trends, clientesIngresados, className = ''
       <MetricCard
         title="Clientes ingresados"
         value={clientesIngresados?.total ?? 0}
-        subtitle="Clientes que entraron al sistema"
+        subtitle={porFlujo ? 'Que entraron a este flujo' : 'Que entraron al sistema (total)'}
         icon={<UserPlus className="h-4 w-4" />}
       />
     </div>
