@@ -1,18 +1,16 @@
 /**
  * ReconciliacionSysgalCard
  *
- * Muestra el cruce SYSGAL ↔ ingresados (Contratos + Onboarding) del mes en curso.
- * El dato lo refresca cada hora el comando `nurturing:cache-reconciliacion` (no pega
- * en vivo a SYSGAL en cada carga). Sirve para que gerencia confirme que no se escapa
- * ningún contrato, sin pedirle nada al equipo técnico.
- *
- * Es una métrica GLOBAL (no depende del flujo seleccionado).
+ * Muestra el cruce SYSGAL ↔ ingresados (Contratos + Onboarding), HOY y mes en curso.
+ * El dato lo refresca cada hora `nurturing:cache-reconciliacion` (no pega en vivo a SYSGAL
+ * en cada carga). El "Hoy" coincide exactamente con lo que devuelve /ContratosNuevos (el CSV).
+ * Métrica GLOBAL (no depende del flujo seleccionado).
  */
 
 import { ShieldCheck, CheckCircle2, Users, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatNumber } from '../utils/formatters';
-import type { ReconciliacionEndpoint, ReconciliacionSysgalMetric } from '@/types/metricas';
+import type { ReconciliacionPorPeriodo, ReconciliacionSysgalMetric } from '@/types/metricas';
 
 interface ReconciliacionSysgalCardProps {
   data?: ReconciliacionSysgalMetric | null;
@@ -24,12 +22,14 @@ const ENDPOINTS: { key: 'contratos' | 'clientes-ingreso'; label: string }[] = [
   { key: 'clientes-ingreso', label: 'Onboarding (Clientes ingreso)' },
 ];
 
-function EndpointBlock({ label, r }: { label: string; r: ReconciliacionEndpoint }) {
-  const pendientes = r.faltantes_count ?? 0;
+function EndpointBlock({ label, data }: { label: string; data: ReconciliacionPorPeriodo }) {
+  const hoy = data.hoy;
+  const mes = data.mes;
+  const pendientes = mes?.faltantes_count ?? hoy?.faltantes_count ?? 0;
   const ok = pendientes === 0;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-4">
+    <div className="flex flex-col gap-3 rounded-lg border p-4">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-semibold">{label}</span>
         {ok ? (
@@ -43,22 +43,32 @@ function EndpointBlock({ label, r }: { label: string; r: ReconciliacionEndpoint 
         )}
       </div>
 
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold leading-none">{formatNumber(r.sysgal_total)}</span>
-        <span className="text-xs text-muted-foreground">registros en SYSGAL (mes)</span>
+      <div className="flex items-end gap-6">
+        <div className="flex flex-col">
+          <span className="text-3xl font-bold leading-none">{formatNumber(hoy?.sysgal_total ?? 0)}</span>
+          <span className="mt-1 text-xs text-muted-foreground">registrados HOY</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xl font-semibold leading-none text-muted-foreground">
+            {formatNumber(mes?.sysgal_total ?? 0)}
+          </span>
+          <span className="mt-1 text-xs text-muted-foreground">este mes</span>
+        </div>
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {formatNumber(r.desglose.ingresado)} ingresados
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Users className="h-3 w-3 text-sky-500" /> {formatNumber(r.desglose.duplicado)} ya en sistema
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Clock className="h-3 w-3 text-amber-500" /> {formatNumber(pendientes)} por ingresar
-        </span>
-      </div>
+      {mes && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {formatNumber(mes.desglose.ingresado)} ingresados (mes)
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3 w-3 text-sky-500" /> {formatNumber(mes.desglose.duplicado)} ya en sistema
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3 text-amber-500" /> {formatNumber(pendientes)} por ingresar
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -74,8 +84,8 @@ export function ReconciliacionSysgalCard({ data, className = '' }: Reconciliacio
           <CardTitle>Reconciliación SYSGAL</CardTitle>
         </div>
         <CardDescription>
-          Cruce entre lo que reporta SYSGAL y lo ingresado al sistema (mes en curso). Garantiza que no
-          se escape ningún contrato. Se verifica automáticamente cada hora.
+          Lo que reporta SYSGAL vs lo ingresado al sistema. "Hoy" coincide con los contratos del día
+          (el mismo dato que el Excel). Garantiza que no se escape ninguno. Se verifica cada hora.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -87,8 +97,8 @@ export function ReconciliacionSysgalCard({ data, className = '' }: Reconciliacio
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               {ENDPOINTS.map(({ key, label }) => {
-                const r = data?.[key];
-                return r ? <EndpointBlock key={key} label={label} r={r} /> : null;
+                const periodo = data?.[key];
+                return periodo ? <EndpointBlock key={key} label={label} data={periodo} /> : null;
               })}
             </div>
             <p className="text-xs text-muted-foreground">

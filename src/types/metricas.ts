@@ -354,12 +354,17 @@ export interface ReconciliacionEndpoint {
   faltantes_ids: Array<string | number>;
 }
 
-/** Reconciliación SYSGAL ↔ ingresados (mes en curso), cacheada por nurturing:cache-reconciliacion. */
+/** Reconciliación de un endpoint en dos ventanas: hoy y mes en curso. */
+export interface ReconciliacionPorPeriodo {
+  hoy?: ReconciliacionEndpoint;
+  mes?: ReconciliacionEndpoint;
+}
+
+/** Reconciliación SYSGAL ↔ ingresados (hoy + mes), cacheada por nurturing:cache-reconciliacion. */
 export interface ReconciliacionSysgalMetric {
-  contratos?: ReconciliacionEndpoint;
-  'clientes-ingreso'?: ReconciliacionEndpoint;
+  contratos?: ReconciliacionPorPeriodo;
+  'clientes-ingreso'?: ReconciliacionPorPeriodo;
   generado_at?: string;
-  desde?: string;
 }
 
 export interface MetricasDashboard {
