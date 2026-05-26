@@ -283,9 +283,9 @@ export function MetricasPage() {
         <PageHeader {...pageHeaderProps} isRefreshing={false} />
         <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
           <LayoutDashboard className="h-10 w-10 text-muted-foreground" />
-          <h2 className="text-xl font-semibold">Elegí un flujo para ver sus métricas</h2>
+          <h2 className="text-xl font-semibold">Elige un flujo para ver sus métricas</h2>
           <p className="max-w-md text-muted-foreground">
-            Seleccioná un flujo en el desplegable de arriba. Las métricas y el dato de SYSGAL se
+            Seleccione un flujo en el desplegable de arriba. Las métricas y el dato de SYSGAL se
             muestran por flujo.
           </p>
         </div>
