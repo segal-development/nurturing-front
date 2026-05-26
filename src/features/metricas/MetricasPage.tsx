@@ -383,9 +383,9 @@ export function MetricasPage() {
         <ProblemasEnvioCard data={dashboard.problemas_envio} />
       )}
 
-      {/* Reconciliación SYSGAL: control de integridad de ingreso, filtrado al endpoint del flujo
-          (solo flujos SYSGAL: Contratos Nuevos / Onboarding). */}
-      {sysgalTipo && (
+      {/* Reconciliación SYSGAL: SOLO en Contratos Nuevos (ahí "hoy" no tiene corrimiento y cuadra
+          con el resto). En Onboarding confunde porque mezcla "ingreso" con los números de campaña. */}
+      {sysgalTipo === 'contratos' && (
         <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} flujoTipo={sysgalTipo} />
       )}
 
