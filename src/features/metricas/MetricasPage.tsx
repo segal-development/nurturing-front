@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, AlertCircle, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMetricasDashboard, useRefreshMetricas } from './hooks/useMetricas';
@@ -234,6 +234,21 @@ export function MetricasPage() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader {...pageHeaderProps} isRefreshing={refreshMutation.isPending} />
+
+      {/* Nota para gerencia: el onboarding por fecha de ingreso tiene 3 días de delay
+          y son mayormente clientes que ya existen en el sistema. */}
+      {flujoNombre?.toLowerCase().includes('fecha ingreso') && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Cómo leer esta campaña (Onboarding)</AlertTitle>
+          <AlertDescription className="mt-1 text-sm">
+            Esta campaña envía el email <strong>"a los 3 días de ingresado"</strong>. Por eso un cliente
+            que ingresó en una fecha <strong>entra a la campaña 3 días después</strong> (no el mismo día).
+            Y como la mayoría ya son <strong>clientes existentes</strong> (firmaron contrato), el número de
+            "Incorporados al flujo" es naturalmente menor que el total que reporta SYSGAL para ese día.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* KPI Summary Cards */}
       <KpiSummary

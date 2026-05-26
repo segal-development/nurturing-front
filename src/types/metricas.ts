@@ -357,6 +357,7 @@ export interface ReconciliacionEndpoint {
 /** Reconciliación de un endpoint en dos ventanas: hoy y mes en curso. */
 export interface ReconciliacionPorPeriodo {
   hoy?: ReconciliacionEndpoint;
+  ayer?: ReconciliacionEndpoint;
   mes?: ReconciliacionEndpoint;
 }
 

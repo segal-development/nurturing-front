@@ -24,6 +24,7 @@ const ENDPOINTS: { key: 'contratos' | 'clientes-ingreso'; label: string }[] = [
 
 function EndpointBlock({ label, data }: { label: string; data: ReconciliacionPorPeriodo }) {
   const hoy = data.hoy;
+  const ayer = data.ayer;
   const mes = data.mes;
   const pendientes = mes?.faltantes_count ?? hoy?.faltantes_count ?? 0;
   const ok = pendientes === 0;
@@ -43,10 +44,14 @@ function EndpointBlock({ label, data }: { label: string; data: ReconciliacionPor
         )}
       </div>
 
-      <div className="flex items-end gap-6">
+      <div className="flex items-end gap-5">
         <div className="flex flex-col">
           <span className="text-3xl font-bold leading-none">{formatNumber(hoy?.sysgal_total ?? 0)}</span>
-          <span className="mt-1 text-xs text-muted-foreground">registrados HOY</span>
+          <span className="mt-1 text-xs text-muted-foreground">hoy</span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-2xl font-semibold leading-none">{formatNumber(ayer?.sysgal_total ?? 0)}</span>
+          <span className="mt-1 text-xs text-muted-foreground">ayer</span>
         </div>
         <div className="flex flex-col">
           <span className="text-xl font-semibold leading-none text-muted-foreground">
@@ -102,7 +107,8 @@ export function ReconciliacionSysgalCard({ data, className = '' }: Reconciliacio
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              Los "por ingresar" suelen ser registros recién llegados que entran en el próximo sync.
+              Muestra hoy, ayer y el mes en curso (no depende del filtro de fecha de arriba). Los "por
+              ingresar" suelen ser registros recién llegados que entran en el próximo sync.
               {data?.generado_at && (
                 <> · Última verificación: {new Date(data.generado_at).toLocaleString('es-CL')}</>
               )}
