@@ -162,24 +162,36 @@ export function MetricasPage() {
       ? 'contratos'
       : null;
 
+  // ¿Caso "Onboarding viendo Hoy"? La campaña contacta HOY a los que ingresaron exactamente
+  // 3 días atrás, así que mostramos SOLO ese día (un único día), no un rango.
+  const onboardingHoy =
+    sysgalTipo === 'clientes-ingreso' &&
+    period === METRIC_PERIOD.TODAY &&
+    !(dateRange?.from && dateRange?.to);
+
   // Rango que se le consulta a SYSGAL:
   // - Fechas elegidas con el calendario → ese rango exacto.
-  // - "Hoy" en Onboarding (clientes por fecha de ingreso) → últimos 3 días [hoy-3, hoy],
-  //   porque la campaña dispara "a los 3 días de ingresado".
+  // - "Hoy" en Onboarding → SOLO el día de hace 3 días (desde === hasta).
   // - Resto de períodos → la ventana natural del período.
   const sysgalRange = (() => {
     if (dateRange?.from && dateRange?.to) {
       return { desde: toISODateString(dateRange.from), hasta: toISODateString(dateRange.to) };
     }
+    if (onboardingHoy) {
+      const dia = new Date();
+      dia.setDate(dia.getDate() - 3); // ingresos de hace exactamente 3 días
+      const iso = toISODateString(dia);
+      return { desde: iso, hasta: iso };
+    }
     const hasta = new Date();
     const desde = new Date();
-    if (sysgalTipo === 'clientes-ingreso' && period === METRIC_PERIOD.TODAY) {
-      desde.setDate(desde.getDate() - 3);
-    } else {
-      desde.setDate(desde.getDate() - Math.max(period - 1, 0));
-    }
+    desde.setDate(desde.getDate() - Math.max(period - 1, 0));
     return { desde: toISODateString(desde), hasta: toISODateString(hasta) };
   })();
+
+  const sysgalNota = onboardingHoy
+    ? 'Viendo "Hoy": son los que ingresaron exactamente 3 días atrás (a quienes la campaña contacta hoy).'
+    : undefined;
 
   // Build MetricsParams based on period selection + flujo selection.
   // Custom date range takes precedence over dias when both from/to are set.
@@ -287,6 +299,7 @@ export function MetricasPage() {
           desde={sysgalRange.desde}
           hasta={sysgalRange.hasta}
           label={sysgalTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
+          nota={sysgalNota}
         />
       )}
 

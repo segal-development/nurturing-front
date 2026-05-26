@@ -21,6 +21,7 @@ interface SysgalRangoCardProps {
   desde: string; // YYYY-MM-DD
   hasta: string; // YYYY-MM-DD
   label: string; // ej. "Contratos Nuevos"
+  nota?: string; // aclaración contextual (ej. el corrimiento de 3 días del onboarding)
   className?: string;
 }
 
@@ -34,7 +35,8 @@ function formatFecha(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-export function SysgalRangoCard({ tipo, desde, hasta, label, className = '' }: SysgalRangoCardProps) {
+export function SysgalRangoCard({ tipo, desde, hasta, label, nota, className = '' }: SysgalRangoCardProps) {
+  const esUnDia = desde === hasta;
   const [estado, setEstado] = useState<Estado>('generando');
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -127,8 +129,18 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, className = '' }: S
           <CardTitle>SYSGAL — {label}</CardTitle>
         </div>
         <CardDescription>
-          Dato oficial de SYSGAL para el rango seleccionado · del {formatFecha(desde)} al{' '}
-          {formatFecha(hasta)}
+          {esUnDia ? (
+            <>Dato oficial de SYSGAL · {formatFecha(desde)}</>
+          ) : (
+            <>
+              Dato oficial de SYSGAL para el rango · del {formatFecha(desde)} al {formatFecha(hasta)}
+            </>
+          )}
+          {nota && (
+            <span className="mt-1 block font-medium text-segal-blue dark:text-segal-turquoise">
+              {nota}
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -142,7 +154,9 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, className = '' }: S
           <div className="flex items-end justify-between gap-4">
             <div className="flex flex-col">
               <span className="text-4xl font-bold leading-none">{formatNumber(count ?? 0)}</span>
-              <span className="mt-1 text-sm text-muted-foreground">{unidad} en este rango</span>
+              <span className="mt-1 text-sm text-muted-foreground">
+                {unidad} {esUnDia ? 'ese día' : 'en este rango'}
+              </span>
             </div>
             <Button variant="outline" size="sm" onClick={descargar}>
               <Download className="mr-2 h-4 w-4" /> Descargar Excel
