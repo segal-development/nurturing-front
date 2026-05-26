@@ -14,6 +14,8 @@ import type { ReconciliacionPorPeriodo, ReconciliacionSysgalMetric } from '@/typ
 
 interface ReconciliacionSysgalCardProps {
   data?: ReconciliacionSysgalMetric | null;
+  /** Si viene, muestra SOLO el bloque de ese endpoint (el del flujo seleccionado). */
+  flujoTipo?: 'contratos' | 'clientes-ingreso' | null;
   className?: string;
 }
 
@@ -78,8 +80,14 @@ function EndpointBlock({ label, data }: { label: string; data: ReconciliacionPor
   );
 }
 
-export function ReconciliacionSysgalCard({ data, className = '' }: ReconciliacionSysgalCardProps) {
-  const sinDatos = !data || (!data.contratos && !data['clientes-ingreso']);
+export function ReconciliacionSysgalCard({
+  data,
+  flujoTipo,
+  className = '',
+}: ReconciliacionSysgalCardProps) {
+  // Con un flujo SYSGAL seleccionado, mostramos solo su endpoint; si no, ambos.
+  const visibles = flujoTipo ? ENDPOINTS.filter((e) => e.key === flujoTipo) : ENDPOINTS;
+  const sinDatos = !data || visibles.every((e) => !data[e.key]);
 
   return (
     <Card className={className}>
@@ -89,8 +97,9 @@ export function ReconciliacionSysgalCard({ data, className = '' }: Reconciliacio
           <CardTitle>Reconciliación SYSGAL</CardTitle>
         </div>
         <CardDescription>
-          Lo que reporta SYSGAL vs lo ingresado al sistema. "Hoy" coincide con los contratos del día
-          (el mismo dato que el Excel). Garantiza que no se escape ninguno. Se verifica cada hora.
+          Control de integridad: lo que SYSGAL reportó vs lo que se ingresó al sistema (hoy, ayer y
+          mes en curso). Es independiente de la campaña y del filtro de fecha de arriba; solo
+          verifica que no se escape ningún registro. Se actualiza cada hora.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,15 +109,14 @@ export function ReconciliacionSysgalCard({ data, className = '' }: Reconciliacio
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ENDPOINTS.map(({ key, label }) => {
+            <div className={visibles.length > 1 ? 'grid gap-4 sm:grid-cols-2' : ''}>
+              {visibles.map(({ key, label }) => {
                 const periodo = data?.[key];
                 return periodo ? <EndpointBlock key={key} label={label} data={periodo} /> : null;
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              Muestra hoy, ayer y el mes en curso (no depende del filtro de fecha de arriba). Los "por
-              ingresar" suelen ser registros recién llegados que entran en el próximo sync.
+              Los "por ingresar" suelen ser registros recién llegados que entran en el próximo sync.
               {data?.generado_at && (
                 <> · Última verificación: {new Date(data.generado_at).toLocaleString('es-CL')}</>
               )}

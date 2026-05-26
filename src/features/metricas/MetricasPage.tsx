@@ -383,8 +383,11 @@ export function MetricasPage() {
         <ProblemasEnvioCard data={dashboard.problemas_envio} />
       )}
 
-      {/* Reconciliación SYSGAL ↔ ingresados (GLOBAL, mes en curso): garantiza que no se escape ningún contrato */}
-      <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} />
+      {/* Reconciliación SYSGAL: control de integridad de ingreso, filtrado al endpoint del flujo
+          (solo flujos SYSGAL: Contratos Nuevos / Onboarding). */}
+      {sysgalTipo && (
+        <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} flujoTipo={sysgalTipo} />
+      )}
 
       {/* Footer with generation time */}
       <p className="text-xs text-muted-foreground text-right">
