@@ -140,6 +140,16 @@ function toISODateString(date: Date): string {
   return date.toISOString().split('T')[0];
 }
 
+/**
+ * Suma (o resta, con días negativos) días a una fecha ISO (YYYY-MM-DD).
+ * Usa mediodía UTC para ser inmune a zonas horarias / DST.
+ */
+function shiftISODate(iso: string, dias: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().split('T')[0];
+}
+
 export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -162,26 +172,10 @@ export function MetricasPage() {
       ? 'contratos'
       : null;
 
-  // ¿Caso "Onboarding viendo Hoy"? La campaña contacta HOY a los que ingresaron exactamente
-  // 3 días atrás, así que mostramos SOLO ese día (un único día), no un rango.
-  const onboardingHoy =
-    sysgalTipo === 'clientes-ingreso' &&
-    period === METRIC_PERIOD.TODAY &&
-    !(dateRange?.from && dateRange?.to);
-
-  // Rango que se le consulta a SYSGAL:
-  // - Fechas elegidas con el calendario → ese rango exacto.
-  // - "Hoy" en Onboarding → SOLO el día de hace 3 días (desde === hasta).
-  // - Resto de períodos → la ventana natural del período.
-  const sysgalRange = (() => {
+  // Ventana de CONTACTO = el período/fechas que el usuario eligió (a quién mira la campaña).
+  const contactoRange = (() => {
     if (dateRange?.from && dateRange?.to) {
       return { desde: toISODateString(dateRange.from), hasta: toISODateString(dateRange.to) };
-    }
-    if (onboardingHoy) {
-      const dia = new Date();
-      dia.setDate(dia.getDate() - 3); // ingresos de hace exactamente 3 días
-      const iso = toISODateString(dia);
-      return { desde: iso, hasta: iso };
     }
     const hasta = new Date();
     const desde = new Date();
@@ -189,9 +183,16 @@ export function MetricasPage() {
     return { desde: toISODateString(desde), hasta: toISODateString(hasta) };
   })();
 
-  const sysgalNota = onboardingHoy
-    ? 'Viendo "Hoy": son los que ingresaron exactamente 3 días atrás (a quienes la campaña contacta hoy).'
-    : undefined;
+  // Onboarding: la campaña contacta a los que ingresaron 3 días ANTES. Por eso lo que se le
+  // consulta a SYSGAL (fechas de INGRESO) es la ventana de contacto corrida 3 días hacia atrás.
+  // Contratos: sin corrimiento (la ventana de contacto = la ventana consultada).
+  const esOnboarding = sysgalTipo === 'clientes-ingreso';
+  const sysgalRange = esOnboarding
+    ? {
+        desde: shiftISODate(contactoRange.desde, -3),
+        hasta: shiftISODate(contactoRange.hasta, -3),
+      }
+    : contactoRange;
 
   // Build MetricsParams based on period selection + flujo selection.
   // Custom date range takes precedence over dias when both from/to are set.
@@ -302,7 +303,7 @@ export function MetricasPage() {
           desde={sysgalRange.desde}
           hasta={sysgalRange.hasta}
           label={sysgalTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
-          nota={sysgalNota}
+          contacto={esOnboarding ? contactoRange : undefined}
         />
       )}
 

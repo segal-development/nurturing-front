@@ -21,7 +21,12 @@ interface SysgalRangoCardProps {
   desde: string; // YYYY-MM-DD
   hasta: string; // YYYY-MM-DD
   label: string; // ej. "Contratos Nuevos"
-  nota?: string; // aclaración contextual (ej. el corrimiento de 3 días del onboarding)
+  /**
+   * Onboarding: rango de CONTACTO (lo que el usuario eligió). Cuando viene, la tarjeta muestra
+   * esas fechas como "contactados" y aclara que los ingresos consultados (desde/hasta) son 3
+   * días antes. Para contratos no se pasa (no hay corrimiento).
+   */
+  contacto?: { desde: string; hasta: string };
   className?: string;
 }
 
@@ -35,8 +40,13 @@ function formatFecha(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-export function SysgalRangoCard({ tipo, desde, hasta, label, nota, className = '' }: SysgalRangoCardProps) {
-  const esUnDia = desde === hasta;
+function rangoTexto(desde: string, hasta: string): string {
+  return desde === hasta
+    ? `el ${formatFecha(desde)}`
+    : `del ${formatFecha(desde)} al ${formatFecha(hasta)}`;
+}
+
+export function SysgalRangoCard({ tipo, desde, hasta, label, contacto, className = '' }: SysgalRangoCardProps) {
   const [estado, setEstado] = useState<Estado>('generando');
   const [count, setCount] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +129,12 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, nota, className = '
     }
   };
 
-  const unidad = tipo === 'contratos' ? 'contratos nuevos' : 'clientes por fecha de ingreso';
+  const unidad = tipo === 'contratos' ? 'contratos nuevos' : 'clientes';
+  // Subtítulo del número: onboarding muestra las fechas de CONTACTO (lo que se eligió);
+  // contratos muestra el rango consultado.
+  const subtitulo = contacto
+    ? `clientes contactados ${rangoTexto(contacto.desde, contacto.hasta)}`
+    : `${unidad} ${rangoTexto(desde, hasta)}`;
 
   return (
     <Card className={className}>
@@ -128,20 +143,7 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, nota, className = '
           <FileSpreadsheet className="h-5 w-5 text-segal-blue dark:text-segal-turquoise" />
           <CardTitle>SYSGAL — {label}</CardTitle>
         </div>
-        <CardDescription>
-          {esUnDia ? (
-            <>Dato oficial de SYSGAL · {formatFecha(desde)}</>
-          ) : (
-            <>
-              Dato oficial de SYSGAL para el rango · del {formatFecha(desde)} al {formatFecha(hasta)}
-            </>
-          )}
-          {nota && (
-            <span className="mt-1 block font-medium text-segal-blue dark:text-segal-turquoise">
-              {nota}
-            </span>
-          )}
-        </CardDescription>
+        <CardDescription>Dato oficial de SYSGAL para el rango seleccionado.</CardDescription>
       </CardHeader>
       <CardContent>
         {estado === 'generando' && (
@@ -151,16 +153,21 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, nota, className = '
         )}
 
         {estado === 'listo' && (
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="text-4xl font-bold leading-none">{formatNumber(count ?? 0)}</span>
-              <span className="mt-1 text-sm text-muted-foreground">
-                {unidad} {esUnDia ? 'ese día' : 'en este rango'}
-              </span>
+          <div>
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex flex-col">
+                <span className="text-4xl font-bold leading-none">{formatNumber(count ?? 0)}</span>
+                <span className="mt-1 text-sm text-muted-foreground">{subtitulo}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={descargar}>
+                <Download className="mr-2 h-4 w-4" /> Descargar Excel
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={descargar}>
-              <Download className="mr-2 h-4 w-4" /> Descargar Excel
-            </Button>
+            {contacto && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Son los que ingresaron {rangoTexto(desde, hasta)} — la campaña les escribe a los 3 días.
+              </p>
+            )}
           </div>
         )}
 
