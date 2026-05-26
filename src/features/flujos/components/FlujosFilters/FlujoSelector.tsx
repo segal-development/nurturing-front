@@ -24,8 +24,9 @@ interface FlujoSelectorProps {
 export const FILTER_ALL_FLUJOS = '_todos'
 
 export function FlujoSelector({ selectedId, flujos, onChange, isLoading }: FlujoSelectorProps) {
-  // Convertir selectedId a string para el Select
-  const selectValue = selectedId ? String(selectedId) : FILTER_ALL_FLUJOS
+  // Sin flujo seleccionado → value vacío para que el Select muestre el placeholder
+  // ("Selecciona un flujo..."). Ya no existe la opción "Todos los flujos".
+  const selectValue = selectedId ? String(selectedId) : ''
 
   const handleChange = (value: string) => {
     if (value === FILTER_ALL_FLUJOS) {
@@ -51,10 +52,6 @@ export function FlujoSelector({ selectedId, flujos, onChange, isLoading }: Flujo
             <SelectValue placeholder="Selecciona un flujo..." />
           </SelectTrigger>
           <SelectContent className="bg-white border border-segal-blue/20 rounded-md shadow-lg dark:bg-gray-700 dark:border-gray-600 max-h-[300px]">
-            <SelectItem value={FILTER_ALL_FLUJOS}>
-              <span className="text-sm font-medium">Todos los flujos</span>
-            </SelectItem>
-            <div className="my-1 border-t border-segal-blue/10" />
             {flujos.map((flujo) => (
               <SelectItem key={flujo.id} value={String(flujo.id)}>
                 <span className="text-sm">{flujo.nombre}</span>

@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { RefreshCw, AlertCircle, Loader2, Info } from 'lucide-react';
+import { RefreshCw, AlertCircle, Loader2, Info, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMetricasDashboard, useRefreshMetricas } from './hooks/useMetricas';
@@ -20,8 +20,6 @@ import {
   PeriodSelector,
   EnviosChart,
   AperturasChart,
-  TopFlujosTable,
-  NuevosProspectosChart,
   EnviosHoyCard,
   ProblemasEnvioCard,
   ReconciliacionSysgalCard,
@@ -214,7 +212,7 @@ export function MetricasPage() {
     isLoading,
     error,
     refetch,
-  } = useMetricasDashboard(metricsParams);
+  } = useMetricasDashboard(metricsParams, { enabled: selectedFlujoId !== null });
 
   const refreshMutation = useRefreshMetricas();
 
@@ -240,6 +238,24 @@ export function MetricasPage() {
     isLoadingFlujos,
     flujoNombre,
   };
+
+  // Sin flujo seleccionado: pantalla de selección. No se traen métricas globales (el dashboard
+  // arranca por flujo). El usuario elige un flujo en el desplegable de arriba.
+  if (selectedFlujoId === null) {
+    return (
+      <div className="p-6 space-y-6">
+        <PageHeader {...pageHeaderProps} isRefreshing={false} />
+        <div className="flex min-h-[400px] flex-col items-center justify-center gap-3 text-center">
+          <LayoutDashboard className="h-10 w-10 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">Elegí un flujo para ver sus métricas</h2>
+          <p className="max-w-md text-muted-foreground">
+            Seleccioná un flujo en el desplegable de arriba. Las métricas y el dato de SYSGAL se
+            muestran por flujo.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoading) {
@@ -326,12 +342,6 @@ export function MetricasPage() {
         <EnviosHoyCard data={dashboard.envios_hoy} />
       )}
 
-      {/* Incorporados a campañas: SOLO sin flujo seleccionado. Con un flujo elegido, el KPI
-          "Clientes ingresados" ya muestra ese número por flujo, así que evitamos el duplicado. */}
-      {selectedFlujoId === null && dashboard.nuevos_prospectos && (
-        <NuevosProspectosChart data={dashboard.nuevos_prospectos} />
-      )}
-
       {/* Prospectos con datos que impiden el envío (calidad de dato del origen / SYSGAL) */}
       {dashboard.problemas_envio && (
         <ProblemasEnvioCard data={dashboard.problemas_envio} />
@@ -339,9 +349,6 @@ export function MetricasPage() {
 
       {/* Reconciliación SYSGAL ↔ ingresados (GLOBAL, mes en curso): garantiza que no se escape ningún contrato */}
       <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} />
-
-      {/* Top Flujos: solo cuando no hay filtro de flujo seleccionado */}
-      {selectedFlujoId === null && <TopFlujosTable flujos={dashboard.top_flujos} />}
 
       {/* Footer with generation time */}
       <p className="text-xs text-muted-foreground text-right">

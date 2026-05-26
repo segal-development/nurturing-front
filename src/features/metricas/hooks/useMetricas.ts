@@ -61,11 +61,15 @@ const STALE_TIME = {
  * @param params - Period in days or custom date range
  * @returns Query result with full dashboard data
  */
-export function useMetricasDashboard(params: MetricsParams = { dias: 30 }) {
+export function useMetricasDashboard(
+  params: MetricsParams = { dias: 30 },
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: QUERY_KEYS.dashboard(params),
     queryFn: () => metricasService.getDashboard(params),
     staleTime: STALE_TIME.DASHBOARD,
+    enabled: options?.enabled ?? true,
   });
 }
 
