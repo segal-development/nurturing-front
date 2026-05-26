@@ -79,7 +79,7 @@ export function SysgalRangoCard({ tipo, desde, hasta, label, contacto, className
           intentosRef.current += 1;
           if (intentosRef.current > MAX_INTENTOS) {
             limpiar();
-            setError('Tardó demasiado, reintentá');
+            setError('Tardó demasiado, reintente');
             setEstado('error');
             return;
           }

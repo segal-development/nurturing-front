@@ -111,7 +111,7 @@ function PageHeader({
             <DatePicker
               date={onboardingDia}
               onDateChange={(d) => d && onOnboardingDiaChange(d)}
-              placeholder="Elegí el día"
+              placeholder="Elige el día"
               dateFormat="PPP"
               toDate={new Date()}
               className="w-[240px]"
