@@ -49,7 +49,9 @@ export function PeriodSelector({
   className = '',
 }: PeriodSelectorProps) {
   const handlePeriodChange = (v: string) => {
-    onChange(parseInt(v, 10) as MetricPeriod);
+    const parsed = parseInt(v, 10);
+    if (Number.isNaN(parsed)) return; // 'custom' no es un preset real
+    onChange(parsed as MetricPeriod);
     // Preset chosen → clear the custom date range so dias takes over
     onDateRangeChange?.(undefined);
   };
@@ -80,12 +82,20 @@ export function PeriodSelector({
   // is the current stored value (legacy guard — CUSTOM no longer appears as option).
   const dropdownValue = value === METRIC_PERIOD.CUSTOM ? METRIC_PERIOD.MONTH : value;
 
+  // Con un rango custom activo, el dropdown NO debe mostrar un preset: si mostrara "Hoy" y el
+  // usuario hace clic en "Hoy", el valor no cambia y onValueChange NO se dispara (no limpia el
+  // rango). Mostrando "Personalizado", hacer clic en cualquier preset siempre cuenta como cambio.
+  const customActive = !!(dateRange?.from && dateRange?.to);
+  const selectValue = customActive ? 'custom' : dropdownValue.toString();
+
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
       {/* Preset dropdown */}
-      <Select value={dropdownValue.toString()} onValueChange={handlePeriodChange}>
+      <Select value={selectValue} onValueChange={handlePeriodChange}>
         <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Seleccionar período">{getPeriodLabel(dropdownValue)}</SelectValue>
+          <SelectValue placeholder="Seleccionar período">
+            {customActive ? 'Personalizado' : getPeriodLabel(dropdownValue)}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent
           position="popper"

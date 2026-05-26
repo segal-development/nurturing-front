@@ -218,6 +218,9 @@ export function MetricasPage() {
   const refreshMutation = useRefreshMetricas();
 
   const handleRefresh = () => {
+    // Reset de los filtros de fecha al estado inicial (mantiene el flujo seleccionado) + datos frescos.
+    setPeriod(METRIC_PERIOD.TODAY);
+    setDateRange(undefined);
     refreshMutation.mutate(undefined, {
       onSuccess: () => refetch(),
     });
