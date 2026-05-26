@@ -15,6 +15,7 @@ import { getPeriodLabel, formatDateRange } from './utils/formatters';
 import { getApiErrorMessage } from '@/api/client';
 import { useFlujos } from '@/features/flujos/hooks/useFlujos';
 import { FlujoSelector } from '@/features/flujos/components/FlujosFilters/FlujoSelector';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   KpiSummary,
   PeriodSelector,
@@ -67,6 +68,9 @@ function PageHeader({
   flujos,
   isLoadingFlujos,
   flujoNombre,
+  esOnboarding,
+  onboardingDia,
+  onOnboardingDiaChange,
 }: {
   period: MetricPeriod;
   onPeriodChange: (value: MetricPeriod) => void;
@@ -79,10 +83,14 @@ function PageHeader({
   flujos: { id: number; nombre: string }[];
   isLoadingFlujos: boolean;
   flujoNombre?: string;
+  esOnboarding: boolean;
+  onboardingDia: Date;
+  onOnboardingDiaChange: (date: Date) => void;
 }) {
-  // Show formatted date range when both bounds are set; otherwise show preset label
-  const periodDisplay =
-    dateRange?.from && dateRange?.to
+  // Onboarding muestra un día único; el resto, rango/preset.
+  const periodDisplay = esOnboarding
+    ? onboardingDia.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })
+    : dateRange?.from && dateRange?.to
       ? formatDateRange(dateRange.from, dateRange.to)
       : getPeriodLabel(period);
 
@@ -98,12 +106,24 @@ function PageHeader({
           <p className="text-muted-foreground mt-1">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          <PeriodSelector
-            value={period}
-            onChange={onPeriodChange}
-            dateRange={dateRange}
-            onDateRangeChange={onDateRangeChange}
-          />
+          {esOnboarding ? (
+            // Onboarding: se elige UN día de contacto (el −3 a ingresos es automático).
+            <DatePicker
+              date={onboardingDia}
+              onDateChange={(d) => d && onOnboardingDiaChange(d)}
+              placeholder="Elegí el día"
+              dateFormat="PPP"
+              toDate={new Date()}
+              className="w-[240px]"
+            />
+          ) : (
+            <PeriodSelector
+              value={period}
+              onChange={onPeriodChange}
+              dateRange={dateRange}
+              onDateRangeChange={onDateRangeChange}
+            />
+          )}
           <Button
             variant="outline"
             size="icon"
@@ -152,6 +172,8 @@ export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedFlujoId, setSelectedFlujoId] = useState<number | null>(null);
+  // Onboarding (Clientes por Fecha Ingreso): se elige UN día de contacto, no un rango.
+  const [onboardingDia, setOnboardingDia] = useState<Date>(() => new Date());
 
   // Cargar lista de flujos para el selector
   const { data: flujosResponse, isLoading: isLoadingFlujos } = useFlujos({ per_page: 100 });
@@ -170,8 +192,16 @@ export function MetricasPage() {
       ? 'contratos'
       : null;
 
-  // Ventana de CONTACTO = el período/fechas que el usuario eligió (a quién mira la campaña).
+  const esOnboarding = sysgalTipo === 'clientes-ingreso';
+
+  // Ventana de CONTACTO (a quién mira la campaña):
+  // - Onboarding → UN solo día (onboardingDia).
+  // - Otros flujos → el rango del datepicker o la ventana del período.
   const contactoRange = (() => {
+    if (esOnboarding) {
+      const iso = toISODateString(onboardingDia);
+      return { desde: iso, hasta: iso };
+    }
     if (dateRange?.from && dateRange?.to) {
       return { desde: toISODateString(dateRange.from), hasta: toISODateString(dateRange.to) };
     }
@@ -184,7 +214,6 @@ export function MetricasPage() {
   // Onboarding: la campaña contacta a los que ingresaron 3 días ANTES. Por eso lo que se le
   // consulta a SYSGAL (fechas de INGRESO) es la ventana de contacto corrida 3 días hacia atrás.
   // Contratos: sin corrimiento (la ventana de contacto = la ventana consultada).
-  const esOnboarding = sysgalTipo === 'clientes-ingreso';
   const sysgalRange = esOnboarding
     ? {
         desde: shiftISODate(contactoRange.desde, -3),
@@ -192,10 +221,13 @@ export function MetricasPage() {
       }
     : contactoRange;
 
-  // Build MetricsParams based on period selection + flujo selection.
-  // Custom date range takes precedence over dias when both from/to are set.
-  const baseParams: MetricsParams =
-    dateRange?.from && dateRange?.to
+  // Build MetricsParams. Onboarding usa el día de contacto (un día); el resto, rango o período.
+  const baseParams: MetricsParams = esOnboarding
+    ? {
+        fecha_inicio: toISODateString(onboardingDia),
+        fecha_fin: toISODateString(onboardingDia),
+      }
+    : dateRange?.from && dateRange?.to
       ? {
           fecha_inicio: toISODateString(dateRange.from),
           fecha_fin: toISODateString(dateRange.to),
@@ -220,6 +252,7 @@ export function MetricasPage() {
     // Reset de los filtros de fecha al estado inicial (mantiene el flujo seleccionado) + datos frescos.
     setPeriod(METRIC_PERIOD.TODAY);
     setDateRange(undefined);
+    setOnboardingDia(new Date());
     refreshMutation.mutate(undefined, {
       onSuccess: () => refetch(),
     });
@@ -237,6 +270,9 @@ export function MetricasPage() {
     flujos: flujosList,
     isLoadingFlujos,
     flujoNombre,
+    esOnboarding,
+    onboardingDia,
+    onOnboardingDiaChange: setOnboardingDia,
   };
 
   // Sin flujo seleccionado: pantalla de selección. No se traen métricas globales (el dashboard
