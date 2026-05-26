@@ -190,6 +190,51 @@ class MetricasService {
   async refreshCache(): Promise<void> {
     await apiClient.post(`${this.basePath}/refresh`);
   }
+
+  // ============================================================
+  // EXPORT SYSGAL (on-demand por rango — lo genera la VM)
+  // ============================================================
+
+  /** Encola la generación del export SYSGAL para un rango. Devuelve el token. */
+  async createExport(
+    tipo: 'contratos' | 'clientes-ingreso',
+    desde: string,
+    hasta: string
+  ): Promise<string> {
+    const response = await apiClient.post<{ success: boolean; token: string }>(
+      `${this.basePath}/export-sysgal`,
+      { tipo, desde, hasta }
+    );
+    return response.data.token;
+  }
+
+  /** Estado del export: pendiente | listo | error (+ conteo). */
+  async getExportStatus(
+    token: string
+  ): Promise<{ estado: string; count?: number; error?: string }> {
+    const response = await apiClient.get<{
+      success: boolean;
+      estado: string;
+      count?: number;
+      error?: string;
+    }>(`${this.basePath}/export-sysgal/${token}`);
+    return response.data;
+  }
+
+  /** Descarga el CSV (con auth) y dispara la descarga en el browser. */
+  async downloadExport(token: string, filename: string): Promise<void> {
+    const response = await apiClient.get(`${this.basePath}/export-sysgal/${token}/download`, {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(response.data as Blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 }
 
 // ============================================================

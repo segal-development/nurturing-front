@@ -25,6 +25,7 @@ import {
   EnviosHoyCard,
   ProblemasEnvioCard,
   ReconciliacionSysgalCard,
+  ExportSysgalButton,
 } from './components';
 
 // ============================================================
@@ -151,6 +152,26 @@ export function MetricasPage() {
     ? flujosList.find((f) => f.id === selectedFlujoId)?.nombre
     : undefined;
 
+  // Export SYSGAL por rango: el "tipo" depende del flujo SYSGAL seleccionado; el rango
+  // sale de las fechas custom o del período. null = el flujo no es de SYSGAL (no se muestra).
+  const exportTipo: 'contratos' | 'clientes-ingreso' | null = flujoNombre
+    ?.toLowerCase()
+    .includes('fecha ingreso')
+    ? 'clientes-ingreso'
+    : flujoNombre?.toLowerCase().includes('contratos')
+      ? 'contratos'
+      : null;
+
+  const exportRange = (() => {
+    if (dateRange?.from && dateRange?.to) {
+      return { desde: toISODateString(dateRange.from), hasta: toISODateString(dateRange.to) };
+    }
+    const hasta = new Date();
+    const desde = new Date();
+    desde.setDate(desde.getDate() - Math.max(period - 1, 0));
+    return { desde: toISODateString(desde), hasta: toISODateString(hasta) };
+  })();
+
   // Build MetricsParams based on period selection + flujo selection.
   // Custom date range takes precedence over dias when both from/to are set.
   const baseParams: MetricsParams =
@@ -248,6 +269,16 @@ export function MetricasPage() {
             "Incorporados al flujo" es naturalmente menor que el total que reporta SYSGAL para ese día.
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Descargar Excel de SYSGAL del rango seleccionado (solo flujos SYSGAL) */}
+      {exportTipo && (
+        <ExportSysgalButton
+          tipo={exportTipo}
+          desde={exportRange.desde}
+          hasta={exportRange.hasta}
+          label={exportTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
+        />
       )}
 
       {/* KPI Summary Cards */}
