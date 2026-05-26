@@ -25,7 +25,7 @@ import {
   EnviosHoyCard,
   ProblemasEnvioCard,
   ReconciliacionSysgalCard,
-  ExportSysgalButton,
+  SysgalRangoCard,
 } from './components';
 
 // ============================================================
@@ -152,9 +152,9 @@ export function MetricasPage() {
     ? flujosList.find((f) => f.id === selectedFlujoId)?.nombre
     : undefined;
 
-  // Export SYSGAL por rango: el "tipo" depende del flujo SYSGAL seleccionado; el rango
-  // sale de las fechas custom o del período. null = el flujo no es de SYSGAL (no se muestra).
-  const exportTipo: 'contratos' | 'clientes-ingreso' | null = flujoNombre
+  // SYSGAL por rango: el "tipo" depende del flujo SYSGAL seleccionado.
+  // null = el flujo no es de SYSGAL (no se muestra la tarjeta).
+  const sysgalTipo: 'contratos' | 'clientes-ingreso' | null = flujoNombre
     ?.toLowerCase()
     .includes('fecha ingreso')
     ? 'clientes-ingreso'
@@ -162,13 +162,22 @@ export function MetricasPage() {
       ? 'contratos'
       : null;
 
-  const exportRange = (() => {
+  // Rango que se le consulta a SYSGAL:
+  // - Fechas elegidas con el calendario → ese rango exacto.
+  // - "Hoy" en Onboarding (clientes por fecha de ingreso) → últimos 3 días [hoy-3, hoy],
+  //   porque la campaña dispara "a los 3 días de ingresado".
+  // - Resto de períodos → la ventana natural del período.
+  const sysgalRange = (() => {
     if (dateRange?.from && dateRange?.to) {
       return { desde: toISODateString(dateRange.from), hasta: toISODateString(dateRange.to) };
     }
     const hasta = new Date();
     const desde = new Date();
-    desde.setDate(desde.getDate() - Math.max(period - 1, 0));
+    if (sysgalTipo === 'clientes-ingreso' && period === METRIC_PERIOD.TODAY) {
+      desde.setDate(desde.getDate() - 3);
+    } else {
+      desde.setDate(desde.getDate() - Math.max(period - 1, 0));
+    }
     return { desde: toISODateString(desde), hasta: toISODateString(hasta) };
   })();
 
@@ -271,13 +280,13 @@ export function MetricasPage() {
         </Alert>
       )}
 
-      {/* Descargar Excel de SYSGAL del rango seleccionado (solo flujos SYSGAL) */}
-      {exportTipo && (
-        <ExportSysgalButton
-          tipo={exportTipo}
-          desde={exportRange.desde}
-          hasta={exportRange.hasta}
-          label={exportTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
+      {/* Número de SYSGAL para el rango seleccionado + descarga (solo flujos SYSGAL) */}
+      {sysgalTipo && (
+        <SysgalRangoCard
+          tipo={sysgalTipo}
+          desde={sysgalRange.desde}
+          hasta={sysgalRange.hasta}
+          label={sysgalTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
         />
       )}
 

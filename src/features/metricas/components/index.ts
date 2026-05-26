@@ -13,4 +13,4 @@ export { NuevosProspectosChart } from './NuevosProspectosChart';
 export { EnviosHoyCard } from './EnviosHoyCard';
 export { ProblemasEnvioCard } from './ProblemasEnvioCard';
 export { ReconciliacionSysgalCard } from './ReconciliacionSysgalCard';
-export { ExportSysgalButton } from './ExportSysgalButton';
+export { SysgalRangoCard } from './SysgalRangoCard';
