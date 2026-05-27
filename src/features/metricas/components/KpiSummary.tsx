@@ -52,7 +52,7 @@ export function KpiSummary({
         <MetricCard
           title={porFlujo ? 'Incorporados al flujo' : 'Clientes ingresados'}
           value={clientesIngresados?.total ?? 0}
-          subtitle={porFlujo ? 'Entraron a la campaña (≠ total SYSGAL)' : 'Entraron al sistema (total)'}
+          subtitle={porFlujo ? 'Nuevos que entraron a la campaña' : 'Entraron al sistema (total)'}
           icon={<UserPlus className="h-4 w-4" />}
         />
 

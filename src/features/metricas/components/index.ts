@@ -14,3 +14,4 @@ export { EnviosHoyCard } from './EnviosHoyCard';
 export { ProblemasEnvioCard } from './ProblemasEnvioCard';
 export { ReconciliacionSysgalCard } from './ReconciliacionSysgalCard';
 export { SysgalRangoCard } from './SysgalRangoCard';
+export { EmbudoCampana } from './EmbudoCampana';

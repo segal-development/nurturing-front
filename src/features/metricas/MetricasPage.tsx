@@ -11,9 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMetricasDashboard, useRefreshMetricas } from './hooks/useMetricas';
 import { METRIC_PERIOD, type MetricPeriod, type DateRange, type MetricsParams } from '@/types/metricas';
+import type { FlujoNurturing } from '@/types/flujo';
 import { getPeriodLabel, formatDateRange } from './utils/formatters';
 import { getApiErrorMessage } from '@/api/client';
 import { useFlujos } from '@/features/flujos/hooks/useFlujos';
+import {
+  useBatchExecutionState,
+  getFlowExecutionState,
+} from '@/features/flujos/hooks/useBatchExecutionState';
 import { FlujoSelector } from '@/features/flujos/components/FlujosFilters/FlujoSelector';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -24,7 +29,7 @@ import {
   EnviosHoyCard,
   ProblemasEnvioCard,
   ReconciliacionSysgalCard,
-  SysgalRangoCard,
+  EmbudoCampana,
 } from './components';
 
 // ============================================================
@@ -183,6 +188,19 @@ function viernesBatch(): { ultimo: string; proximo: string } {
   return { ultimo: fmt(ultimo), proximo: fmt(proximo) };
 }
 
+/**
+ * ¿El flujo se alimenta por batch SEMANAL (viernes)? Solo los SEGMENTO, que son perpetuos Y asignan
+ * por nivel_deuda (nivel_deuda_target seteado). Contratos/Onboarding son perpetuos pero con feed
+ * CONTINUO (cada hora vía auto_asignar_nuevos), así que NO deben mostrar el banner de "viernes".
+ */
+function esBatchSemanal(flujo: FlujoNurturing | undefined): boolean {
+  return !!(
+    flujo?.es_perpetuo &&
+    Array.isArray(flujo.nivel_deuda_target) &&
+    flujo.nivel_deuda_target.length > 0
+  );
+}
+
 export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -193,13 +211,31 @@ export function MetricasPage() {
   // Cargar lista de flujos para el selector
   const { data: flujosResponse, isLoading: isLoadingFlujos } = useFlujos({ per_page: 100 });
   const flujosList = flujosResponse?.data ?? [];
+
+  // Estado de ejecución (batch) para filtrar el selector. Mismo criterio que la tabla de Flujos:
+  // mostramos solo flujos perpetuos o en ejecución (in_progress/paused). Los completados no aportan
+  // métricas accionables, así que se ocultan. Sin polling: al dashboard no le hace falta tiempo real.
+  const flujoIds = flujosList.map((f) => f.id);
+  const { data: estadosEjecucion, isLoading: isLoadingEstados } = useBatchExecutionState(
+    flujoIds,
+    false,
+  );
+  // Mientras carga el estado no escondemos nada (evita parpadeo); una vez cargado, filtramos.
+  const flujosVisibles = isLoadingEstados
+    ? flujosList
+    : flujosList.filter((flujo) => {
+        if (flujo.es_perpetuo) return true;
+        const estado = getFlowExecutionState(estadosEjecucion, flujo.id).ejecucion?.estado;
+        return estado === 'in_progress' || estado === 'paused';
+      });
+
   const selectedFlujo = selectedFlujoId
     ? flujosList.find((f) => f.id === selectedFlujoId)
     : undefined;
   const flujoNombre = selectedFlujo?.nombre;
-  // Flujo perpetuo: se alimenta por batch SEMANAL (viernes, ver routes/console.php weeklyOn(5)),
-  // no a diario. Cambia cómo se lee el dashboard (ver nota + período default abajo).
-  const esPerpetuo = selectedFlujo?.es_perpetuo ?? false;
+  // Batch semanal (viernes) SOLO para los SEGMENTO (perpetuo + nivel_deuda_target). Esto decide el
+  // banner de "viernes" y el período default. Contratos/Onboarding son perpetuos pero feed continuo.
+  const esBatchSemanalSel = esBatchSemanal(selectedFlujo);
 
   // SYSGAL por rango: el "tipo" depende del flujo SYSGAL seleccionado.
   // null = el flujo no es de SYSGAL (no se muestra la tarjeta).
@@ -277,13 +313,13 @@ export function MetricasPage() {
     });
   };
 
-  // Al elegir un flujo perpetuo, el período arranca en "últimos 7 días" para que "Incorporados al
-  // flujo" muestre el batch semanal (viernes) en lugar de 0. Los flujos normales arrancan en "Hoy".
+  // Solo los flujos de batch semanal (SEGMENTO) arrancan en "últimos 7 días", para que "Incorporados
+  // al flujo" muestre el batch del viernes en lugar de 0. El resto (continuos/normales) arranca en "Hoy".
   const handleFlujoChange = (id: number | null) => {
     setSelectedFlujoId(id);
     setDateRange(undefined);
     const flujo = id ? flujosList.find((f) => f.id === id) : undefined;
-    setPeriod(flujo?.es_perpetuo ? METRIC_PERIOD.WEEK : METRIC_PERIOD.TODAY);
+    setPeriod(esBatchSemanal(flujo) ? METRIC_PERIOD.WEEK : METRIC_PERIOD.TODAY);
   };
 
   // Common PageHeader props
@@ -295,7 +331,7 @@ export function MetricasPage() {
     onRefresh: handleRefresh,
     selectedFlujoId,
     onFlujoChange: handleFlujoChange,
-    flujos: flujosList,
+    flujos: flujosVisibles,
     isLoadingFlujos,
     flujoNombre,
     esOnboarding,
@@ -362,9 +398,9 @@ export function MetricasPage() {
     <div className="p-6 space-y-6">
       <PageHeader {...pageHeaderProps} isRefreshing={refreshMutation.isPending} />
 
-      {/* Flujo perpetuo: se alimenta por batch SEMANAL (viernes). Entre un viernes y otro,
+      {/* Batch semanal (SEGMENTO): los clientes ingresan los viernes. Entre un viernes y otro,
           "Incorporados al flujo" puede ser 0 — es esperado; la actividad diaria está en los Envíos. */}
-      {esPerpetuo && (
+      {esBatchSemanalSel && (
         <Alert>
           <Info className="h-4 w-4" />
           <AlertTitle>♾️ Flujo perpetuo · cómo leerlo</AlertTitle>
@@ -378,29 +414,21 @@ export function MetricasPage() {
         </Alert>
       )}
 
-      {/* Nota para gerencia: el onboarding por fecha de ingreso tiene 3 días de delay
-          y son mayormente clientes que ya existen en el sistema. */}
-      {flujoNombre?.toLowerCase().includes('fecha ingreso') && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Cómo leer esta campaña (Onboarding)</AlertTitle>
-          <AlertDescription className="mt-1 text-sm">
-            Esta campaña envía el email <strong>"a los 3 días de ingresado"</strong>. Por eso un cliente
-            que ingresó en una fecha <strong>entra a la campaña 3 días después</strong> (no el mismo día).
-            Y como la mayoría ya son <strong>clientes existentes</strong> (firmaron contrato), el número de
-            "Incorporados al flujo" es naturalmente menor que el total que reporta SYSGAL para ese día.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Número de SYSGAL para el rango seleccionado + descarga (solo flujos SYSGAL) */}
+      {/* Resumen de la campaña como EMBUDO (solo flujos SYSGAL): SYSGAL → Entraron → Recibieron →
+          Abrieron. Reemplaza la tarjeta de SYSGAL + las notas: cada número sale del anterior y la
+          diferencia se explica sola, así no parece inconsistente. */}
       {sysgalTipo && (
-        <SysgalRangoCard
+        <EmbudoCampana
           tipo={sysgalTipo}
           desde={sysgalRange.desde}
           hasta={sysgalRange.hasta}
-          label={sysgalTipo === 'contratos' ? 'Contratos Nuevos' : 'Onboarding'}
           contacto={esOnboarding ? contactoRange : undefined}
+          esOnboarding={esOnboarding}
+          incorporados={dashboard.clientes_ingresados?.total ?? 0}
+          recibieron={dashboard.resumen.envios_exitosos}
+          aperturasUnicas={dashboard.resumen.aperturas_unicas}
+          tasaApertura={dashboard.resumen.tasas.apertura}
+          conProblemas={dashboard.problemas_envio?.total_con_problemas ?? 0}
         />
       )}
 

@@ -32,8 +32,8 @@ const LINE_CONFIG = [
 export function AperturasChart({ data, className = '' }: AperturasChartProps) {
   return (
     <LineChart
-      title="Aperturas de Email"
-      description="Total de aperturas vs aperturas únicas por día"
+      title="Aperturas por día"
+      description="Aperturas que ocurrieron cada día (incluye correos enviados en días anteriores)"
       data={data}
       lines={LINE_CONFIG}
       className={className}
