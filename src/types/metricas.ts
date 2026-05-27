@@ -368,6 +368,17 @@ export interface ReconciliacionSysgalMetric {
   generado_at?: string;
 }
 
+export interface EmbudoCohorteMetric {
+  /** Prospectos que entraron al flujo en la ventana. */
+  entraron: number;
+  /** De los que entraron, cuántos recibieron un email exitoso. */
+  recibieron: number;
+  /** De los que entraron, cuántos abrieron al menos un email. */
+  abrieron: number;
+  /** De los que entraron, cuántos no pueden recibir (email inválido o sin email). */
+  con_problema: number;
+}
+
 export interface MetricasDashboard {
   resumen: MetricSummary;
   aperturas: AperturasMetrics;
@@ -379,6 +390,8 @@ export interface MetricasDashboard {
   nuevos_prospectos: NuevosProspectosMetric;
   /** Clientes que ingresaron al sistema (prospectos creados). Distinto de nuevos_prospectos que cuenta incorporaciones a flujos. */
   clientes_ingresados?: ClientesIngresadosMetric;
+  /** Embudo por cohorte (solo por flujo): de los que ENTRARON en la ventana, cuántos recibieron/abrieron. Monótono. */
+  embudo?: EmbudoCohorteMetric | null;
   problemas_envio: ProblemasEnvioMetric;
   /** Reconciliación SYSGAL ↔ ingresados (mes en curso), cacheada. null si aún no se computó. */
   reconciliacion_sysgal?: ReconciliacionSysgalMetric | null;

@@ -423,11 +423,15 @@ export function MetricasPage() {
           hasta={sysgalRange.hasta}
           contacto={esOnboarding ? contactoRange : undefined}
           esOnboarding={esOnboarding}
-          incorporados={dashboard.clientes_ingresados?.total ?? 0}
-          recibieron={dashboard.resumen.envios_exitosos}
-          aperturasUnicas={dashboard.resumen.aperturas_unicas}
-          tasaApertura={dashboard.resumen.tasas.apertura}
-          conProblemas={dashboard.problemas_envio?.total_con_problemas ?? 0}
+          incorporados={dashboard.embudo?.entraron ?? 0}
+          recibieron={dashboard.embudo?.recibieron ?? 0}
+          aperturasUnicas={dashboard.embudo?.abrieron ?? 0}
+          tasaApertura={
+            dashboard.embudo && dashboard.embudo.recibieron > 0
+              ? Math.round((dashboard.embudo.abrieron / dashboard.embudo.recibieron) * 1000) / 10
+              : 0
+          }
+          conProblemas={dashboard.embudo?.con_problema ?? 0}
         />
       )}
 
