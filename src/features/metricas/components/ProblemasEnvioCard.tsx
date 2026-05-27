@@ -6,8 +6,9 @@
  * Pensado para detectar y corregir calidad de dato en el origen (SYSGAL).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Pagination } from '@/components/shared/Pagination';
 import {
   AlertTriangle,
   MailX,
@@ -37,6 +38,9 @@ interface ProblemasEnvioCardProps {
 // ============================================================
 // META + HELPERS
 // ============================================================
+
+/** Cuántos prospectos se muestran por página en el detalle. Debajo de esto no hay paginador. */
+const DETALLE_PAGE_SIZE = 30;
 
 const MOTIVO_META: Record<
   MotivoProblemaEnvio,
@@ -113,11 +117,26 @@ function DetalleRow({ prospecto }: { prospecto: ProblemaEnvioDetalle }) {
 
 export function ProblemasEnvioCard({ data, className = '' }: ProblemasEnvioCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // Vuelve a la primera página al abrir/cerrar el detalle o cuando cambia el set de datos.
+  useEffect(() => {
+    setPage(1);
+  }, [data.detalle.length, expanded]);
 
   const motivos = (Object.entries(data.por_motivo) as [MotivoProblemaEnvio, number][]).filter(
     ([, n]) => (n ?? 0) > 0,
   );
   const sinProblemas = data.total_con_problemas === 0;
+
+  // Paginación del detalle: si no supera DETALLE_PAGE_SIZE, totalPages = 1 y el paginador no se muestra.
+  const totalDetalle = data.detalle.length;
+  const totalPages = Math.ceil(totalDetalle / DETALLE_PAGE_SIZE);
+  const safePage = Math.min(page, Math.max(totalPages, 1));
+  const detalleVisible = data.detalle.slice(
+    (safePage - 1) * DETALLE_PAGE_SIZE,
+    safePage * DETALLE_PAGE_SIZE,
+  );
 
   return (
     <Card className={className}>
@@ -180,17 +199,25 @@ export function ProblemasEnvioCard({ data, className = '' }: ProblemasEnvioCardP
               </button>
 
               {expanded && (
-                <div className="mt-3 rounded-lg border p-3">
-                  {data.detalle.map((p) => (
-                    <DetalleRow key={p.prospecto_id} prospecto={p} />
-                  ))}
-                  {data.detalle_truncado && (
-                    <p className="pt-2 text-xs text-muted-foreground">
-                      Mostrando los primeros {formatNumber(data.detalle.length)}. Hay más — afiná el
-                      período para verlos.
-                    </p>
-                  )}
-                </div>
+                <>
+                  <div className="mt-3 rounded-lg border p-3">
+                    {detalleVisible.map((p) => (
+                      <DetalleRow key={p.prospecto_id} prospecto={p} />
+                    ))}
+                    {data.detalle_truncado && (
+                      <p className="pt-2 text-xs text-muted-foreground">
+                        Hay más de los {formatNumber(totalDetalle)} cargados — afiná el período para
+                        verlos.
+                      </p>
+                    )}
+                  </div>
+                  <Pagination
+                    currentPage={safePage}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    className="mt-3"
+                  />
+                </>
               )}
             </div>
           </div>
