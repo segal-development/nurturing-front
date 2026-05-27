@@ -21,11 +21,10 @@ interface EmbudoCampanaProps {
   /** Onboarding: rango de contacto elegido (para la aclaración del delay de 3 días). */
   contacto?: { desde: string; hasta: string };
   esOnboarding: boolean;
-  incorporados: number; // entraron al flujo en el período
-  recibieron: number; // envíos exitosos (entregados) del período
-  aperturasUnicas: number; // aperturas únicas de esos envíos
-  tasaApertura: number; // %
-  conProblemas: number; // prospectos con dato que impide el envío
+  incorporados: number; // cohorte: entraron al flujo en la ventana
+  recibieron: number; // de esa cohorte, cuántos recibieron un email exitoso
+  aperturasUnicas: number; // de esa cohorte, cuántos abrieron
+  tasaApertura: number; // % (abrieron / recibieron de la cohorte)
   className?: string;
 }
 
@@ -64,7 +63,6 @@ export function EmbudoCampana({
   recibieron,
   aperturasUnicas,
   tasaApertura,
-  conProblemas,
   className = '',
 }: EmbudoCampanaProps) {
   const { estado, count, error, descargar, reintentar } = useSysgalConteo(tipo, desde, hasta);
@@ -88,6 +86,10 @@ export function EmbudoCampana({
       : sinEntrar === 0
         ? 'entraron todos'
         : `${formatNumber(sinEntrar)} aún no`;
+
+  // Caída real entre "entraron" y "recibieron": los que todavía no recibieron (dato malo o en cola).
+  const sinRecibir = Math.max(incorporados - recibieron, 0);
+  const notaRecibieron = sinRecibir > 0 ? `${formatNumber(sinRecibir)} sin recibir aún` : null;
 
   return (
     <Card className={className}>
@@ -126,7 +128,7 @@ export function EmbudoCampana({
             icon={<MailCheck className="h-5 w-5" />}
             label="Recibieron el email"
             valor={formatNumber(recibieron)}
-            nota={conProblemas > 0 ? `${formatNumber(conProblemas)} con dato malo` : null}
+            nota={notaRecibieron}
           />
           <Flecha />
           <Paso

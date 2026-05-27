@@ -431,7 +431,6 @@ export function MetricasPage() {
               ? Math.round((dashboard.embudo.abrieron / dashboard.embudo.recibieron) * 1000) / 10
               : 0
           }
-          conProblemas={dashboard.embudo?.con_problema ?? 0}
         />
       )}
 
