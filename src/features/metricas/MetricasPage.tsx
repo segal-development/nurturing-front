@@ -441,6 +441,7 @@ export function MetricasPage() {
         trends={dashboard.tendencias}
         clientesIngresados={dashboard.clientes_ingresados}
         porFlujo={selectedFlujoId !== null}
+        soloTasas={sysgalTipo !== null}
       />
 
       {/* Charts Grid */}

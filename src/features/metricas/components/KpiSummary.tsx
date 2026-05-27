@@ -18,6 +18,11 @@ interface KpiSummaryProps {
   clientesIngresados?: ClientesIngresadosMetric;
   /** true cuando hay un flujo seleccionado: "Clientes ingresados" pasa a ser de ese flujo */
   porFlujo?: boolean;
+  /**
+   * true cuando arriba está el embudo (flujos SYSGAL): oculta los conteos (Incorporados y Total
+   * Envíos) porque el embudo ya los muestra por cohorte; deja solo las tasas, así no se contradicen.
+   */
+  soloTasas?: boolean;
   className?: string;
 }
 
@@ -30,6 +35,7 @@ export function KpiSummary({
   trends,
   clientesIngresados,
   porFlujo = false,
+  soloTasas = false,
   className = '',
 }: KpiSummaryProps) {
   return (
@@ -47,22 +53,31 @@ export function KpiSummary({
         </p>
       </div>
 
-      {/* Orden de embudo: entran → se les envía → llega → abren → clickean → se dan de baja */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-6">
-        <MetricCard
-          title={porFlujo ? 'Incorporados al flujo' : 'Clientes ingresados'}
-          value={clientesIngresados?.total ?? 0}
-          subtitle={porFlujo ? 'Nuevos que entraron a la campaña' : 'Entraron al sistema (total)'}
-          icon={<UserPlus className="h-4 w-4" />}
-        />
+      {/* Orden de embudo: entran → se les envía → llega → abren → clickean → se dan de baja.
+          Con soloTasas (flujos con embudo) ocultamos los conteos: el embudo ya los muestra. */}
+      <div
+        className={`grid gap-4 md:grid-cols-2 ${
+          soloTasas ? 'lg:grid-cols-4 2xl:grid-cols-4' : 'lg:grid-cols-3 2xl:grid-cols-6'
+        }`}
+      >
+        {!soloTasas && (
+          <>
+            <MetricCard
+              title={porFlujo ? 'Incorporados al flujo' : 'Clientes ingresados'}
+              value={clientesIngresados?.total ?? 0}
+              subtitle={porFlujo ? 'Nuevos que entraron a la campaña' : 'Entraron al sistema (total)'}
+              icon={<UserPlus className="h-4 w-4" />}
+            />
 
-        <MetricCard
-          title="Total Envíos"
-          value={summary.total_envios}
-          subtitle={`${summary.envios_exitosos} exitosos`}
-          trend={trends?.envios}
-          icon={<Send className="h-4 w-4" />}
-        />
+            <MetricCard
+              title="Total Envíos"
+              value={summary.total_envios}
+              subtitle={`${summary.envios_exitosos} exitosos`}
+              trend={trends?.envios}
+              icon={<Send className="h-4 w-4" />}
+            />
+          </>
+        )}
 
         <MetricCard
           title="Tasa de Entrega"
