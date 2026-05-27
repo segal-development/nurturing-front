@@ -150,10 +150,10 @@ export function EmbudoCampana({
 
         {esOnboarding && contacto && (
           <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
-            La campaña contacta a los <strong>3 días de ingresar</strong> y mira una{' '}
-            <strong>ventana de 3 días</strong> (para no perder los fines de semana). Por eso "SYSGAL
-            reportó" cuenta los ingresos de esos 3 días, y los recién incorporados pueden todavía no
-            figurar en "Recibieron" — el envío está programado.
+            La campaña le escribe al cliente <strong>exactamente 3 días después de ingresar</strong>.
+            Por eso "SYSGAL reportó" muestra los ingresos de <strong>ese día (hoy − 3)</strong>; si ese
+            día no ingresó nadie, da 0. Los recién incorporados pueden todavía no figurar en
+            "Recibieron" — el envío está en curso.
           </p>
         )}
       </CardContent>

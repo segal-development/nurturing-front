@@ -265,15 +265,14 @@ export function MetricasPage() {
     return { desde: toISODateString(desde), hasta: toISODateString(hasta) };
   })();
 
-  // Onboarding: la campaña contacta a los que ingresaron y usa una VENTANA DE 3 DÍAS (igual que el
-  // sync: subDays(3)..subDays(1)), para no perder ingresos de fines de semana. Por eso a SYSGAL se le
-  // consultan los ingresos de [día-3, día-1] — así el total de SYSGAL cuadra con los que entraron
-  // (que también vienen de esa ventana) y el embudo nunca crece.
+  // Onboarding: la campaña contacta EXACTAMENTE a los 3 días de ingresar (un solo día). El sync
+  // corre los 7 días y trae solo la cohorte del día-3 exacto. Por eso a SYSGAL se le consulta ese
+  // único día (día-3) y cuadra con los que entraron. Si ese día no ingresó nadie, SYSGAL = 0 (correcto).
   // Contratos: sin corrimiento (la ventana de contacto = la ventana consultada).
   const sysgalRange = esOnboarding
     ? {
         desde: shiftISODate(contactoRange.desde, -3),
-        hasta: shiftISODate(contactoRange.hasta, -1),
+        hasta: shiftISODate(contactoRange.hasta, -3),
       }
     : contactoRange;
 
