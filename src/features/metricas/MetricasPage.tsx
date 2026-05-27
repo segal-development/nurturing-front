@@ -28,7 +28,6 @@ import {
   AperturasChart,
   EnviosHoyCard,
   ProblemasEnvioCard,
-  ReconciliacionSysgalCard,
   EmbudoCampana,
 } from './components';
 
@@ -454,12 +453,6 @@ export function MetricasPage() {
       {/* Prospectos con datos que impiden el envío (calidad de dato del origen / SYSGAL) */}
       {dashboard.problemas_envio && (
         <ProblemasEnvioCard data={dashboard.problemas_envio} />
-      )}
-
-      {/* Reconciliación SYSGAL: SOLO en Contratos Nuevos (ahí "hoy" no tiene corrimiento y cuadra
-          con el resto). En Onboarding confunde porque mezcla "ingreso" con los números de campaña. */}
-      {sysgalTipo === 'contratos' && (
-        <ReconciliacionSysgalCard data={dashboard.reconciliacion_sysgal} flujoTipo={sysgalTipo} />
       )}
 
       {/* Footer with generation time */}
