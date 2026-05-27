@@ -168,6 +168,21 @@ function shiftISODate(iso: string, dias: number): string {
   return d.toISOString().split('T')[0];
 }
 
+/**
+ * Último viernes (≤ hoy) y próximo viernes, formateados en es-CL.
+ * Los flujos perpetuos se alimentan por batch los viernes (routes/console.php → weeklyOn(5)).
+ */
+function viernesBatch(): { ultimo: string; proximo: string } {
+  const hoy = new Date();
+  const diasDesdeViernes = (hoy.getDay() - 5 + 7) % 7; // getDay(): 0=domingo … 5=viernes
+  const ultimo = new Date(hoy);
+  ultimo.setDate(hoy.getDate() - diasDesdeViernes);
+  const proximo = new Date(ultimo);
+  proximo.setDate(ultimo.getDate() + 7);
+  const fmt = (d: Date) => d.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  return { ultimo: fmt(ultimo), proximo: fmt(proximo) };
+}
+
 export function MetricasPage() {
   const [period, setPeriod] = useState<MetricPeriod>(METRIC_PERIOD.TODAY);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -178,9 +193,13 @@ export function MetricasPage() {
   // Cargar lista de flujos para el selector
   const { data: flujosResponse, isLoading: isLoadingFlujos } = useFlujos({ per_page: 100 });
   const flujosList = flujosResponse?.data ?? [];
-  const flujoNombre = selectedFlujoId
-    ? flujosList.find((f) => f.id === selectedFlujoId)?.nombre
+  const selectedFlujo = selectedFlujoId
+    ? flujosList.find((f) => f.id === selectedFlujoId)
     : undefined;
+  const flujoNombre = selectedFlujo?.nombre;
+  // Flujo perpetuo: se alimenta por batch SEMANAL (viernes, ver routes/console.php weeklyOn(5)),
+  // no a diario. Cambia cómo se lee el dashboard (ver nota + período default abajo).
+  const esPerpetuo = selectedFlujo?.es_perpetuo ?? false;
 
   // SYSGAL por rango: el "tipo" depende del flujo SYSGAL seleccionado.
   // null = el flujo no es de SYSGAL (no se muestra la tarjeta).
@@ -258,6 +277,15 @@ export function MetricasPage() {
     });
   };
 
+  // Al elegir un flujo perpetuo, el período arranca en "últimos 7 días" para que "Incorporados al
+  // flujo" muestre el batch semanal (viernes) en lugar de 0. Los flujos normales arrancan en "Hoy".
+  const handleFlujoChange = (id: number | null) => {
+    setSelectedFlujoId(id);
+    setDateRange(undefined);
+    const flujo = id ? flujosList.find((f) => f.id === id) : undefined;
+    setPeriod(flujo?.es_perpetuo ? METRIC_PERIOD.WEEK : METRIC_PERIOD.TODAY);
+  };
+
   // Common PageHeader props
   const pageHeaderProps = {
     period,
@@ -266,7 +294,7 @@ export function MetricasPage() {
     onDateRangeChange: setDateRange,
     onRefresh: handleRefresh,
     selectedFlujoId,
-    onFlujoChange: setSelectedFlujoId,
+    onFlujoChange: handleFlujoChange,
     flujos: flujosList,
     isLoadingFlujos,
     flujoNombre,
@@ -329,9 +357,26 @@ export function MetricasPage() {
   }
 
   // Success state
+  const { ultimo: ultimoViernes, proximo: proximoViernes } = viernesBatch();
   return (
     <div className="p-6 space-y-6">
       <PageHeader {...pageHeaderProps} isRefreshing={refreshMutation.isPending} />
+
+      {/* Flujo perpetuo: se alimenta por batch SEMANAL (viernes). Entre un viernes y otro,
+          "Incorporados al flujo" puede ser 0 — es esperado; la actividad diaria está en los Envíos. */}
+      {esPerpetuo && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>♾️ Flujo perpetuo · cómo leerlo</AlertTitle>
+          <AlertDescription className="mt-1 text-sm">
+            Los clientes ingresan en un <strong>batch semanal (todos los viernes)</strong>. El último
+            ingreso fue el <strong>viernes {ultimoViernes}</strong> y el próximo es el{' '}
+            <strong>viernes {proximoViernes}</strong>. Por eso, entre un viernes y otro,{' '}
+            <strong>"Incorporados al flujo" puede mostrar 0</strong> — es normal. La actividad de cada
+            día está en los <strong>Envíos</strong>, que procesan ese batch de a poco.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Nota para gerencia: el onboarding por fecha de ingreso tiene 3 días de delay
           y son mayormente clientes que ya existen en el sistema. */}
