@@ -209,9 +209,9 @@ export function EmbudoCampana({
           <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
             La campaña le escribe al cliente <strong>exactamente 3 días después de ingresar</strong>.
             Por eso "SYSGAL reportó" muestra los ingresos de <strong>ese día (hoy − 3)</strong>; si
-            ese día no ingresó nadie, da 0. Todos los números abajo son <strong>de este día</strong>
-            (no acumulados): si alguien entró al flujo en un día anterior, aparece en el embudo de
-            ese día, no en el de hoy.
+            ese día no ingresó nadie, da 0. Los números del embudo son <strong>de toda esa cohorte
+            </strong>: de los X que SYSGAL reportó, cuántos entraron al flujo y cuántos recibieron
+            el email (en cualquier momento, no solo hoy).
           </p>
         )}
       </CardContent>

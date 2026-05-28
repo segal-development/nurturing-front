@@ -476,8 +476,10 @@ export function MetricasPage() {
         </div>
       )}
 
-      {/* Envíos de hoy con fallback histórico — solo cuando hay flujo seleccionado */}
-      {selectedFlujoId !== null && dashboard.envios_hoy && (
+      {/* Envíos de hoy con fallback histórico — solo cuando hay flujo seleccionado y NO es
+          flujo SYSGAL. Para SYSGAL, el embudo de arriba ya muestra el total de la cohorte; este
+          panel sería redundante y confuso (mostraría un número distinto por filtrar por día). */}
+      {selectedFlujoId !== null && sysgalTipo === null && dashboard.envios_hoy && (
         <EnviosHoyCard data={dashboard.envios_hoy} />
       )}
 
