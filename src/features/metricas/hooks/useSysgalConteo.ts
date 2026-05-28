@@ -14,9 +14,18 @@ export type SysgalConteoEstado = 'generando' | 'listo' | 'error';
 const POLL_MS = 3000;
 const MAX_INTENTOS = 25; // ~75s
 
+export interface SysgalRechazado {
+  rut: string;
+  nombre: string;
+  email: string;
+  telefono: string;
+  razones: string[];
+}
+
 export interface UseSysgalConteo {
   estado: SysgalConteoEstado;
   count: number | null;
+  rechazados: SysgalRechazado[];
   error: string | null;
   descargar: (nombreArchivo?: string) => Promise<void>;
   reintentar: () => void;
@@ -29,6 +38,7 @@ export function useSysgalConteo(
 ): UseSysgalConteo {
   const [estado, setEstado] = useState<SysgalConteoEstado>('generando');
   const [count, setCount] = useState<number | null>(null);
+  const [rechazados, setRechazados] = useState<SysgalRechazado[]>([]);
   const [error, setError] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -45,6 +55,7 @@ export function useSysgalConteo(
     limpiar();
     setEstado('generando');
     setCount(null);
+    setRechazados([]);
     setError(null);
     intentosRef.current = 0;
     let vivo = true;
@@ -67,6 +78,7 @@ export function useSysgalConteo(
             if (s.estado === 'listo') {
               limpiar();
               setCount(s.count ?? null);
+              setRechazados(s.rechazados ?? []);
               setEstado('listo');
             } else if (s.estado === 'error') {
               limpiar();
@@ -107,5 +119,5 @@ export function useSysgalConteo(
     [tipo, desde, hasta],
   );
 
-  return { estado, count, error, descargar, reintentar: arrancar };
+  return { estado, count, rechazados, error, descargar, reintentar: arrancar };
 }

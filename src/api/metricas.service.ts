@@ -208,15 +208,33 @@ class MetricasService {
     return response.data.token;
   }
 
-  /** Estado del export: pendiente | listo | error (+ conteo). */
+  /** Estado del export: pendiente | listo | error (+ conteo + rechazados). */
   async getExportStatus(
     token: string
-  ): Promise<{ estado: string; count?: number; error?: string }> {
+  ): Promise<{
+    estado: string;
+    count?: number;
+    error?: string;
+    rechazados?: Array<{
+      rut: string;
+      nombre: string;
+      email: string;
+      telefono: string;
+      razones: string[];
+    }>;
+  }> {
     const response = await apiClient.get<{
       success: boolean;
       estado: string;
       count?: number;
       error?: string;
+      rechazados?: Array<{
+        rut: string;
+        nombre: string;
+        email: string;
+        telefono: string;
+        razones: string[];
+      }>;
     }>(`${this.basePath}/export-sysgal/${token}`);
     return response.data;
   }

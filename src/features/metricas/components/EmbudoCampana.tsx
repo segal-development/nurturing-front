@@ -65,7 +65,7 @@ export function EmbudoCampana({
   tasaApertura,
   className = '',
 }: EmbudoCampanaProps) {
-  const { estado, count, error, descargar, reintentar } = useSysgalConteo(tipo, desde, hasta);
+  const { estado, count, rechazados, error, descargar, reintentar } = useSysgalConteo(tipo, desde, hasta);
   const unidad = tipo === 'contratos' ? 'contratos nuevos' : 'clientes';
 
   // Paso 1 (SYSGAL): número async.
@@ -78,14 +78,18 @@ export function EmbudoCampana({
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     );
 
-  // Nota del paso 2: cuánto del total de SYSGAL entró (la diferencia, si la hay).
+  // Nota del paso 2: si SYSGAL trae más que los que entraron, casi siempre es porque tienen
+  // datos malos (sin email/teléfono válido). Mostramos eso si lo sabemos (rechazados.length),
+  // si no caemos en "aún no" genérico.
   const sinEntrar = estado === 'listo' && count !== null ? Math.max(count - incorporados, 0) : 0;
   const notaEntraron =
     estado !== 'listo' || count === null
       ? null
       : sinEntrar === 0
         ? 'entraron todos'
-        : `${formatNumber(sinEntrar)} aún no`;
+        : rechazados.length > 0
+          ? `${formatNumber(rechazados.length)} con datos malos`
+          : `${formatNumber(sinEntrar)} aún no`;
 
   // Caída real entre "entraron" y "recibieron": los que todavía no recibieron (dato malo o en cola).
   const sinRecibir = Math.max(incorporados - recibieron, 0);
@@ -145,6 +149,59 @@ export function EmbudoCampana({
             <Button variant="ghost" size="sm" onClick={reintentar}>
               Reintentar
             </Button>
+          </div>
+        )}
+
+        {/* Rechazados SYSGAL: SYSGAL los reporta pero NO pueden entrar al flujo (sin email
+            válido Y sin teléfono). La gerencia los necesita para corregir el dato en SYSGAL. */}
+        {rechazados.length > 0 && (
+          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+            <div className="mb-2 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                {rechazados.length} {rechazados.length === 1 ? 'cliente' : 'clientes'} de SYSGAL no
+                pudieron entrar al flujo por datos incompletos
+              </span>
+            </div>
+            <p className="mb-2 text-xs text-amber-800 dark:text-amber-300">
+              Hay que corregir el dato directamente en SYSGAL.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-amber-200 text-left text-amber-900 dark:border-amber-900/50 dark:text-amber-200">
+                    <th className="py-1 pr-3 font-medium">RUT</th>
+                    <th className="py-1 pr-3 font-medium">Nombre</th>
+                    <th className="py-1 pr-3 font-medium">Email</th>
+                    <th className="py-1 pr-3 font-medium">Teléfono</th>
+                    <th className="py-1 pr-3 font-medium">Problema</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rechazados.map((r) => (
+                    <tr key={r.rut + r.nombre} className="border-b border-amber-100 last:border-0 dark:border-amber-900/30">
+                      <td className="py-1 pr-3 font-mono text-amber-950 dark:text-amber-100">{r.rut || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.nombre || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.email || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.telefono || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-800 dark:text-amber-300">
+                        {r.razones
+                          .map((rz) =>
+                            rz === 'sin_email'
+                              ? 'sin email'
+                              : rz === 'email_invalido'
+                                ? 'email inválido'
+                                : rz === 'sin_telefono'
+                                  ? 'sin teléfono'
+                                  : rz,
+                          )
+                          .join(' + ')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
