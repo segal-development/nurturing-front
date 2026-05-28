@@ -436,9 +436,32 @@ export function MetricasPage() {
       )}
 
       {/* KPI Summary Cards */}
+      {/* En flujos SYSGAL (con embudo), las tasas de abajo se computan de la COHORTE para que
+          cuadren con el embudo (no del período, que con 0 envíos hoy daba "Tasa Entrega 0%" aunque
+          la cohorte hubiera recibido todo). En flujos no-SYSGAL, queda el cálculo original. */}
       <KpiSummary
-        summary={dashboard.resumen}
-        trends={dashboard.tendencias}
+        summary={
+          sysgalTipo && dashboard.embudo
+            ? {
+                ...dashboard.resumen,
+                total_envios: dashboard.embudo.recibieron,
+                envios_exitosos: dashboard.embudo.recibieron,
+                aperturas_unicas: dashboard.embudo.abrieron,
+                total_aperturas: dashboard.embudo.abrieron,
+                clicks_unicos: dashboard.embudo.clickaron,
+                total_clicks: dashboard.embudo.clickaron,
+                desuscripciones: dashboard.embudo.desuscribieron,
+                tasas: {
+                  entrega: dashboard.embudo.tasa_entrega,
+                  apertura: dashboard.embudo.tasa_apertura,
+                  click: dashboard.embudo.tasa_ctr,
+                  ctr: dashboard.embudo.tasa_ctr,
+                  desuscripcion: dashboard.embudo.tasa_desuscripcion,
+                },
+              }
+            : dashboard.resumen
+        }
+        trends={sysgalTipo ? undefined : dashboard.tendencias}
         clientesIngresados={dashboard.clientes_ingresados}
         porFlujo={selectedFlujoId !== null}
         soloTasas={sysgalTipo !== null}

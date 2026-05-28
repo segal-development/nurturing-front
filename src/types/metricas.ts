@@ -375,8 +375,17 @@ export interface EmbudoCohorteMetric {
   recibieron: number;
   /** De los que entraron, cuántos abrieron al menos un email. */
   abrieron: number;
+  /** De los que entraron, cuántos hicieron click en al menos un email. */
+  clickaron: number;
+  /** De los que entraron, cuántos se desuscribieron. */
+  desuscribieron: number;
   /** De los que entraron, cuántos no pueden recibir (email inválido o sin email). */
   con_problema: number;
+  /** Tasas de COHORTE (no de período): cuadran con el embudo. */
+  tasa_entrega: number;
+  tasa_apertura: number;
+  tasa_ctr: number;
+  tasa_desuscripcion: number;
 }
 
 export interface MetricasDashboard {
