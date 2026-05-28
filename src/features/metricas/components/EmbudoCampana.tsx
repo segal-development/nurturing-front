@@ -78,9 +78,8 @@ export function EmbudoCampana({
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     );
 
-  // Nota del paso 2: si SYSGAL trae más que los que entraron, casi siempre es porque tienen
-  // datos malos (sin email/teléfono válido). Mostramos eso si lo sabemos (rechazados.length),
-  // si no caemos en "aún no" genérico.
+  // Nota del paso 2: cuántos NO entraron al flujo. Si tenemos detalle (rechazados con razón),
+  // pointea al usuario al detalle abajo. Si no, fallback genérico.
   const sinEntrar = estado === 'listo' && count !== null ? Math.max(count - incorporados, 0) : 0;
   const notaEntraron =
     estado !== 'listo' || count === null
@@ -88,7 +87,7 @@ export function EmbudoCampana({
       : sinEntrar === 0
         ? 'entraron todos'
         : rechazados.length > 0
-          ? `${formatNumber(rechazados.length)} con datos malos`
+          ? `${formatNumber(rechazados.length)} no entraron — ver abajo`
           : `${formatNumber(sinEntrar)} aún no`;
 
   // Caída real entre "entraron" y "recibieron": los que todavía no recibieron (dato malo o en cola).
@@ -152,19 +151,20 @@ export function EmbudoCampana({
           </div>
         )}
 
-        {/* Rechazados SYSGAL: SYSGAL los reporta pero NO pueden entrar al flujo (sin email
-            válido Y sin teléfono). La gerencia los necesita para corregir el dato en SYSGAL. */}
+        {/* Por qué SYSGAL los reportó pero NO entraron al flujo. Pueden ser datos malos en
+            SYSGAL (corregir allá) o situación legítima (ej. ya estaba en otro flujo activo). */}
         {rechazados.length > 0 && (
           <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
             <div className="mb-2 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                {rechazados.length} {rechazados.length === 1 ? 'cliente' : 'clientes'} de SYSGAL no
-                pudieron entrar al flujo por datos incompletos
+                {rechazados.length} {rechazados.length === 1 ? 'cliente' : 'clientes'} de SYSGAL
+                no entraron al flujo — detalle abajo
               </span>
             </div>
             <p className="mb-2 text-xs text-amber-800 dark:text-amber-300">
-              Hay que corregir el dato directamente en SYSGAL.
+              Las razones marcadas como "datos malos en SYSGAL" hay que corregirlas allá. Las
+              marcadas "ya en otro flujo" son esperadas (no se duplica el contacto).
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -174,7 +174,7 @@ export function EmbudoCampana({
                     <th className="py-1 pr-3 font-medium">Nombre</th>
                     <th className="py-1 pr-3 font-medium">Email</th>
                     <th className="py-1 pr-3 font-medium">Teléfono</th>
-                    <th className="py-1 pr-3 font-medium">Problema</th>
+                    <th className="py-1 pr-3 font-medium">Por qué no entró</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -188,12 +188,20 @@ export function EmbudoCampana({
                         {r.razones
                           .map((rz) =>
                             rz === 'sin_email'
-                              ? 'sin email'
+                              ? 'sin email (corregir en SYSGAL)'
                               : rz === 'email_invalido'
-                                ? 'email inválido'
+                                ? 'email inválido (corregir en SYSGAL)'
                                 : rz === 'sin_telefono'
                                   ? 'sin teléfono'
-                                  : rz,
+                                  : rz === 'sin_nombre'
+                                    ? 'sin nombre (corregir en SYSGAL)'
+                                    : rz === 'en_otro_flujo_activo'
+                                      ? 'ya en otro flujo activo'
+                                      : rz === 'no_se_creo'
+                                        ? 'no se creó en DB (revisar sync)'
+                                        : rz === 'no_asignado'
+                                          ? 'existe pero no asignado (revisar)'
+                                          : rz,
                           )
                           .join(' + ')}
                       </td>
