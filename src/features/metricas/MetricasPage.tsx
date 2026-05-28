@@ -467,11 +467,14 @@ export function MetricasPage() {
         soloTasas={sysgalTipo !== null}
       />
 
-      {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <EnviosChart data={dashboard.envios.por_dia} />
-        <AperturasChart data={dashboard.aperturas.por_dia} />
-      </div>
+      {/* Charts Grid — ocultos en flujos SYSGAL: el embudo de arriba ya muestra lo mismo
+          filtrado a la cohorte exacta del día. Para no-SYSGAL siguen visibles. */}
+      {sysgalTipo === null && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <EnviosChart data={dashboard.envios.por_dia} />
+          <AperturasChart data={dashboard.aperturas.por_dia} />
+        </div>
+      )}
 
       {/* Envíos de hoy con fallback histórico — solo cuando hay flujo seleccionado */}
       {selectedFlujoId !== null && dashboard.envios_hoy && (
