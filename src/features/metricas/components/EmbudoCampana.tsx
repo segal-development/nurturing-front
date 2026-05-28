@@ -126,9 +126,9 @@ export function EmbudoCampana({
           <Flecha />
           <Paso
             icon={<MailCheck className="h-5 w-5" />}
-            label="Ya recibieron"
+            label="Recibieron el email"
             valor={formatNumber(recibieron)}
-            nota={notaRecibieron ?? 'acumulado de la cohorte'}
+            nota={notaRecibieron}
           />
           <Flecha />
           <Paso
@@ -151,10 +151,10 @@ export function EmbudoCampana({
         {esOnboarding && contacto && (
           <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
             La campaña le escribe al cliente <strong>exactamente 3 días después de ingresar</strong>.
-            Por eso "SYSGAL reportó" muestra los ingresos de <strong>ese día (hoy − 3)</strong>; si ese
-            día no ingresó nadie, da 0. <strong>"Ya recibieron" es acumulado de la cohorte</strong>
-            (incluye envíos hechos en días anteriores), por eso puede no coincidir con "Envíos por
-            Día" de hoy.
+            Por eso "SYSGAL reportó" muestra los ingresos de <strong>ese día (hoy − 3)</strong>; si
+            ese día no ingresó nadie, da 0. Todos los números abajo son <strong>de este día</strong>
+            (no acumulados): si alguien entró al flujo en un día anterior, aparece en el embudo de
+            ese día, no en el de hoy.
           </p>
         )}
       </CardContent>
