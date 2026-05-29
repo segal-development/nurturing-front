@@ -15,3 +15,4 @@ export { ProblemasEnvioCard } from './ProblemasEnvioCard';
 export { ReconciliacionSysgalCard } from './ReconciliacionSysgalCard';
 export { SysgalRangoCard } from './SysgalRangoCard';
 export { EmbudoCampana } from './EmbudoCampana';
+export { EmbudosPorEtapa } from './EmbudosPorEtapa';

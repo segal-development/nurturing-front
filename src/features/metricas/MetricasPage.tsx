@@ -29,6 +29,7 @@ import {
   EnviosHoyCard,
   ProblemasEnvioCard,
   EmbudoCampana,
+  EmbudosPorEtapa,
 } from './components';
 
 // ============================================================
@@ -433,6 +434,13 @@ export function MetricasPage() {
               : 0
           }
         />
+      )}
+
+      {/* Embudos POR ETAPA — solo para Clientes por Fecha Ingreso. Backend devuelve un array
+          con el detalle de cada etapa del drip (3, 4, 5, 10, 18 días). Cada mini-embudo
+          consulta SYSGAL para su cohorte específica. */}
+      {sysgalTipo === 'clientes-ingreso' && dashboard.embudos_por_etapa && dashboard.embudos_por_etapa.length > 0 && (
+        <EmbudosPorEtapa etapas={dashboard.embudos_por_etapa} />
       )}
 
       {/* KPI Summary Cards */}

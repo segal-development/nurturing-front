@@ -368,6 +368,27 @@ export interface ReconciliacionSysgalMetric {
   generado_at?: string;
 }
 
+export interface EmbudoEtapaMetric {
+  /** ID del stage en config_structure. */
+  stage_id: string;
+  /** Label legible (ej. "Clientes Ingreso: Email a los 3 días de..."). */
+  label: string;
+  /** Días desde ingreso del cliente hasta el envío de ESTA etapa. */
+  offset_dias: number;
+  /** Rango de ingreso SYSGAL que corresponde a esta etapa para el período seleccionado. */
+  desde_ingreso: string;
+  hasta_ingreso: string;
+  entraron: number;
+  recibieron: number;
+  abrieron: number;
+  clickaron: number;
+  desuscribieron: number;
+  tasa_entrega: number;
+  tasa_apertura: number;
+  tasa_ctr: number;
+  tasa_desuscripcion: number;
+}
+
 export interface EmbudoCohorteMetric {
   /** Prospectos que entraron al flujo en la ventana. */
   entraron: number;
@@ -401,6 +422,8 @@ export interface MetricasDashboard {
   clientes_ingresados?: ClientesIngresadosMetric;
   /** Embudo por cohorte (solo por flujo): de los que ENTRARON en la ventana, cuántos recibieron/abrieron. Monótono. */
   embudo?: EmbudoCohorteMetric | null;
+  /** Embudos POR ETAPA (solo flujo Clientes por Fecha Ingreso). Uno por etapa con su offset propio desde ingreso. */
+  embudos_por_etapa?: EmbudoEtapaMetric[] | null;
   problemas_envio: ProblemasEnvioMetric;
   /** Reconciliación SYSGAL ↔ ingresados (mes en curso), cacheada. null si aún no se computó. */
   reconciliacion_sysgal?: ReconciliacionSysgalMetric | null;
