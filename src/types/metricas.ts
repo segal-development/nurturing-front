@@ -387,6 +387,10 @@ export interface EmbudoEtapaMetric {
   tasa_apertura: number;
   tasa_ctr: number;
   tasa_desuscripcion: number;
+  /** True solo para flujos con anchor SYSGAL (Clientes-Ingreso). En esos casos la tabla
+   *  muestra la columna "SYSGAL" comparando reportado vs efectivamente ingresado. Para
+   *  otros flujos perpetuos la cohorte es por fecha_inicio y no aplica el contraste. */
+  tiene_anchor_sysgal: boolean;
 }
 
 export interface EmbudoCohorteMetric {

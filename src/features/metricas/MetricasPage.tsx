@@ -436,10 +436,12 @@ export function MetricasPage() {
         />
       )}
 
-      {/* Embudos POR ETAPA — solo para Clientes por Fecha Ingreso. Backend devuelve un array
-          con el detalle de cada etapa del drip (3, 4, 5, 10, 18 días). Cada mini-embudo
-          consulta SYSGAL para su cohorte específica. */}
-      {sysgalTipo === 'clientes-ingreso' && dashboard.embudos_por_etapa && dashboard.embudos_por_etapa.length > 0 && (
+      {/* Embudos POR ETAPA — para cualquier flujo perpetuo con más de un nodo. El backend
+          decide si lo devuelve (es_perpetuo + stages >= 2). Clientes-Ingreso es el caso
+          especial con anchor SYSGAL: muestra la columna SYSGAL y permite expandir la fila
+          para ver quiénes no entraron. Otros flujos perpetuos usan fecha_inicio como anchor
+          y la tabla queda sin la columna SYSGAL. */}
+      {dashboard.embudos_por_etapa && dashboard.embudos_por_etapa.length > 0 && (
         <EmbudosPorEtapa etapas={dashboard.embudos_por_etapa} />
       )}
 

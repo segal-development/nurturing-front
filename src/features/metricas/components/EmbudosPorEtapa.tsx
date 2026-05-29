@@ -32,7 +32,7 @@ function razonTexto(rz: string): string {
   }
 }
 
-function EtapaRow({ etapa }: { etapa: EmbudoEtapaMetric }) {
+function EtapaRowSysgal({ etapa }: { etapa: EmbudoEtapaMetric }) {
   const [expanded, setExpanded] = useState(false);
   const { estado, count, rechazados } = useSysgalConteo('clientes-ingreso', etapa.desde_ingreso, etapa.hasta_ingreso);
 
@@ -110,16 +110,40 @@ function EtapaRow({ etapa }: { etapa: EmbudoEtapaMetric }) {
   );
 }
 
+function EtapaRowSimple({ etapa }: { etapa: EmbudoEtapaMetric }) {
+  const labelCorto = etapa.label;
+
+  return (
+    <tr className="border-b">
+      <td className="py-2 pl-3 pr-2 text-sm">
+        <div>
+          <div className="font-medium">{labelCorto}</div>
+          <div className="text-xs text-muted-foreground">+{etapa.offset_dias}d desde inicio · cohorte {etapa.desde_ingreso}</div>
+        </div>
+      </td>
+      <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.entraron)}</td>
+      <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.recibieron)}</td>
+      <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.abrieron)}</td>
+      <td className="px-2 py-2 text-center text-sm">{etapa.tasa_entrega}%</td>
+      <td className="px-2 py-2 text-center text-sm">{etapa.tasa_apertura}%</td>
+      <td className="px-2 py-2 pr-3 text-center text-sm">{etapa.tasa_ctr}%</td>
+    </tr>
+  );
+}
+
 export function EmbudosPorEtapa({ etapas, className = '' }: EmbudosPorEtapaProps) {
   if (!etapas || etapas.length === 0) return null;
+
+  const tieneAnchorSysgal = etapas[0]?.tiene_anchor_sysgal ?? false;
 
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle>Embudo por etapa</CardTitle>
         <CardDescription>
-          Una fila por cada email del drip. Click en la fila para ver quiénes de SYSGAL no entraron
-          a esa etapa.
+          {tieneAnchorSysgal
+            ? 'Una fila por cada email del drip. Click en la fila para ver quiénes de SYSGAL no entraron a esa etapa.'
+            : 'Una fila por cada email del drip. La cohorte es por fecha de inicio en el flujo.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -128,7 +152,7 @@ export function EmbudosPorEtapa({ etapas, className = '' }: EmbudosPorEtapaProps
             <thead>
               <tr className="border-b text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 <th className="py-2 pl-3 pr-2">Etapa</th>
-                <th className="px-2 py-2 text-center">SYSGAL</th>
+                {tieneAnchorSysgal && <th className="px-2 py-2 text-center">SYSGAL</th>}
                 <th className="px-2 py-2 text-center">Entraron</th>
                 <th className="px-2 py-2 text-center">Recibieron</th>
                 <th className="px-2 py-2 text-center">Abrieron</th>
@@ -138,32 +162,36 @@ export function EmbudosPorEtapa({ etapas, className = '' }: EmbudosPorEtapaProps
               </tr>
             </thead>
             <tbody>
-              {etapas.map((etapa) => (
-                <EtapaRow key={etapa.stage_id} etapa={etapa} />
-              ))}
+              {etapas.map((etapa) =>
+                etapa.tiene_anchor_sysgal
+                  ? <EtapaRowSysgal key={etapa.stage_id} etapa={etapa} />
+                  : <EtapaRowSimple key={etapa.stage_id} etapa={etapa} />
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <div className="space-y-1">
-            <p>
-              <strong>¿Por qué SYSGAL &gt; Entraron en cohortes de hace más de una semana?</strong>
-            </p>
-            <p>
-              La diferencia corresponde a <strong>duplicados históricos</strong> de prospectos en la base
-              de datos (mismo RUT cargado más de una vez en sincronizaciones anteriores). Cuando el sync
-              encuentra un RUT que ya existe, no lo vuelve a insertar — por eso esos clientes aparecen en
-              SYSGAL pero no como nuevos en el flujo. Es deuda técnica conocida con plan de dedup en
-              curso; no refleja prospectos perdidos por el sistema actual.
-            </p>
-            <p className="text-blue-700 dark:text-blue-300">
-              Las cohortes recientes (+3d, +4d) sí cuadran 1:1 porque el sync con UPSERT por RUT está
-              vigente desde el 28/05.
-            </p>
+        {tieneAnchorSysgal && (
+          <div className="mt-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
+            <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <div className="space-y-1">
+              <p>
+                <strong>¿Por qué SYSGAL &gt; Entraron en cohortes de hace más de una semana?</strong>
+              </p>
+              <p>
+                La diferencia corresponde a <strong>duplicados históricos</strong> de prospectos en la base
+                de datos (mismo RUT cargado más de una vez en sincronizaciones anteriores). Cuando el sync
+                encuentra un RUT que ya existe, no lo vuelve a insertar — por eso esos clientes aparecen en
+                SYSGAL pero no como nuevos en el flujo. Es deuda técnica conocida con plan de dedup en
+                curso; no refleja prospectos perdidos por el sistema actual.
+              </p>
+              <p className="text-blue-700 dark:text-blue-300">
+                Las cohortes recientes (+3d, +4d) sí cuadran 1:1 porque el sync con UPSERT por RUT está
+                vigente desde el 28/05.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
