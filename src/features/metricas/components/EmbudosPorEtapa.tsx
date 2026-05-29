@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, Loader2, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSysgalConteo } from '../hooks/useSysgalConteo';
 import { formatNumber } from '../utils/formatters';
@@ -143,6 +143,26 @@ export function EmbudosPorEtapa({ etapas, className = '' }: EmbudosPorEtapaProps
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-200">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <div className="space-y-1">
+            <p>
+              <strong>¿Por qué SYSGAL &gt; Entraron en cohortes de hace más de una semana?</strong>
+            </p>
+            <p>
+              La diferencia corresponde a <strong>duplicados históricos</strong> de prospectos en la base
+              de datos (mismo RUT cargado más de una vez en sincronizaciones anteriores). Cuando el sync
+              encuentra un RUT que ya existe, no lo vuelve a insertar — por eso esos clientes aparecen en
+              SYSGAL pero no como nuevos en el flujo. Es deuda técnica conocida con plan de dedup en
+              curso; no refleja prospectos perdidos por el sistema actual.
+            </p>
+            <p className="text-blue-700 dark:text-blue-300">
+              Las cohortes recientes (+3d, +4d) sí cuadran 1:1 porque el sync con UPSERT por RUT está
+              vigente desde el 28/05.
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
