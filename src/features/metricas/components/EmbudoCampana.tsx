@@ -198,9 +198,9 @@ export function EmbudoCampana({
                                     : rz === 'en_otro_flujo_activo'
                                       ? 'ya en otro flujo activo'
                                       : rz === 'no_se_creo'
-                                        ? 'no se creó en DB (revisar sync)'
+                                        ? 'pendiente próximo sync horario'
                                         : rz === 'no_asignado'
-                                          ? 'existe pero no asignado (revisar)'
+                                          ? 'pendiente asignación (próximo sync horario)'
                                           : rz,
                           )
                           .join(' + ')}
