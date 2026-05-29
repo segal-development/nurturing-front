@@ -1,14 +1,14 @@
 /**
  * EmbudosPorEtapa
  *
- * Renderiza un mini-embudo por cada etapa del flujo Clientes por Fecha Ingreso.
- * Cada etapa tiene su offset desde el ingreso (3, 4, 5, 10, 18 días) — el SYSGAL de cada
- * embudo consulta un día distinto (hoy − offset). Permite a gerencia ver el rendimiento
- * de cada email del drip por separado.
+ * Tabla compacta — una fila por etapa del flujo Clientes por Fecha Ingreso (5 etapas).
+ * Cada fila muestra SYSGAL, Entraron, Recibieron, Abrieron + tasas. Expandible: al hacer
+ * click se muestra el detalle de "quiénes no entraron" (rechazados de SYSGAL) usando el
+ * mismo job que el embudo principal.
  */
 
-import type { ReactNode } from 'react';
-import { ArrowRight, FileText, UserPlus, MailCheck, Eye, MousePointerClick, Mail, AlertTriangle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSysgalConteo } from '../hooks/useSysgalConteo';
 import { formatNumber } from '../utils/formatters';
@@ -19,80 +19,94 @@ interface EmbudosPorEtapaProps {
   className?: string;
 }
 
-function Paso({ icon, label, valor, nota }: { icon: ReactNode; label: string; valor: ReactNode; nota?: string | null }) {
-  return (
-    <div className="flex flex-1 flex-col items-center gap-1 px-2 text-center">
-      <span className="text-segal-blue dark:text-segal-turquoise">{icon}</span>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      <span className="text-2xl font-bold leading-none">{valor}</span>
-      {nota ? <span className="text-xs text-muted-foreground">{nota}</span> : <span className="text-xs">&nbsp;</span>}
-    </div>
-  );
+function razonTexto(rz: string): string {
+  switch (rz) {
+    case 'sin_email': return 'sin email (corregir en SYSGAL)';
+    case 'email_invalido': return 'email inválido (corregir en SYSGAL)';
+    case 'sin_telefono': return 'sin teléfono';
+    case 'sin_nombre': return 'sin nombre (corregir en SYSGAL)';
+    case 'en_otro_flujo_activo': return 'ya en otro flujo activo';
+    case 'no_se_creo': return 'pendiente próximo sync horario';
+    case 'no_asignado': return 'pendiente asignación (próximo sync horario)';
+    default: return rz;
+  }
 }
 
-function Flecha() {
-  return <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground/50 sm:block" />;
-}
+function EtapaRow({ etapa }: { etapa: EmbudoEtapaMetric }) {
+  const [expanded, setExpanded] = useState(false);
+  const { estado, count, rechazados } = useSysgalConteo('clientes-ingreso', etapa.desde_ingreso, etapa.hasta_ingreso);
 
-function MiniTasas({ etapa }: { etapa: EmbudoEtapaMetric }) {
-  const tasas = [
-    { label: 'Tasa de Entrega', valor: etapa.tasa_entrega, icon: <Mail className="h-4 w-4" /> },
-    { label: 'Tasa de Apertura', valor: etapa.tasa_apertura, icon: <Eye className="h-4 w-4" /> },
-    { label: 'CTR', valor: etapa.tasa_ctr, icon: <MousePointerClick className="h-4 w-4" /> },
-  ];
-  return (
-    <div className="mt-3 grid grid-cols-3 gap-3 border-t pt-3">
-      {tasas.map((t) => (
-        <div key={t.label} className="flex flex-col items-center text-center">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            {t.icon} {t.label}
-          </span>
-          <span className="text-lg font-semibold">{t.valor}%</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+  const sysgalCell =
+    estado === 'listo' ? formatNumber(count ?? 0) :
+    estado === 'error' ? <AlertTriangle className="inline h-4 w-4 text-amber-500" /> :
+    <Loader2 className="inline h-4 w-4 animate-spin text-muted-foreground" />;
 
-function EtapaCard({ etapa }: { etapa: EmbudoEtapaMetric }) {
-  // SYSGAL para el día específico de ingreso que corresponde a esta etapa.
-  const { estado, count } = useSysgalConteo('clientes-ingreso', etapa.desde_ingreso, etapa.hasta_ingreso);
-
-  const valorSysgal: ReactNode =
-    estado === 'listo' ? formatNumber(count ?? 0)
-    : estado === 'error' ? <AlertTriangle className="h-5 w-5 text-amber-500" />
-    : <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
-
-  const sinEntrar = estado === 'listo' && count !== null ? Math.max(count - etapa.entraron, 0) : 0;
-  const notaEntraron = estado !== 'listo' || count === null
-    ? null
-    : sinEntrar === 0
-      ? 'entraron todos'
-      : `${formatNumber(sinEntrar)} aún no`;
-  const sinRecibir = Math.max(etapa.entraron - etapa.recibieron, 0);
-  const notaRecibieron = sinRecibir > 0 ? `${formatNumber(sinRecibir)} sin recibir` : null;
+  const tieneRechazados = estado === 'listo' && rechazados.length > 0;
+  const labelCorto = etapa.label.replace('Clientes Ingreso: ', '').replace(/ de ingresar.*$/, '');
 
   return (
-    <Card className="border-l-4 border-l-segal-blue/40 dark:border-l-segal-turquoise/40">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">{etapa.label}</CardTitle>
-        <CardDescription className="text-xs">
-          Email a los <strong>{etapa.offset_dias} días</strong> del ingreso · ingreso = {etapa.desde_ingreso}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <Paso icon={<FileText className="h-4 w-4" />} label="SYSGAL" valor={valorSysgal} nota="clientes" />
-          <Flecha />
-          <Paso icon={<UserPlus className="h-4 w-4" />} label="Entraron" valor={formatNumber(etapa.entraron)} nota={notaEntraron} />
-          <Flecha />
-          <Paso icon={<MailCheck className="h-4 w-4" />} label="Recibieron" valor={formatNumber(etapa.recibieron)} nota={notaRecibieron} />
-          <Flecha />
-          <Paso icon={<Eye className="h-4 w-4" />} label="Abrieron" valor={formatNumber(etapa.abrieron)} nota={`${etapa.tasa_apertura}% apertura`} />
-        </div>
-        <MiniTasas etapa={etapa} />
-      </CardContent>
-    </Card>
+    <>
+      <tr
+        className={`border-b transition-colors ${tieneRechazados ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+        onClick={() => tieneRechazados && setExpanded((v) => !v)}
+      >
+        <td className="py-2 pl-3 pr-2 text-sm">
+          <div className="flex items-center gap-2">
+            {tieneRechazados ? (
+              expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            ) : <span className="w-4" />}
+            <div>
+              <div className="font-medium">{labelCorto}</div>
+              <div className="text-xs text-muted-foreground">+{etapa.offset_dias}d · ingreso {etapa.desde_ingreso}</div>
+            </div>
+          </div>
+        </td>
+        <td className="px-2 py-2 text-center text-sm font-medium">{sysgalCell}</td>
+        <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.entraron)}</td>
+        <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.recibieron)}</td>
+        <td className="px-2 py-2 text-center text-sm font-medium">{formatNumber(etapa.abrieron)}</td>
+        <td className="px-2 py-2 text-center text-sm">{etapa.tasa_entrega}%</td>
+        <td className="px-2 py-2 text-center text-sm">{etapa.tasa_apertura}%</td>
+        <td className="px-2 py-2 pr-3 text-center text-sm">{etapa.tasa_ctr}%</td>
+      </tr>
+
+      {expanded && tieneRechazados && (
+        <tr className="border-b bg-amber-50/50 dark:bg-amber-950/10">
+          <td colSpan={8} className="px-4 py-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="h-4 w-4" />
+              {rechazados.length} de SYSGAL no entraron a esta etapa
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-amber-200 text-left text-amber-900 dark:border-amber-900/50 dark:text-amber-200">
+                    <th className="py-1 pr-3 font-medium">RUT</th>
+                    <th className="py-1 pr-3 font-medium">Nombre</th>
+                    <th className="py-1 pr-3 font-medium">Email</th>
+                    <th className="py-1 pr-3 font-medium">Teléfono</th>
+                    <th className="py-1 pr-3 font-medium">Por qué no entró</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rechazados.map((r) => (
+                    <tr key={r.rut + r.nombre} className="border-b border-amber-100 last:border-0 dark:border-amber-900/30">
+                      <td className="py-1 pr-3 font-mono text-amber-950 dark:text-amber-100">{r.rut || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.nombre || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.email || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-950 dark:text-amber-100">{r.telefono || '—'}</td>
+                      <td className="py-1 pr-3 text-amber-800 dark:text-amber-300">
+                        {r.razones.map(razonTexto).join(' + ')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -100,19 +114,38 @@ export function EmbudosPorEtapa({ etapas, className = '' }: EmbudosPorEtapaProps
   if (!etapas || etapas.length === 0) return null;
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <div>
-        <h3 className="text-lg font-semibold tracking-tight">Embudo por etapa del flujo</h3>
-        <p className="text-sm text-muted-foreground">
-          Cada etapa envía el email un número específico de días después del ingreso del cliente.
-          El SYSGAL, los que entraron y las tasas se calculan para la cohorte específica de cada
-          etapa según el día seleccionado.
-        </p>
-      </div>
-      {etapas.map((etapa) => (
-        <EtapaCard key={etapa.stage_id} etapa={etapa} />
-      ))}
-    </div>
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Embudo por etapa</CardTitle>
+        <CardDescription>
+          Una fila por cada email del drip. Click en la fila para ver quiénes de SYSGAL no entraron
+          a esa etapa.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <th className="py-2 pl-3 pr-2">Etapa</th>
+                <th className="px-2 py-2 text-center">SYSGAL</th>
+                <th className="px-2 py-2 text-center">Entraron</th>
+                <th className="px-2 py-2 text-center">Recibieron</th>
+                <th className="px-2 py-2 text-center">Abrieron</th>
+                <th className="px-2 py-2 text-center">% Entrega</th>
+                <th className="px-2 py-2 text-center">% Apertura</th>
+                <th className="px-2 py-2 pr-3 text-center">CTR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {etapas.map((etapa) => (
+                <EtapaRow key={etapa.stage_id} etapa={etapa} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
