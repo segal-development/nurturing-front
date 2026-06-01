@@ -82,17 +82,20 @@ export function EmbudoCampana({
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     );
 
-  // Nota del paso 2: cuántos NO entraron al flujo. Si tenemos detalle (rechazados con razón),
-  // pointea al usuario al detalle abajo. Si no, fallback genérico.
-  const sinEntrar = estado === 'listo' && count !== null ? Math.max(count - incorporados, 0) : 0;
+  // Nota del paso 2: cuántos clientes de SYSGAL NO entraron al flujo.
+  //
+  // La fuente AUTORITATIVA es `rechazados` (el job compara cliente por cliente, por RUT/
+  // email/teléfono e incluyendo duplicados). El gap numérico count - incorporados NO es
+  // confiable: el embudo ancla "Entraron" en fecha_ingreso exacta, pero un cliente puede
+  // estar en el flujo con otra fecha_ingreso (deuda de duplicados) → quedaría fuera de la
+  // cohorte del día aunque SÍ está siendo nutrido. Por eso, si rechazados está vacío,
+  // significa que NADIE quedó afuera, sin importar el gap numérico.
   const notaEntraron =
     estado !== 'listo' || count === null
       ? null
-      : sinEntrar === 0
-        ? 'entraron todos'
-        : rechazados.length > 0
-          ? `${formatNumber(rechazados.length)} no entraron — ver abajo`
-          : `${formatNumber(sinEntrar)} aún no`;
+      : rechazados.length > 0
+        ? `${formatNumber(rechazados.length)} no entraron — ver abajo`
+        : 'todos en el flujo';
 
   // ¿El flujo usa SMS además de email? Si llegó al menos un SMS, mostramos los dos canales
   // por separado para que un problema de un canal (ej. emails caídos por Athena) no quede
