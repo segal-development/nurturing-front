@@ -27,6 +27,14 @@ export interface DateRange {
 }
 
 // Parameters for metrics API calls
+/** Una persona que entró al flujo pero NO recibió el email, con la razón. */
+export interface NoRecibidoDetalle {
+  rut: string;
+  nombre: string;
+  email: string;
+  razon: 'sin_email' | 'email_invalido' | 'fallido_envio' | 'pendiente_huerfano' | 'en_cola' | 'sin_envio';
+}
+
 export interface MetricsParams {
   dias?: MetricPeriod;
   fecha_inicio?: string; // ISO date string YYYY-MM-DD

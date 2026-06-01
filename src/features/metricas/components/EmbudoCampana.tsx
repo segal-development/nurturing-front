@@ -7,12 +7,27 @@
  * Las diferencias entre pasos se explican abajo de cada uno, así no parece inconsistente.
  */
 
-import type { ReactNode } from 'react';
-import { ArrowRight, Download, Loader2, AlertTriangle, FileText, UserPlus, MailCheck, MessageSquare, Eye } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { ArrowRight, Download, Loader2, AlertTriangle, FileText, UserPlus, MailCheck, MessageSquare, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSysgalConteo } from '../hooks/useSysgalConteo';
 import { formatNumber } from '../utils/formatters';
+import { metricasService } from '@/api/metricas.service';
+import type { MetricsParams, NoRecibidoDetalle } from '@/types/metricas';
+
+/** Texto legible de por qué una persona no recibió el email. */
+function razonNoRecibio(r: string): string {
+  switch (r) {
+    case 'fallido_envio': return 'el envío falló (problema del proveedor de email) — se reenvía';
+    case 'pendiente_huerfano': return 'quedó trabado por la caída del proveedor — se reenvía';
+    case 'en_cola': return 'en cola, aún sin enviar';
+    case 'sin_envio': return 'aún no se le generó el envío';
+    case 'sin_email': return 'sin email cargado — corregir en SYSGAL';
+    case 'email_invalido': return 'email inválido — corregir en SYSGAL';
+    default: return r;
+  }
+}
 
 interface EmbudoCampanaProps {
   tipo: 'contratos' | 'clientes-ingreso';
@@ -27,6 +42,9 @@ interface EmbudoCampanaProps {
   recibieronSms: number; // de esa cohorte, cuántos recibieron el SMS
   aperturasUnicas: number; // de esa cohorte, cuántos abrieron
   tasaApertura: number; // % (abrieron / recibieron de la cohorte)
+  /** Params del dashboard (mismos que alimentan el embudo) para traer el detalle de los que
+   *  no recibieron el email. Si se omite, no se muestra el "ver detalle". */
+  detalleParams?: MetricsParams;
   className?: string;
 }
 
@@ -67,9 +85,30 @@ export function EmbudoCampana({
   recibieronSms,
   aperturasUnicas,
   tasaApertura,
+  detalleParams,
   className = '',
 }: EmbudoCampanaProps) {
   const { estado, count, rechazados, error, descargar, reintentar } = useSysgalConteo(tipo, desde, hasta);
+
+  // Detalle "por qué no recibieron el email" (lazy: se trae al expandir).
+  const [detalleAbierto, setDetalleAbierto] = useState(false);
+  const [noRecibe, setNoRecibe] = useState<NoRecibidoDetalle[] | null>(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
+
+  const toggleDetalle = async () => {
+    const abrir = !detalleAbierto;
+    setDetalleAbierto(abrir);
+    if (abrir && noRecibe === null && detalleParams) {
+      setCargandoDetalle(true);
+      try {
+        setNoRecibe(await metricasService.getNoRecibieron(detalleParams));
+      } catch {
+        setNoRecibe([]);
+      } finally {
+        setCargandoDetalle(false);
+      }
+    }
+  };
   const unidad = tipo === 'contratos' ? 'contratos nuevos' : 'clientes';
 
   // Paso 1 (SYSGAL): número async.
@@ -184,6 +223,63 @@ export function EmbudoCampana({
             <Button variant="ghost" size="sm" onClick={reintentar}>
               Reintentar
             </Button>
+          </div>
+        )}
+
+        {/* Detalle: por qué N entraron pero NO recibieron el email (lo que pregunta gerencia). */}
+        {detalleParams && (usaSms ? sinRecibirEmail : sinRecibir) > 0 && (
+          <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/20">
+            <button
+              type="button"
+              onClick={toggleDetalle}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold text-blue-900 hover:bg-blue-100/50 dark:text-blue-200 dark:hover:bg-blue-900/20"
+            >
+              {detalleAbierto ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              ¿Por qué {formatNumber(usaSms ? sinRecibirEmail : sinRecibir)} entraron pero no recibieron el email? — ver detalle
+            </button>
+            {detalleAbierto && (
+              <div className="px-3 pb-3">
+                {cargandoDetalle ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Cargando detalle…
+                  </div>
+                ) : !noRecibe || noRecibe.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Sin detalle disponible.</p>
+                ) : (
+                  <>
+                    <p className="mb-2 text-xs text-blue-800 dark:text-blue-300">
+                      La mayoría falló por un problema del proveedor de email (no son datos malos) y se
+                      reenvían. Los marcados "corregir en SYSGAL" sí necesitan acción en el origen.
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-blue-200 text-left text-blue-900 dark:border-blue-900/50 dark:text-blue-200">
+                            <th className="py-1 pr-3 font-medium">RUT</th>
+                            <th className="py-1 pr-3 font-medium">Nombre</th>
+                            <th className="py-1 pr-3 font-medium">Email</th>
+                            <th className="py-1 pr-3 font-medium">Por qué no recibió</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {noRecibe.map((r, i) => (
+                            <tr
+                              key={(r.rut || r.email || '') + i}
+                              className="border-b border-blue-100 last:border-0 dark:border-blue-900/30"
+                            >
+                              <td className="py-1 pr-3 font-mono text-blue-950 dark:text-blue-100">{r.rut || '—'}</td>
+                              <td className="py-1 pr-3 text-blue-950 dark:text-blue-100">{r.nombre || '—'}</td>
+                              <td className="py-1 pr-3 text-blue-950 dark:text-blue-100">{r.email || '—'}</td>
+                              <td className="py-1 pr-3 text-blue-800 dark:text-blue-300">{razonNoRecibio(r.razon)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
 

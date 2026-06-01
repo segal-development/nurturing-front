@@ -435,6 +435,7 @@ export function MetricasPage() {
               ? Math.round((dashboard.embudo.abrieron / dashboard.embudo.recibieron) * 1000) / 10
               : 0
           }
+          detalleParams={metricsParams}
         />
       )}
 

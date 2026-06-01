@@ -22,6 +22,7 @@ import type {
   TopFlujoMetric,
   MetricasApiResponse,
   MetricsParams,
+  NoRecibidoDetalle,
 } from '@/types/metricas';
 
 // ============================================================
@@ -74,6 +75,19 @@ class MetricasService {
   async getDashboard(params: MetricsParams = { dias: 30 }): Promise<MetricasDashboard> {
     const response = await apiClient.get<MetricasApiResponse<MetricasDashboard>>(
       `${this.basePath}/dashboard`,
+      { params: this.buildParams(params) }
+    );
+
+    return response.data.data;
+  }
+
+  /**
+   * Detalle de los que entraron al flujo pero NO recibieron el email, con la razón.
+   * Mismos params que el dashboard → la cohorte (y el conteo) coinciden con el embudo.
+   */
+  async getNoRecibieron(params: MetricsParams): Promise<NoRecibidoDetalle[]> {
+    const response = await apiClient.get<MetricasApiResponse<NoRecibidoDetalle[]>>(
+      `${this.basePath}/no-recibieron`,
       { params: this.buildParams(params) }
     );
 
