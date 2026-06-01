@@ -427,6 +427,8 @@ export function MetricasPage() {
           esOnboarding={esOnboarding}
           incorporados={dashboard.embudo?.entraron ?? 0}
           recibieron={dashboard.embudo?.recibieron ?? 0}
+          recibieronEmail={dashboard.embudo?.recibieron_email ?? 0}
+          recibieronSms={dashboard.embudo?.recibieron_sms ?? 0}
           aperturasUnicas={dashboard.embudo?.abrieron ?? 0}
           tasaApertura={
             dashboard.embudo && dashboard.embudo.recibieron > 0

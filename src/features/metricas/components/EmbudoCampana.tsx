@@ -8,7 +8,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { ArrowRight, Download, Loader2, AlertTriangle, FileText, UserPlus, MailCheck, Eye } from 'lucide-react';
+import { ArrowRight, Download, Loader2, AlertTriangle, FileText, UserPlus, MailCheck, MessageSquare, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSysgalConteo } from '../hooks/useSysgalConteo';
@@ -22,7 +22,9 @@ interface EmbudoCampanaProps {
   contacto?: { desde: string; hasta: string };
   esOnboarding: boolean;
   incorporados: number; // cohorte: entraron al flujo en la ventana
-  recibieron: number; // de esa cohorte, cuántos recibieron un email exitoso
+  recibieron: number; // de esa cohorte, cuántos recibieron por cualquier canal
+  recibieronEmail: number; // de esa cohorte, cuántos recibieron el EMAIL
+  recibieronSms: number; // de esa cohorte, cuántos recibieron el SMS
   aperturasUnicas: number; // de esa cohorte, cuántos abrieron
   tasaApertura: number; // % (abrieron / recibieron de la cohorte)
   className?: string;
@@ -61,6 +63,8 @@ export function EmbudoCampana({
   esOnboarding,
   incorporados,
   recibieron,
+  recibieronEmail,
+  recibieronSms,
   aperturasUnicas,
   tasaApertura,
   className = '',
@@ -90,7 +94,18 @@ export function EmbudoCampana({
           ? `${formatNumber(rechazados.length)} no entraron — ver abajo`
           : `${formatNumber(sinEntrar)} aún no`;
 
-  // Caída real entre "entraron" y "recibieron": los que todavía no recibieron (dato malo o en cola).
+  // ¿El flujo usa SMS además de email? Si llegó al menos un SMS, mostramos los dos canales
+  // por separado para que un problema de un canal (ej. emails caídos por Athena) no quede
+  // tapado por el éxito del otro. Si es email-only, mantenemos el paso único.
+  const usaSms = recibieronSms > 0;
+
+  // Caída por canal: los que entraron pero todavía no recibieron por ese canal.
+  const sinRecibirEmail = Math.max(incorporados - recibieronEmail, 0);
+  const sinRecibirSms = Math.max(incorporados - recibieronSms, 0);
+  const notaEmail = sinRecibirEmail > 0 ? `${formatNumber(sinRecibirEmail)} sin recibir aún` : 'todos';
+  const notaSms = sinRecibirSms > 0 ? `${formatNumber(sinRecibirSms)} sin recibir aún` : 'todos';
+
+  // Email-only: caída total contra "recibieron" (cualquier canal, == email aquí).
   const sinRecibir = Math.max(incorporados - recibieron, 0);
   const notaRecibieron = sinRecibir > 0 ? `${formatNumber(sinRecibir)} sin recibir aún` : null;
 
@@ -127,12 +142,30 @@ export function EmbudoCampana({
             nota={notaEntraron}
           />
           <Flecha />
-          <Paso
-            icon={<MailCheck className="h-5 w-5" />}
-            label="Recibieron el email"
-            valor={formatNumber(recibieron)}
-            nota={notaRecibieron}
-          />
+          {usaSms ? (
+            <>
+              <Paso
+                icon={<MailCheck className="h-5 w-5" />}
+                label="Recibieron email"
+                valor={formatNumber(recibieronEmail)}
+                nota={notaEmail}
+              />
+              <Flecha />
+              <Paso
+                icon={<MessageSquare className="h-5 w-5" />}
+                label="Recibieron SMS"
+                valor={formatNumber(recibieronSms)}
+                nota={notaSms}
+              />
+            </>
+          ) : (
+            <Paso
+              icon={<MailCheck className="h-5 w-5" />}
+              label="Recibieron el email"
+              valor={formatNumber(recibieron)}
+              nota={notaRecibieron}
+            />
+          )}
           <Flecha />
           <Paso
             icon={<Eye className="h-5 w-5" />}

@@ -396,8 +396,12 @@ export interface EmbudoEtapaMetric {
 export interface EmbudoCohorteMetric {
   /** Prospectos que entraron al flujo en la ventana. */
   entraron: number;
-  /** De los que entraron, cuántos recibieron un email exitoso. */
+  /** De los que entraron, cuántos recibieron un envío exitoso por CUALQUIER canal (email o SMS). */
   recibieron: number;
+  /** De los que entraron, cuántos recibieron el EMAIL exitosamente. */
+  recibieron_email: number;
+  /** De los que entraron, cuántos recibieron el SMS exitosamente. */
+  recibieron_sms: number;
   /** De los que entraron, cuántos abrieron al menos un email. */
   abrieron: number;
   /** De los que entraron, cuántos hicieron click en al menos un email. */
