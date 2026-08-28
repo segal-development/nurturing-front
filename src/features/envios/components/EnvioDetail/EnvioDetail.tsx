@@ -38,7 +38,6 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useEnvioDetail } from '@/features/envios/hooks'
-import { sanitizeHtml } from '@/utils/sanitize'
 
 interface EnvioDetailProps {
   envioId: number
@@ -166,6 +165,7 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
 
   const formattedCreatedDate = safeFormatDate(envio.fecha_creacion) || 'Fecha no disponible'
   const formattedSentDate = safeFormatDate(envio.fecha_enviado)
+  const isEmailHtml = envio.canal === 'email' && envio.contenido.includes('<')
 
   return (
     <div className="space-y-4 p-4 dark:bg-slate-950">
@@ -387,31 +387,36 @@ export function EnvioDetail({ envioId, onClose }: EnvioDetailProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-segal-light/50 dark:bg-slate-800 border border-segal-blue/20 dark:border-slate-700 rounded p-4 max-h-96 overflow-y-auto">
-                <p className="text-sm text-segal-dark dark:text-slate-300 whitespace-pre-wrap break-words font-mono">
-                  {envio.contenido}
-                </p>
-              </div>
+              {isEmailHtml ? (
+                /* Rendered preview: sandboxed iframe keeps email styles isolated, no scripts */
+                <iframe
+                  title="Vista previa del email"
+                  sandbox=""
+                  srcDoc={envio.contenido}
+                  className="w-full h-96 rounded border border-segal-blue/20 dark:border-slate-700 bg-white"
+                />
+              ) : (
+                <div className="bg-segal-light/50 dark:bg-slate-800 border border-segal-blue/20 dark:border-slate-700 rounded p-4 max-h-96 overflow-y-auto">
+                  <p className="text-sm text-segal-dark dark:text-slate-300 whitespace-pre-wrap break-words font-mono">
+                    {envio.contenido}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* HTML Preview (if applicable) */}
-          {envio.canal === 'email' && envio.contenido.includes('<') && (
-            <Card className="dark:bg-slate-900 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-base text-segal-dark dark:text-white">
-                  Vista Previa
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white dark:bg-slate-800 border border-segal-blue/20 dark:border-slate-700 rounded p-4 max-h-96 overflow-y-auto">
-                  <div
-                    className="prose dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(envio.contenido) }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+          {/* Raw HTML source, collapsed by default */}
+          {isEmailHtml && (
+            <details className="rounded border border-segal-blue/20 dark:border-slate-700 dark:bg-slate-900 p-4">
+              <summary className="cursor-pointer text-sm font-medium text-segal-dark dark:text-white select-none">
+                Ver código HTML
+              </summary>
+              <div className="mt-3 bg-segal-light/50 dark:bg-slate-800 border border-segal-blue/20 dark:border-slate-700 rounded p-4 max-h-96 overflow-auto">
+                <pre className="text-xs text-segal-dark dark:text-slate-300 font-mono whitespace-pre-wrap break-all">
+                  {envio.contenido}
+                </pre>
+              </div>
+            </details>
           )}
         </TabsContent>
       </Tabs>

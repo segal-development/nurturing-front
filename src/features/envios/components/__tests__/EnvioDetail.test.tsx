@@ -481,6 +481,90 @@ describe('EnvioDetail Component', () => {
     })
   })
 
+  describe('Email HTML Content Rendering', () => {
+    const htmlEnvio = {
+      ...mockEnvio,
+      contenido:
+        '<!DOCTYPE html><html><body style="margin:0"><p>Hola deudor</p></body></html>',
+    }
+
+    it('should render HTML email inside a sandboxed iframe preview', async () => {
+      const user = userEvent.setup()
+      vi.spyOn(useEnvioDetailHook, 'useEnvioDetail').mockReturnValue({
+        data: htmlEnvio,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as any)
+
+      renderWithQueryClient(<EnvioDetail envioId={1} />)
+      await user.click(screen.getByRole('tab', { name: /contenido/i }))
+
+      const iframe = screen.getByTitle(/vista previa del email/i)
+      expect(iframe.tagName).toBe('IFRAME')
+      // Empty sandbox: no scripts, no same-origin access
+      expect(iframe).toHaveAttribute('sandbox', '')
+      expect(iframe.getAttribute('srcdoc')).toContain('Hola deudor')
+    })
+
+    it('should hide raw HTML behind a collapsed details element', async () => {
+      const user = userEvent.setup()
+      vi.spyOn(useEnvioDetailHook, 'useEnvioDetail').mockReturnValue({
+        data: htmlEnvio,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as any)
+
+      renderWithQueryClient(<EnvioDetail envioId={1} />)
+      await user.click(screen.getByRole('tab', { name: /contenido/i }))
+
+      const summary = screen.getByText(/ver código html/i)
+      const details = summary.closest('details')
+      expect(details).toBeInTheDocument()
+      expect(details).not.toHaveAttribute('open')
+      expect(details?.textContent).toContain('<!DOCTYPE')
+    })
+
+    it('should not render iframe for SMS content', async () => {
+      const user = userEvent.setup()
+      const smsEnvio = {
+        ...mockEnvio,
+        canal: 'sms' as const,
+        contenido: 'Hola, tu deuda tiene solución. Responde SI para más info.',
+      }
+      vi.spyOn(useEnvioDetailHook, 'useEnvioDetail').mockReturnValue({
+        data: smsEnvio,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as any)
+
+      renderWithQueryClient(<EnvioDetail envioId={1} />)
+      await user.click(screen.getByRole('tab', { name: /contenido/i }))
+
+      expect(screen.queryByTitle(/vista previa del email/i)).not.toBeInTheDocument()
+      expect(screen.getByText(/tu deuda tiene solución/i)).toBeInTheDocument()
+    })
+
+    it('should not render iframe for plain-text email', async () => {
+      const user = userEvent.setup()
+      const plainEnvio = { ...mockEnvio, contenido: 'Email de texto plano sin markup' }
+      vi.spyOn(useEnvioDetailHook, 'useEnvioDetail').mockReturnValue({
+        data: plainEnvio,
+        isLoading: false,
+        isError: false,
+        error: null,
+      } as any)
+
+      renderWithQueryClient(<EnvioDetail envioId={1} />)
+      await user.click(screen.getByRole('tab', { name: /contenido/i }))
+
+      expect(screen.queryByTitle(/vista previa del email/i)).not.toBeInTheDocument()
+      expect(screen.getByText(/email de texto plano sin markup/i)).toBeInTheDocument()
+    })
+  })
+
   describe('Accessibility', () => {
     beforeEach(() => {
       vi.spyOn(useEnvioDetailHook, 'useEnvioDetail').mockReturnValue({
